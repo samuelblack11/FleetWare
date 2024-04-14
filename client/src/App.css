@@ -10,10 +10,10 @@ body {
 .header-container {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     width: 100%;
     height: auto; /* Adjust or set a min-height if necessary */
-    padding: 10px 0;
+    padding: 10px;
+    max-height: 300px;
 }
 
 .header-content {
@@ -22,19 +22,17 @@ body {
     align-items: center;
     justify-content: center;
     flex-grow: 1;
-    padding: 10px;
 }
 
 
 .header-title {
-    margin-top: 0;
+    margin-top: -10px;
     color:  rgba(128, 50, 50, 0.6);
 }
 
 .logo {
     height: auto; /* Maintains aspect ratio */
     width: 100%; /* Use 100% of the container width up to its max width */
-    max-width: 150px; /* Maximum width, adjust based on your design */
     max-height: 150px; /* Maximum width, adjust based on your design */
 }
 
