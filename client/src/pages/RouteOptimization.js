@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GenericTable, GenericPopup } from './ReusableReactComponents';
 import MapComponent from './MapComponent'; 
+import Spinner from 'react-bootstrap/Spinner';
+
+
+const LoadingSpinner = () => (
+  <Spinner animation="border" role="status">
+    <span className="visually-hidden">Loading...</span>
+  </Spinner>
+);
 
 const RouteOptimization = () => {
     const [selectedDate, setSelectedDate] = useState('');
@@ -10,6 +18,8 @@ const RouteOptimization = () => {
     const [numClusters, setNumClusters] = useState(2);
     const [optimizedRoutes, setOptimizedRoutes] = useState([]);
     const [routePlanExists, setRoutePlanExists] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const [drivers, setDrivers] = useState([]); // Assuming you fetch this from somewhere
     const [routeDetails, setRouteDetails] = useState({ routes: [] });
     const [selectedDrivers, setSelectedDrivers] = useState({}); // {routeIndex: driverId}
@@ -22,29 +32,31 @@ const RouteOptimization = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+            setIsLoading(true);
             const exists = await checkForExistingRoutePlan(selectedDate);
             setRoutePlanExists(exists);
 
-        if (!exists) {
+            if (!exists) {
             // No route plan exists, fetch orders for the selected date
-            try {
-                const { data } = await axios.get(`/api/orders?date=${selectedDate}`);
-                setOrders(data); // Set orders for route optimization
-                setSelectedOrders([]); // Reset any previously selected orders
-            } catch (error) {
-                console.error("Error fetching orders:", error);
+                try {
+                    const { data } = await axios.get(`/api/orders?date=${selectedDate}`);
+                    setOrders(data); // Set orders for route optimization
+                    setSelectedOrders([]); // Reset any previously selected orders
+                } catch (error) {
+                    console.error("Error fetching orders:", error);
+                }
+            } else {
+                // A route plan exists, fetch route plan details
+                try {
+                    const routePlanDetails = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
+                    setRouteDetails(routePlanDetails.data); // Set route plan details for display
+                    setOrders([]); // Optionally clear orders as they are now part of the route plan
+                } catch (error) {
+                    console.error("Error fetching route plan details:", error);
+                }
             }
-        } else {
-            // A route plan exists, fetch route plan details
-            try {
-                const routePlanDetails = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
-                setRouteDetails(routePlanDetails.data); // Set route plan details for display
-                setOrders([]); // Optionally clear orders as they are now part of the route plan
-            } catch (error) {
-                console.error("Error fetching route plan details:", error);
-            }
-        }
-    };
+            setIsLoading(false);
+        };
     if (selectedDate) {
         fetchData();
     }
@@ -77,6 +89,7 @@ useEffect(() => {
       setDrivers(response.data);
     } catch (error) {
       console.error('Error fetching drivers:', error);
+      setError('Failed to fetch drivers.');
     }
   };
 
@@ -90,7 +103,8 @@ const checkForExistingRoutePlan = async (selectedDate) => {
         return response.data.exists;
     } catch (error) {
         console.error("Error checking for existing route plan:", error);
-        return false; // Assume no plan exists if there's an error
+        setError('Failed to check for existing route plans.');
+        //return false; // Assume no plan exists if there's an error
     }
 };
 
@@ -101,6 +115,8 @@ const handleChange = (setter) => (e) => setter(e.target.value);
     // Submit handler simplified with async/await and direct mapping
 const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
     try {
         const { data } = await axios.post('/api/optimize-deliveries', {
             orders, // Sending all fetched orders
@@ -112,12 +128,15 @@ const handleSubmit = async (e) => {
     } catch (error) {
         console.error("Error optimizing routes:", error);
         setOptimizedRoutes([]);
+        setError('Failed to optimize routes.');
     }
+    setIsLoading(false);
 };
 
 const handleDeleteRoutePlan = async () => {
+    setIsLoading(true);
     if (!selectedDate) {
-        alert('Please select a date to delete the route plan.');
+        setError('Please select a date to delete the route plan.');
         return;
     }
     try {
@@ -127,10 +146,12 @@ const handleDeleteRoutePlan = async () => {
         setRoutePlanExists(false);
         setRouteDetails({ routes: [] }); // Clear existing route details
         fetchOrdersForDate(selectedDate); // Refetch orders if needed, or handle UI updates
+        setError('');
     } catch (error) {
         console.error('Error deleting route plan:', error);
-        alert('Failed to delete route plan.');
+        setError('Failed to delete route plan.');
     }
+    setIsLoading(false);
 };
 
 
@@ -161,6 +182,7 @@ const flatRoutes = optimizedRoutes.flatMap((route, clusterIndex) =>
     ];
 
     const handleSubmitRoutePlan = async () => {
+        setIsLoading(true)
         try {
             // Construct the payload according to your backend expectations
             const selectedDateTime = new Date(`${selectedDate}T06:00:00`);
@@ -183,11 +205,13 @@ const flatRoutes = optimizedRoutes.flatMap((route, clusterIndex) =>
             }));
 
             await axios.post('/api/deliveryRoutes', { routes }); // Adjust the URL as necessary
+            setIsLoading(false);
             alert('Route plan submitted successfully.');
             // Optionally clear routes after submission
             // setOptimizedRoutes([]);
         } catch (error) {
             console.error('Error submitting route plan:', error);
+            setIsLoading(false);
             alert('Failed to submit route plan.');
         }
     };
@@ -225,6 +249,7 @@ function reformatDate(selectedDate) {
 }
 
 const handleConfirmDriverAssignments = async () => {
+    setIsLoading(true);
     // Loop through each route and update it with the assigned driver
     const updatedRoutes = routeDetails.routes.map((route, index) => ({
         ...route,
@@ -237,12 +262,13 @@ const handleConfirmDriverAssignments = async () => {
             date: selectedDate,
             updatedRoutes
         });
-
+        setIsLoading(false);
         alert('Driver assignments confirmed successfully.');
 
         // Optionally refresh data here if needed
     } catch (error) {
         console.error('Error confirming driver assignments:', error);
+        setIsLoading(false);
         alert('Failed to confirm driver assignments.');
     }
 };
@@ -252,6 +278,7 @@ const handleConfirmDriverAssignments = async () => {
     return (
         <div className="route-optimization-container">
             <h2>Route Optimization</h2>
+            {isLoading && (LoadingSpinner)}
             <form className="form-section" onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label htmlFor="dateSelect">Select Delivery Date:</label>

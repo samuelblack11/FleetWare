@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const NodeGeocoder = require('node-geocoder');
 const { kmeans } = require('ml-kmeans');
 const hclust = require('ml-hclust');
 const ACO = require('ant-colony-optimization/src/ants');
+const axios = require('axios'); // Ensure axios is required if not already
+const { GoogleMapsClient } = require("@googlemaps/google-maps-services-js");
+const config = require('../config'); 
 
 // Example using Express.js
 const maxRouteTime = 2 * 60 * 60; // Maximum route time in seconds (2 hours)
@@ -11,26 +13,29 @@ const dropOffTimePerAddress = 4 * 60; // Drop-off time per address in seconds (4
 const pickUpTime = '6:00 AM'; // Constant pickup time
 const loadingTime = 15 * 60; // Loading time in seconds (15 minutes)
 
-// Example using Express.js
-const options = {
-  provider: 'openstreetmap'
-};
+
 
 router.post('/', async (req, res) => {
   const { orders, numClusters, warehouseLocation, method } = req.body;
   try {
     // Geocode warehouse location
-    const warehouseGeocode = await geocodeAddresses([warehouseLocation]);
-    const warehouseCoordinates = warehouseGeocode.length > 0 && warehouseGeocode[0].length > 0
-      ? { latitude: warehouseGeocode[0][0].latitude, longitude: warehouseGeocode[0][0].longitude }
-      : null;
+    const warehouseGeocode = await geocodeAddresses([warehouseLocation.address]);
+    const warehouseCoordinates = warehouseGeocode.length > 0 && warehouseGeocode[0] != null
+    ? { latitude: warehouseGeocode[0].latitude, longitude: warehouseGeocode[0].longitude }
+    : null;
+    console.log(`WH Coordinates ${warehouseCoordinates}`)
+
+// Now you can use warehouseCoordinates for further processing
+
 
     // Geocode order delivery addresses
     const addressesToGeocode = orders.map(order => order.deliveryAddress);
     const geocodedAddresses = await geocodeAddresses(addressesToGeocode);
+    console.log("^^^")
     const coordinates = geocodedAddresses.map(addr => ({
-      latitude: addr[0].latitude, longitude: addr[0].longitude
+      latitude: addr.latitude, longitude: addr.longitude
     }));
+    console.log(coordinates)
 
     // Clustering based on selected method
     const clusterAssignments = await clusterAddresses(coordinates, numClusters, method);
@@ -55,9 +60,47 @@ router.post('/', async (req, res) => {
   }
 });
 
-async function geocodeAddresses(addresses) {
-  const geocoder = NodeGeocoder(options);
-  return Promise.all(addresses.map(address => geocoder.geocode(address)));
+async function geocodeAddresses(input) {
+  console.log(`Input is ${input}`)
+  const addresses = Array.isArray(input) ? input : [input];
+  const results = [];
+
+  for (const address of addresses) {
+    try {
+      const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+        params: {
+          address: address,
+          key: config.googleMapsApiKey
+        }
+      });
+
+  const result = response.data.results;
+  console.log("API response:", result);
+
+  if (result.length > 0) {
+  const location = result[0].geometry.location;
+  console.log("Location object:", result[0].geometry.location);
+  if (location) {
+    const lat = location.lat;
+    const lng = location.lng;
+    console.log(lat)
+    console.log(lng)
+    results.push({ latitude: lat, longitude: lng, formattedAddress: result[0].formatted_address });
+  } else {
+    console.log(`No location data found for address: ${address}`);
+    results.push(null); // Or handle this case as needed
+  }
+} else {
+  console.log(`No results found for address: ${address}`);
+  results.push(null);
+}
+    } catch (error) {
+      console.error(`Geocoding failed for address ${address}:`, error.message);
+      results.push(null); // Continue on error
+    }
+  }
+
+  return Array.isArray(input) ? results : results[0]; // Return an array or a single result based on input
 }
 
 async function clusterAddresses(coordinates, numClusters, method) {
@@ -107,6 +150,7 @@ function optimizeRouteForCluster(clusterId, clusterAssignments, coordinates, ord
 
 
 function calculateDistance(point1, point2) {
+  console.log(`Point 1 ${point1}`)
   return Math.sqrt(Math.pow(point1.latitude - point2.latitude, 2) + Math.pow(point1.longitude - point2.longitude, 2));
 }
 
