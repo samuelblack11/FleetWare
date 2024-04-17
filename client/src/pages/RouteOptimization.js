@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GenericTable, GenericPopup } from './ReusableReactComponents';
 import MapComponent from './MapComponent'; 
-import Spinner from 'react-bootstrap/Spinner';
 
+const LoadingSpinner = () => {
+  return (
+    <div className="spinner-container">
+      <div className="spinner" aria-label="Loading"></div>
+    </div>
+  );
+};
 
-const LoadingSpinner = () => (
-  <Spinner animation="border" role="status">
-    <span className="visually-hidden">Loading...</span>
-  </Spinner>
-);
 
 const RouteOptimization = () => {
     const [selectedDate, setSelectedDate] = useState('');
@@ -57,9 +58,13 @@ const RouteOptimization = () => {
             }
             setIsLoading(false);
         };
-    if (selectedDate) {
-        fetchData();
-    }
+
+    const handler = setTimeout(() => {   
+        if (selectedDate) {
+            fetchData();
+        }
+    }, 500);
+    return () => clearTimeout(handler);
 }, [selectedDate]);
 
     useEffect(() => {
@@ -108,7 +113,6 @@ const checkForExistingRoutePlan = async (selectedDate) => {
     }
 };
 
-
 // Simplify form handlers by removing redundant code
 const handleChange = (setter) => (e) => setter(e.target.value);
 
@@ -125,6 +129,7 @@ const handleSubmit = async (e) => {
             method: routingMethod
         });
         setOptimizedRoutes(data.optimizedRoutes || []);
+        console.log()
     } catch (error) {
         console.error("Error optimizing routes:", error);
         setOptimizedRoutes([]);
@@ -143,9 +148,10 @@ const handleDeleteRoutePlan = async () => {
         await axios.delete(`/api/deliveryRoutes?date=${selectedDate}`);
         alert('Route plan deleted successfully.');
         // Reset state or refresh data as necessary
+        setSelectedDate('')
         setRoutePlanExists(false);
         setRouteDetails({ routes: [] }); // Clear existing route details
-        fetchOrdersForDate(selectedDate); // Refetch orders if needed, or handle UI updates
+        //fetchOrdersForDate(selectedDate); // Refetch orders if needed, or handle UI updates
         setError('');
     } catch (error) {
         console.error('Error deleting route plan:', error);
@@ -204,11 +210,14 @@ const flatRoutes = optimizedRoutes.flatMap((route, clusterIndex) =>
                 startTime: startTimeIso
             }));
 
-            await axios.post('/api/deliveryRoutes', { routes }); // Adjust the URL as necessary
+            await axios.post('/api/deliveryRoutes', { routes });
+            setRoutePlanExists(true);
+            setRouteDetails({ routes: routes });
+            setOrders([]);
             setIsLoading(false);
             alert('Route plan submitted successfully.');
             // Optionally clear routes after submission
-            // setOptimizedRoutes([]);
+            setOptimizedRoutes([]);
         } catch (error) {
             console.error('Error submitting route plan:', error);
             setIsLoading(false);
@@ -278,7 +287,7 @@ const handleConfirmDriverAssignments = async () => {
     return (
         <div className="route-optimization-container">
             <h2>Route Optimization</h2>
-            {isLoading && (LoadingSpinner)}
+            {isLoading && <LoadingSpinner />}
             <form className="form-section" onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label htmlFor="dateSelect">Select Delivery Date:</label>
@@ -322,7 +331,7 @@ const handleConfirmDriverAssignments = async () => {
                     columns={orderTableColumns}
                 />
             )}
-            {optimizedRoutes.length > 0 && (
+            {(optimizedRoutes.length > 0) && (
                 <>
                     <h2>Route Details</h2>
                     <GenericTable

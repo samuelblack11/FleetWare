@@ -23,35 +23,38 @@ router.post('/', async (req, res) => {
     const warehouseCoordinates = warehouseGeocode.length > 0 && warehouseGeocode[0] != null
     ? { latitude: warehouseGeocode[0].latitude, longitude: warehouseGeocode[0].longitude }
     : null;
-    console.log(`WH Coordinates ${warehouseCoordinates}`)
-
-// Now you can use warehouseCoordinates for further processing
-
 
     // Geocode order delivery addresses
     const addressesToGeocode = orders.map(order => order.deliveryAddress);
     const geocodedAddresses = await geocodeAddresses(addressesToGeocode);
-    console.log("^^^")
     const coordinates = geocodedAddresses.map(addr => ({
       latitude: addr.latitude, longitude: addr.longitude
     }));
-    console.log(coordinates)
 
-    // Clustering based on selected method
-    const clusterAssignments = await clusterAddresses(coordinates, numClusters, method);
-    console.log("----")
-    console.log(clusterAssignments)
-    // Optimization per cluster
-    const uniqueClusterIds = [...new Set(clusterAssignments)]; // Get unique cluster IDs
-    console.log("!!!!")
-    console.log(uniqueClusterIds)
-    const optimizedRoutes = await Promise.all(uniqueClusterIds.map(clusterId =>
-      optimizeRouteForCluster(clusterId, clusterAssignments, coordinates, orders, warehouseCoordinates)
-    ));
-    console.log("----")
-    console.log(optimizedRoutes)
+    console.log(`NUMCLUSTERS...${numClusters}`)
+
+    let optimizedRoutes;
+    if (numClusters === "1") {
+      console.log("1 is Confirmed")
+      // Skip clustering and optimize the single route
+      // Assuming 'coordinates' is your array of geocoded addresses
+      const singleRouteClusterAssignments = new Array(coordinates.length).fill(0);
+      optimizedRoutes = [optimizeRouteForCluster(0, singleRouteClusterAssignments, coordinates, orders, warehouseCoordinates)];
+      console.log(optimizedRoutes)
+    } else {
+      console.log("Else called....")
+      // Clustering based on selected method
+      const clusterAssignments = await clusterAddresses(coordinates, numClusters, method);
+      // Optimization per cluster
+      const uniqueClusterIds = [...new Set(clusterAssignments)]; // Get unique cluster IDs
+      optimizedRoutes = await Promise.all(uniqueClusterIds.map(clusterId =>
+        optimizeRouteForCluster(clusterId, clusterAssignments, coordinates, orders, warehouseCoordinates)
+      ));
+    }
     // Build response with order details
     const optimizedRoutesWithOrders = optimizedRoutes.filter(route => route.length > 0);
+    console.log("****")
+    console.log(optimizedRoutesWithOrders)
     res.json({ optimizedRoutes: optimizedRoutesWithOrders });
 
   } catch (error) {
@@ -75,16 +78,12 @@ async function geocodeAddresses(input) {
       });
 
   const result = response.data.results;
-  console.log("API response:", result);
-
   if (result.length > 0) {
   const location = result[0].geometry.location;
   console.log("Location object:", result[0].geometry.location);
   if (location) {
     const lat = location.lat;
     const lng = location.lng;
-    console.log(lat)
-    console.log(lng)
     results.push({ latitude: lat, longitude: lng, formattedAddress: result[0].formatted_address });
   } else {
     console.log(`No location data found for address: ${address}`);

@@ -7,13 +7,15 @@ body {
     min-height: 100vh;
 }
 
+.header-content, .header-container {
+  overflow: visible;
+}
+
 .header-container {
     display: flex;
-    align-items: center;
-    width: 100%;
-    height: auto; /* Adjust or set a min-height if necessary */
-    padding: 10px;
+    align-items: flex-start;
     max-height: 300px;
+    min-height: 160px;
 }
 
 .header-content {
@@ -24,16 +26,16 @@ body {
     flex-grow: 1;
 }
 
-
 .header-title {
     margin-top: -10px;
     color:  rgba(128, 50, 50, 0.6);
 }
 
 .logo {
-    height: auto; /* Maintains aspect ratio */
-    width: 100%; /* Use 100% of the container width up to its max width */
-    max-height: 150px; /* Maximum width, adjust based on your design */
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 150px;
 }
 
 
@@ -121,12 +123,6 @@ body {
 
 .route-background {
   background-color: #C2B280;
-}
-
-
-.logo {
-    max-width: 250px;
-    margin-bottom: 10px;
 }
 
 .title {
