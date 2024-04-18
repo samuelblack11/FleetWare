@@ -1,21 +1,22 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-/server/config.js
-/client/public/backgroundVideos
-startupCheatSheet.txt
-/client/src/config.js
+/dujour-shared/config.js
+/dujour-desktop/client/public/backgroundVideos
+/dujour-desktop/startupCheatSheet.txt
+/dujour-desktop/client/src/config.js
 
 # dependencies
-/node_modules
-/client/node_modules
+/dujour-desktop/node_modules
+/dujour-desktop/client/node_modules
+/dujour-shared/node_modules
+/dujour-shared/client/node_modules
 /.pnp
 .pnp.js
 
 # testing
-/coverage
+/dujour-desktop/coverage
 
 # production
-/build
+/dujour-desktop/build
 
 # misc
 .DS_Store

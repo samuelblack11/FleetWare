@@ -1,0 +1,23 @@
+{
+  "name": "dujour-shared",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.0",
+    "ant-colony-optimization": "^1.1.9",
+    "bcrypt": "^5.1.1",
+    "core-js": "^3.37.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "ml-hclust": "^3.1.0",
+    "ml-kmeans": "^6.0.0",
+    "mongoose": "^8.3.2"
+  }
+}

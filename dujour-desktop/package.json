@@ -1,0 +1,25 @@
+{
+  "name": "fleetware-server",
+  "version": "0.1.0",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.0",
+    "ant-colony-optimization": "^1.1.9",
+    "bcrypt": "^5.1.1",
+    "core-js": "^3.36.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "google-map-react": "^2.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "leaflet": "^1.9.4",
+    "ml-hclust": "^3.1.0",
+    "ml-kmeans": "^6.0.0",
+    "mongoose": "^8.1.0",
+    "node-geocoder": "^4.3.0",
+    "node-kmeans": "^1.1.9",
+    "react-bootstrap": "^2.10.2",
+    "react-leaflet": "^4.2.1"
+  }
+}
