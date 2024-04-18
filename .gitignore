@@ -4,13 +4,11 @@
 /dujour-desktop/startupCheatSheet.txt
 /dujour-desktop/client/src/config.js
 
-# dependencies
-/dujour-desktop/node_modules
-/dujour-desktop/client/node_modules
-/dujour-mobile/node_modules
-/dujour-mobile/client/node_modules
-/dujour-shared/node_modules
-/dujour-shared/client/node_modules
+# Correct syntax to ignore all node_modules directories everywhere
+**/node_modules/
+
+# Same for build directories if they exist in multiple places
+**/build/
 
 /.pnp
 .pnp.js
@@ -36,7 +34,6 @@ yarn-error.log*
 **/node_modules/
 
 # Build directory
-**/build/
 **/public/
 
 # Ignore all log files and the package-lock.json
