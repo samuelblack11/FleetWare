@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Order = require('../models/Order');
-const AvailableItem = require('../models/Item');
+const Order = require('../../../dujour-shared/models/Order');
+const AvailableItem = require('../../../dujour-shared/models/Item');
 
 router.post('/', async (req, res) => {
   console.log("found post order route....")
