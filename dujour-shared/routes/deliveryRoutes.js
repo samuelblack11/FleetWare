@@ -1,20 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const DeliveryRoute = require('../models/DeliveryRoute'); // Ensure this path matches where your Route model is saved
-
+const Driver = require('../models/Driver'); // Make sure the path is correct
+const mongoose = require('mongoose');
 
 // PUT endpoint to update driver assignments for routes
 router.put('/updateDrivers', async (req, res) => {
-    const { date, updatedRoutes } = req.body;
-
+    const { updatedRoutes } = req.body;
     try {
-        // Loop through each route in updatedRoutes and update the database
-        for (let updatedRoute of updatedRoutes) {
-            await DeliveryRoute.updateOne(
-                { _id: updatedRoute._id }, // Assuming each route has a unique _id
-                { $set: { driverId: updatedRoute.driverId } } // Update the driverId
-            );
-        }
+        console.log("Trying to update drivers....");
+        // Execute all updates concurrently
+        await Promise.all(updatedRoutes.map(route =>
+            DeliveryRoute.updateOne(
+                { _id: route._id },
+                { $set: { driverId: route.driverId } }
+            )
+        ));
 
         res.status(200).json({ message: "Driver assignments updated successfully." });
     } catch (error) {
@@ -87,8 +88,6 @@ router.delete('/', async (req, res) => {
     }
 });
 
-
-
 // Assuming you have a field like `date` or you use `startTime` in your schema to store the date
 router.get('/', async (req, res) => {
     const { date } = req.query; // Get the date from query parameters
@@ -114,5 +113,61 @@ router.get('/', async (req, res) => {
         res.status(500).send('Error finding route plans');
     }
 });
+
+router.get('/specificRoute', async (req, res) => {
+    const { date, email } = req.query;
+
+    console.log(`Received email: ${email} (Type: ${typeof email})`);
+    console.log(`DATE....${date}`);
+    console.log(`EMAIL....${email}`);
+
+    // Ensure the connection is ready
+    if (mongoose.connection.readyState !== 1) {
+        console.error("Database not connected!");
+        return res.status(500).json({ message: "Database not connected" });
+    }
+
+    // Log all drivers
+    try {
+        const allDrivers = await Driver.find({});
+        console.log('All drivers:', allDrivers.map(driver => `${driver.name} - ${driver.Email}`));
+    } catch (err) {
+        console.error('Error retrieving all drivers:', err);
+        return res.status(500).json({ message: "Error retrieving all drivers" });
+    }
+
+    try {
+        console.log("Attempting to find driver with email:", email);
+        const driver = await Driver.findOne({ Email: email });
+        console.log("Driver found:", driver ? driver : "No driver found with the specified email.");
+
+        if (!driver) {
+            return res.status(404).json({ message: "Driver not found with the given email" });
+        }
+
+        // Construct the query for route lookup
+        let query = { driverId: driver._id };
+        if (date) {
+            
+            const startOfEstDay = new Date(`${date}T00:00:00-05:00`); // Start of day in EST
+            const endOfEstDay = new Date(`${date}T23:59:59-05:00`); // End of day in EST
+            query.startTime = { $gte: startOfEstDay, $lte: endOfEstDay };
+        }
+
+        // Lookup for existing routes
+        const existingRoutes = await DeliveryRoute.find(query).populate('driverId', 'Email');
+        if (existingRoutes.length > 0) {
+            console.log('Routes found:', existingRoutes);
+            res.json({ exists: true, routes: existingRoutes });
+        } else {
+            console.log('No routes found for this driver on the specified date.');
+            res.json({ exists: false, message: "No routes found for this driver on the specified date." });
+        }
+    } catch (error) {
+        console.error('Error checking for existing route plans:', error);
+        res.status(500).send('Error finding route plans');
+    }
+});
+
 
 module.exports = router;

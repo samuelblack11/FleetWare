@@ -71,7 +71,6 @@ const RouteOptimization = () => {
         fetchDrivers();
     }, []); // Fetch drivers when the component mounts
 
-
     useEffect(() => {
     const selectedDriversInit = {};
     routeDetails.routes.forEach((route, index) => {
@@ -83,15 +82,20 @@ const RouteOptimization = () => {
 }, [routeDetails]);
 
 useEffect(() => {
-    console.log("Existing Route Details:", routeDetails);
-    console.log("Updated Optimized Routes:", optimizedRoutes);
+    //console.log("Existing Route Details:", routeDetails);
+    //console.log("Updated Optimized Routes:", optimizedRoutes);
 }, [routeDetails, optimizedRoutes]);
+
+useEffect(() => {
+    console.log("Selected Drivers:", selectedDrivers);
+}, [selectedDrivers]);
 
 
   const fetchDrivers = async () => {
     try {
       const response = await axios.get('/api/drivers');
       setDrivers(response.data);
+      console.log(`DRIVERS....${response.data}`)
     } catch (error) {
       console.error('Error fetching drivers:', error);
       setError('Failed to fetch drivers.');
@@ -104,7 +108,6 @@ const checkForExistingRoutePlan = async (selectedDate) => {
         const response = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
         // Assuming response.data.exists is true if a route plan exists, false otherwise
         console.log(`Returned ${response} Routes`)
-        console.log(routeDetails.routes)
         return response.data.exists;
     } catch (error) {
         console.error("Error checking for existing route plan:", error);
@@ -229,23 +232,28 @@ const flatRoutes = optimizedRoutes.flatMap((route, clusterIndex) =>
         setOptimizedRoutes([]); // Reset optimized routes
     };
 
-
-const DriverDropdown = ({ drivers, selectedDriverId, onDriverAssigned, routeIndex }) => (
-        <select value={selectedDriverId || ''} onChange={(e) => onDriverAssigned(routeIndex, e.target.value)}>
+    const DriverDropdown = ({ drivers, selectedDriverId, onDriverAssigned, routeIndex }) => (
+        <select 
+        value={selectedDriverId || ''} 
+        onChange={(e) => {
+            onDriverAssigned(routeIndex, e.target.value)}}
+        >
         <option value="">Select a driver</option>
         {drivers.map((driver) => (
-            <option key={driver._id} value={driver._id}>{driver.Name}</option>
+        <option key={driver._id} value={driver._id.toString()}>{driver.Name}</option>
         ))}
-    </select>
-);
+        </select>
+    );
+
 
 const handleDriverSelection = (routeIndex, driverId) => {
-    console.log(`Route Index: ${routeIndex}, Driver ID: ${driverId}`); // Debugging line
-    setSelectedDrivers(prev => ({
-        ...prev,
-        [routeIndex]: driverId,
-    }));
+    console.log(`Route Index: ${routeIndex}, Driver ID: ${driverId}`); // Ensure this logs correct values
+    setSelectedDrivers(prev => {
+        const updated = { ...prev, [routeIndex]: driverId };
+        return updated;
+    });
 };
+
 
 function reformatDate(selectedDate) {
     const dateParts = selectedDate.split('-'); // Split the date by '-'
@@ -353,12 +361,12 @@ const handleConfirmDriverAssignments = async () => {
       {routeDetails.routes.map((route, routeIndex) => (
         <div key={routeIndex}>
           <h3>Route {routeIndex + 1}</h3>
-          <DriverDropdown
+        <DriverDropdown
             drivers={drivers}
             selectedDriverId={selectedDrivers[routeIndex]}
-            onDriverAssigned={(driverId) => handleDriverSelection(routeIndex, driverId)}
+            onDriverAssigned={handleDriverSelection}
             routeIndex={routeIndex}
-          />
+        />
           <table>
             <thead>
               <tr>

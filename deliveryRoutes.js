@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const DeliveryRoute = require('../models/DeliveryRoute'); // Ensure this path matches where your Route model is saved
-
+const Driver = require('../models/Driver'); // Make sure the path is correct
 
 // PUT endpoint to update driver assignments for routes
 router.put('/updateDrivers', async (req, res) => {
     const { date, updatedRoutes } = req.body;
-
     try {
         // Loop through each route in updatedRoutes and update the database
         for (let updatedRoute of updatedRoutes) {
@@ -87,27 +86,40 @@ router.delete('/', async (req, res) => {
     }
 });
 
-
-
-// Assuming you have a field like `date` or you use `startTime` in your schema to store the date
 router.get('/', async (req, res) => {
-    const { date } = req.query; // Get the date from query parameters
-
+    const { date, email } = req.query; // Changed 'driver' to 'email' to reflect that you receive an email
+    console.log(`DATE....${date}`)
+    console.log(`EMAIL....${email}`)
     try {
-      // Assuming 'date' is in "YYYY-MM-DD" format and represents an EST date
-      const startOfEstDay = new Date(`${date}T00:00:00-05:00`); // Start of day in EST, adjust offset as needed for EDT
-      const endOfEstDay = new Date(`${date}T23:59:59-05:00`); // End of day in EST
+        let query = {};
+        
+        // First, find the driver by email to get the driverId
+        const driver = await Driver.findOne({ Email: { $regex: new RegExp('^' + email + '$', 'i') } });
+        console.log(`DRIVER....${driver}`)
+        if (!driver) {
+            return res.status(404).json({ message: "Driver not found with the given email" });
+        }
+        
+        // Adjust query based on the presence of 'date'
+        if (date) {
+            const startOfEstDay = new Date(`${date}T00:00:00-05:00`); // Start of day in EST
+            const endOfEstDay = new Date(`${date}T23:59:59-05:00`); // End of day in EST
+            query.startTime = {
+                $gte: startOfEstDay,
+                $lte: endOfEstDay
+            };
+        }
 
-      const existingRoutes = await DeliveryRoute.find({
-          startTime: {
-              $gte: startOfEstDay,
-              $lte: endOfEstDay
-          }
-      });
+        // Use the found driverId to filter routes
+        query.driverId = driver._id;
+
+        // Perform the query with the constructed conditions
+        const existingRoutes = await DeliveryRoute.find(query).populate('driverId', 'Email'); // Populating 'Email' is optional now since you know it already
+        
         if (existingRoutes.length > 0) {
             res.json({ exists: true, routes: existingRoutes });
         } else {
-            res.json({ exists: false });
+            res.json({ exists: false, message: "No routes found for this driver on the specified date." });
         }
     } catch (error) {
         console.error('Error checking for existing route plans:', error);
@@ -116,3 +128,4 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+

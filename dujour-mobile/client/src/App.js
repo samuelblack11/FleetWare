@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Link, useLocation, Navigate, us
 import './App.css';
 import logo from './assets/logo128.png';
 import Login from './pages/Login';
-import TodayRoute from './pages/TodayRoute';
+import RouteView from './pages/RouteView';
 import RouteHistory from './pages/RouteHistory';
 import Performance from './pages/Performance';
 import Settings from './pages/Settings';
@@ -21,7 +21,7 @@ function ButtonGrid() {
   return (
     <div className="container">
       <div className="button-grid">
-        <Link to="/today-route"><button className="dashboard-button">Today's Route</button></Link>
+        <Link to="/route-view"><button className="dashboard-button">Today's Route</button></Link>
         <Link to="/route-history"><button className="dashboard-button">Route History</button></Link>
         <Link to="/performance"><button className="dashboard-button">Performance</button></Link>
         <Link to="/settings"><button className="dashboard-button">Settings & Support</button></Link>
@@ -107,14 +107,14 @@ function App() {
             {user ? (
               <>
                 <Route path="/" element={<ButtonGrid />} />
-                {user.role === 'admin' && (
-                  <>
-                  </>
-                )}
+                <Route path="/route-view" element={<RouteView />} />
+                <Route path="/route-history" element={<RouteHistory />} />
+                <Route path="/performance" element={<Performance />} />
+                <Route path="/settings" element={<Settings />} />
               </>
             ) : (
               <>
-                <Route path="/" element={<Login />} />
+              <Route path="/" element={<Login />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </>
             )}

@@ -1,5 +1,5 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const mongoose = require('../../dujour-shared/node_modules/mongoose');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3001; // Change 3001 to your preferred port
