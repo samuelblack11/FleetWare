@@ -31,18 +31,14 @@ router.post('/', async (req, res) => {
       latitude: addr.latitude, longitude: addr.longitude
     }));
 
-    console.log(`NUMCLUSTERS...${numClusters}`)
-
     let optimizedRoutes;
     if (numClusters === "1") {
-      console.log("1 is Confirmed")
       // Skip clustering and optimize the single route
       // Assuming 'coordinates' is your array of geocoded addresses
       const singleRouteClusterAssignments = new Array(coordinates.length).fill(0);
       optimizedRoutes = [optimizeRouteForCluster(0, singleRouteClusterAssignments, coordinates, orders, warehouseCoordinates)];
       console.log(optimizedRoutes)
     } else {
-      console.log("Else called....")
       // Clustering based on selected method
       const clusterAssignments = await clusterAddresses(coordinates, numClusters, method);
       // Optimization per cluster

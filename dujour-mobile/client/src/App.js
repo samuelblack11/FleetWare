@@ -10,7 +10,6 @@ import Settings from './pages/Settings';
 
 export const AuthContext = createContext(null);
 
-
 function useAuth() {
   return useContext(AuthContext);
 }
