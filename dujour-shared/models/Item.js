@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 const availableItemSchema = new Schema({
   itemName: String,
+  description: String,
   quantityAvailable: Number,
   unitCost: Number,
   farm: { type: Schema.Types.ObjectId, ref: 'Farm' },

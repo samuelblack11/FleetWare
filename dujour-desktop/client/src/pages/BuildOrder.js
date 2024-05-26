@@ -4,6 +4,9 @@ import './AllPages.css';
 import { AuthContext } from '../App.js';
 import { fetchUserByEmail, submitFinalOrder, incrementUserOrderNumber } from './helperFiles/placeOrder';
 import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateCreditCardNumber, validateCreditCardExpiration, validateCVV, validateItemQuantities } from './helperFiles/orderValidation';
+import { GenericPopup } from './ReusableReactComponents'; // Import your GenericPopup component
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 
 const BuildOrder = () => {
   const { user } = useContext(AuthContext);
@@ -20,6 +23,9 @@ const BuildOrder = () => {
   const [availableItems, setAvailableItems] = useState([]); // Items fetched from the server
   const [cartItems, setCartItems] = useState([]); // Items added to the cart
   const [totalCost, setTotalCost] = useState(0);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [selectedItemDetails, setSelectedItemDetails] = useState(null);
+  const [cartDropdownVisible, setCartDropdownVisible] = useState(false);
 
       const fetchAvailableItems = async () => {
       try {
@@ -125,6 +131,19 @@ const handleAddToCart = (itemToAdd) => {
   updateTotalCost();
 };
 
+const displayItemDetails = (itemToAdd) => {
+  const stockItem = availableItems.find(item => item._id === itemToAdd._id);
+
+  if (!stockItem) {
+    alert('Item not found.');
+    return;
+  }
+
+  setSelectedItemDetails(stockItem);
+  setPopupVisible(true);
+};
+
+
 
 // Adjust `updateTotalCost` to work directly with `cartItems` instead of `availableItems`
 const updateTotalCost = () => {
@@ -185,8 +204,6 @@ const handleSubmit = async (e) => {
   }
 };
 
-
-
 async function createNewOrderForUser(userName, orderData) {
   // Increment the user's lastOrderNumber atomically
   const user = await User.findOneAndUpdate(
@@ -212,49 +229,39 @@ async function createNewOrderForUser(userName, orderData) {
 
 return (
   <div className="build-order-container">
+    <div className="cart-icon" style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer' }}>
+      <FontAwesomeIcon icon={faShoppingCart} size="2x" onClick={() => setCartDropdownVisible(!cartDropdownVisible)} />
+      {cartDropdownVisible && (
+        <div className="cart-dropdown" style={{ position: 'absolute', right: 0, top: '40px', backgroundColor: 'white', border: '1px solid #ccc', padding: '10px', width: '300px', zIndex: 1000 }}>
+          <h2>Cart Items</h2>
+          {cartItems.length === 0 ? (
+            <p>Your cart is empty.</p>
+          ) : (
+            <ul>
+              {cartItems.map((item, index) => (
+                <li key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span>{item.itemName} - {item.quantity} x ${item.unitCost.toFixed(2)}</span>
+                  <button onClick={() => removeItemFromCart(item.id)} style={{ marginLeft: '10px' }}>Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p>Total Cost: ${totalCost.toFixed(2)}</p>
+        </div>
+      )}
+    </div>
   <div className="left-sections"> {/* New wrapper for left sections */}
-<div className="customer-info-section">
-  <h3>Customer Information</h3>
-  <table className="customer-info-table">
-    <tbody>
-       {user.role === 'admin' && (
-      <tr>
-        <td><label htmlFor="customerEmail">Customer Email:</label></td>
-        <td><input type="email" name="customerEmail" id="customerEmail" value={orderData.customerEmail} onChange={handleChange} required /></td>
-      </tr>
-        )}
-      <tr>
-        <td><label htmlFor="deliveryAddress">Delivery Address:</label></td>
-        <td><input type="text" name="deliveryAddress" id="deliveryAddress" value={orderData.deliveryAddress} onChange={handleChange} required /></td>
-      </tr>
-      <tr>
-        <td><label htmlFor="deliveryDate">Delivery Date:</label></td>
-        <td><input type="date" name="deliveryDate" id="deliveryDate" value={orderData.deliveryDate} onChange={handleChange} required /></td>
-      </tr>
-      <tr>
-        <td><label htmlFor="creditCardNumber">Credit Card Number:</label></td>
-        <td><input type="text" name="creditCardNumber" id="creditCardNumber" value={orderData.creditCardNumber} onChange={handleChange} required /></td>
-    </tr>
-    <tr>
-        <td><label htmlFor="creditCardExpiration">Expiration Date:</label></td>
-        <td><input type="text" name="creditCardExpiration" id="creditCardExpiration" value={orderData.creditCardExpiration} placeholder="MM/YY" onChange={handleChange} required /></td>
-    </tr>
-    <tr>
-        <td><label htmlFor="creditCardCVV">Security Code (CVV):</label></td>
-        <td><input type="text" name="creditCardCVV" id="creditCardCVV" value={orderData.creditCardCVV} onChange={handleChange} required /></td>
-    </tr>
-    </tbody>
-  </table>
-</div>
   <div className="build-cart-section">
   <h3>Build Your Cart</h3>
   <table>
     <thead>
       <tr>
         <th>Item Name</th>
+        <th>Farm</th>
         <th>Unit Cost</th>
         <th>Quantity</th>
         <th>Line Item Cost</th>
+        <th>Farm Details</th>
         <th>Add to Cart</th>
       </tr>
     </thead>
@@ -262,6 +269,7 @@ return (
       {availableItems.map((item, index) => (
         <tr key={index}>
           <td>{item.itemName}</td>
+          <td>{item.farm.name}</td>
           <td>${item.unitCost.toFixed(2)}</td>
           <td>
             <input
@@ -273,6 +281,7 @@ return (
             />
           </td>
           <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
+          <td><button onClick={() => displayItemDetails(item)} className="add-button">Details</button></td>
           <td>
             <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
           </td>
@@ -281,55 +290,16 @@ return (
     </tbody>
   </table>
 </div>
-    </div> {/* End of left-sections */}
-  <div className="cart-summary">
-  <h3>Cart Summary</h3>
-    <table>
-    <thead>
-      <tr>
-        <th>Item Name</th>
-        <th>Quantity</th>
-        <th>Unit Cost</th>
-        <th>Line Item Cost</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-  {cartItems.map((item, index) => (
-    <tr key={item.id}>
-      <td>{item.itemName}</td>
-      <td>
-        {item.isUpdating ? (
-          <input
-            type="number"
-            value={item.quantity}
-            onChange={(e) => handleItemQuantityChange(index, e.target.value)}
-            autoFocus
-          />
-        ) : (
-          item.quantity
-        )}
-      </td>
-      <td>${item.unitCost.toFixed(2)}</td>
-      <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
-      <td className="actions-cell">
-        <button className="add-button" onClick={() => toggleUpdateItem(index)}>{item.isUpdating ? "Confirm" : "Update"}</button>
-        <button className="delete-btn" onClick={() => removeItemFromCart(item.id)}>Delete</button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-  </table>
-  <p className="total-cost">Total Cost: ${cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0).toFixed(2)}</p>
-      <div className="submitButton">
-        <form onSubmit={handleSubmit}>
-        <div className="submitButton">
-          <button className="submit-btn" type="submit">Submit Order</button>
+</div> {/* End of left-sections */}
+    <GenericPopup show={popupVisible} onClose={() => setPopupVisible(false)}>
+      {selectedItemDetails && (
+        <div>
+          <h2>{selectedItemDetails.itemName}</h2>
+          <p>Farm: {selectedItemDetails.farm.name}</p>
+          <p>Description: {selectedItemDetails.farm.description}</p>
         </div>
-        </form>
-      </div>
-    </div>
+      )}
+    </GenericPopup>
   </div>
 );
 };
