@@ -7,9 +7,13 @@ import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateC
 import { GenericPopup } from './ReusableReactComponents'; // Import your GenericPopup component
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const BuildOrder = () => {
   const { user } = useContext(AuthContext);
+  const location = useLocation();
+  const { cartItems: initialCartItems, totalCost: initialTotalCost } = location.state || { cartItems: [], totalCost: 0 };
+
     const initialOrderState = {
     customerEmail: '',
     deliveryAddress: '',
@@ -21,12 +25,15 @@ const BuildOrder = () => {
   };
   const [orderData, setOrderData] = useState(initialOrderState);
   const [availableItems, setAvailableItems] = useState([]); // Items fetched from the server
-  const [cartItems, setCartItems] = useState([]); // Items added to the cart
+  const [cartItems, setCartItems] = useState(initialCartItems); // Items added to the cart
   const [totalCost, setTotalCost] = useState(0);
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
   const [cartDropdownVisible, setCartDropdownVisible] = useState(false);
-
+  const navigate = useNavigate();
+  const handleConfirmOrder = () => {
+    navigate('/place-order', { state: { cartItems, totalCost } });
+  };
       const fetchAvailableItems = async () => {
       try {
         const response = await axios.get('/api/items');
@@ -43,6 +50,14 @@ const BuildOrder = () => {
   useEffect(() => {
     fetchAvailableItems();
   }, []);
+
+    useEffect(() => {
+    const calculateTotalCost = () => {
+      const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+      setTotalCost(total);
+    };
+    calculateTotalCost();
+  }, [cartItems]);
 
   // Inside BuildOrder component
   useEffect(() => {
@@ -68,12 +83,10 @@ const BuildOrder = () => {
 };
 
 const removeItemFromCart = (itemId) => {
-  const updatedCartItems = cartItems.filter(item => {
-    console.log(`Checking item with id ${item.id} against ${itemId}`);
-    return item.id !== itemId;
-  });
+  const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
   setCartItems(updatedCartItems);
 };
+
 
 
 const toggleUpdateItem = (index) => {
@@ -106,6 +119,8 @@ const handleAddToCart = (itemToAdd) => {
     alert('Item not found.');
     return;
   }
+
+
 
   // Calculate the total quantity of this item already in the cart
   const cartItem = cartItems.find(item => item._id === itemToAdd._id);
@@ -227,29 +242,67 @@ async function createNewOrderForUser(userName, orderData) {
   return newOrder;
 }
 
+const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOrder }) => {
+  return (
+    <div className="cart-sidebar" style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: '600px', backgroundColor: '#f4f4f4', borderLeft: '1px solid #ccc', padding: '10px', zIndex: 1000 }}>
+      <h2>Cart</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Unit Cost</th>
+            <th>Line Item Cost</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cartItems.map((item, index) => (
+            <tr key={item.id}>
+              <td>{item.itemName}</td>
+              <td>
+                {item.isUpdating ? (
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => handleItemQuantityChange(index, e.target.value)}
+                    autoFocus
+                    />
+                ) : (
+                  item.quantity
+                )}
+              </td>
+              <td>${item.unitCost.toFixed(2)}</td>
+              <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
+              <td className="actions-cell">
+                <button className="add-button" onClick={() => toggleUpdateItem(index)}>{item.isUpdating ? "Confirm" : "Update"}</button>
+                <button className="delete-btn" onClick={() => removeItemFromCart(item._id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="total-cost">Total Cost: ${totalCost.toFixed(2)}</p>
+    <button onClick={handleConfirmOrder} class ="add-button">Confirm Order</button>
+  </div>
+  );
+};
+
+
 return (
   <div className="build-order-container">
-    <div className="cart-icon" style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer' }}>
+    {/*<div className="cart-icon" style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer' }}>
       <FontAwesomeIcon icon={faShoppingCart} size="2x" onClick={() => setCartDropdownVisible(!cartDropdownVisible)} />
-      {cartDropdownVisible && (
-        <div className="cart-dropdown" style={{ position: 'absolute', right: 0, top: '40px', backgroundColor: 'white', border: '1px solid #ccc', padding: '10px', width: '300px', zIndex: 1000 }}>
-          <h2>Cart Items</h2>
-          {cartItems.length === 0 ? (
-            <p>Your cart is empty.</p>
-          ) : (
-            <ul>
-              {cartItems.map((item, index) => (
-                <li key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span>{item.itemName} - {item.quantity} x ${item.unitCost.toFixed(2)}</span>
-                  <button onClick={() => removeItemFromCart(item.id)} style={{ marginLeft: '10px' }}>Remove</button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p>Total Cost: ${totalCost.toFixed(2)}</p>
-        </div>
-      )}
-    </div>
+    </div>*/}
+    {cartItems.length > 0 && (
+      <CartSidebar 
+        cartItems={cartItems} 
+        totalCost={totalCost} 
+        removeItemFromCart={removeItemFromCart} 
+        handleConfirmOrder={handleConfirmOrder} 
+      />
+    )}
+
   <div className="left-sections"> {/* New wrapper for left sections */}
   <div className="build-cart-section">
   <h3>Build Your Cart</h3>

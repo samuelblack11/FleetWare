@@ -4,6 +4,7 @@ import './App.css';
 import logo from './assets/logo128.png';
 import MenuManagement from './pages/MenuManagement';
 import BuildOrder from './pages/BuildOrder';
+import PlaceOrder from './pages/PlaceOrder';
 import OrderManagement from './pages/OrderManagement';
 import RouteOptimization from './pages/RouteOptimization';
 import DriverManagement from './pages/DriverManagement';
@@ -150,6 +151,7 @@ function App() {
                   </>
                 )}
                 <Route path="/build-order" element={<BuildOrder />} />
+                <Route path="/place-order" element={<PlaceOrder />} />
               </>
             ) : (
               <>
