@@ -2,32 +2,40 @@
 import React from 'react';
 
 export const GenericTable = ({ data, columns, handleEditClick, deleteCargo }) => {
-  //console.log("Data in GenericTable:", data);
   return (
     <table>
       <thead>
         <tr>
-          {columns.map((column) => (
-            <th key={column.accessor}>{column.Header}</th>
+          {columns.map((column, index) => (
+            <th key={column.accessor || index}>{column.Header}</th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {data.map((row, rowIndex) => (
-          <tr key={rowIndex}>
-            {columns.map((column) => (
-              <td key={`${rowIndex}-${column.accessor}`}>
-                {column.Cell 
-                  ? column.Cell({ row, handleEditClick, deleteCargo }) 
-                  : row[column.accessor]}
-              </td>
-            ))}
+        {data.map((row) => (
+          <tr key={row._id}>
+            {columns.map((column, index) => {
+              const accessor = column.accessor || `static-${index}`;
+              const cellKey = `${row._id}-${accessor}`;
+              return (
+                <td key={cellKey}>
+                  {column.Cell 
+                    ? column.Cell({ row, handleEditClick, deleteCargo }) 
+                    : accessor.startsWith('static')
+                      ? <button onClick={() => handleEditClick(row)}>Edit</button>
+                      : row[accessor]}
+                </td>
+              );
+            })}
           </tr>
         ))}
       </tbody>
     </table>
   );
 };
+
+
+
 
 export const GenericPopup = ({ show, children, onClose }) => {
   if (!show) {
@@ -84,7 +92,7 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
             ))}
           </tbody>
         </table>
-        <button onClick={onClose} className="close-btn">Close</button>
+        <button onClick={onClose} className="add-button">Close</button>
       </div>
     </div>
   );

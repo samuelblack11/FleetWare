@@ -2,32 +2,57 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 import logo from './assets/logo128.png';
-import MenuManagement from './pages/MenuManagement';
-import OrderManagement from './pages/OrderManagement';
-import RouteOptimization from './pages/RouteOptimization';
-import DriverManagement from './pages/DriverManagement';
+import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
 import BuildOrder from './pages/BuildOrder';
 import PlaceOrder from './pages/PlaceOrder';
+import AboutDujour from './pages/AboutDujour';
+
 
 export const AuthContext = createContext(null);
 
 function useAuth() {
   return useContext(AuthContext);
 }
-
-function ButtonGrid() {
-  const { user } = useAuth();
+  function MenuBar() {
   return (
-    <div className="container">
-      <div className="button-grid">
-        <Link to="/build-order"><button className="dashboard-button">Build Order</button></Link>
-        {<Link to="/my-orders"><button className="dashboard-button">My Orders</button></Link>}
-        {<Link to="/settings-support"><button className="dashboard-button">Settings & Support</button></Link>}
-      </div>
+    <div className="menu-bar">
+      <AboutDujourButton />
+      <OrderHistoryButton />
+      <SettingsButton />
     </div>
   );
 }
+
+const AboutDujourButton = () => {
+  return (
+    <button className="add-button">
+    <Link 
+      to="/about-dujour" 
+      style={{ 
+        color: 'white', 
+        textDecoration: 'none' 
+      }}
+    >
+      About Dujour
+    </Link>    </button>
+  );
+};
+
+const OrderHistoryButton = () => {
+  return (
+    <button className="add-button">
+    <Link 
+      to="/order-history" 
+      style={{ 
+        color: 'white', 
+        textDecoration: 'none' 
+      }}
+    >
+      Order History
+    </Link>    </button>
+  );
+};
 
 function SettingsButton() {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -43,7 +68,7 @@ function SettingsButton() {
 
   return (
     <div className="settings-button-container">
-      <button onClick={toggleDropdown} className="settings-button">
+      <button onClick={toggleDropdown} className="add-button">
         Settings
       </button>
       {showDropdown && (
@@ -115,21 +140,25 @@ function App() {
       <Router>
         <LocationListener />
         <div className={`App ${backgroundClass}`}>
-        <div className="header-container">
-          <div className="header-content">
-            <Link to="/">
-              <img src={logo} className="logo" alt="Dujour Logo" />
-            </Link>
-            <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
+          <div className="header-container">
+            <div className="header-logo">
+              <Link to="/">
+                <img src={logo} className="logo" alt="Dujour Logo" />
+              </Link>
+            </div>
+            <div className="header-content">
+              <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
+              {user && <MenuBar />}
+            </div>
           </div>
-          {user && <SettingsButton />} {/* Positioned to the right */}
-        </div>
           <Routes>
             {user ? (
               <>
-                <Route path="/" element={<ButtonGrid />} />
+                <Route path="/" element={<BuildOrder />} /> {/* Default route for authenticated users */}
                 <Route path="/build-order" element={<BuildOrder />} />
                 <Route path="/place-order" element={<PlaceOrder />} />
+                <Route path="/order-history" element={<OrderHistory />} />
+                <Route path="/about-dujour" element={<AboutDujour />} />
               </>
             ) : (
               <>
@@ -145,3 +174,4 @@ function App() {
 }
 
 export default App;
+
