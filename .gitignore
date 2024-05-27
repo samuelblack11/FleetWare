@@ -1,8 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 /dujour-shared/config.js
-/dujour-desktop/client/public/backgroundVideos
+/dujour-desktop/adminDashboard/client/public/backgroundVideos
 /dujour-desktop/startupCheatSheet.txt
-/dujour-desktop/client/src/config.js
+/dujour-desktop/adminDashboard/client/src/config.js
+/dujour-desktop/customerFacing/client/src/config.js
 
 # Correct syntax to ignore all node_modules directories everywhere
 **/node_modules/
@@ -14,10 +15,10 @@
 .pnp.js
 
 # testing
-/dujour-desktop/coverage
+**/coverage
 
 # production
-/dujour-desktop/build
+**/build/
 
 # Environment secrets
 **/.env
