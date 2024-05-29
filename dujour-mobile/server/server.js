@@ -1,40 +1,41 @@
 const express = require('express');
 const mongoose = require('../../dujour-shared/node_modules/mongoose');
+const config = require('../../dujour-shared/config');
 const cors = require('cors');
 const app = express();
 app.use(express.json()); // Middleware to parse JSON bodies
 app.use(cors());
 const port = process.env.PORT || 3001; // Change 3001 to your preferred port
 
-mongoose.connect('mongodb://localhost:27017/fleetware', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(async () => {
-  console.log('Dujour-Mobile connected to fleetware database...');
-  console.log('Mongoose connection state:', mongoose.connection.readyState);
+// URL encode the password to handle special characters
+const encodedUsername = encodeURIComponent(config.mongoUserName); // URL encode the username if needed
+const encodedPassword = encodeURIComponent(config.mongoPwd);
 
-  try {
-    const info = await mongoose.connection.db.admin().serverInfo();
-    console.log('MongoDB server version:', info.version);
-  } catch (err) {
-    console.error('Failed to retrieve MongoDB server version:', err);
-  }
+// Construct the MongoDB URI using imported configuration
+const uri = `mongodb+srv://${encodedUsername}:${encodedPassword}@${config.mongoClusterName}.mongodb.net/Dujour?retryWrites=true&w=majority&appName=${config.databaseName}`
 
-  console.log('Check 123');
-  console.log('Connected to MongoDB database:', mongoose.connection.db.databaseName);
+mongoose.connect(uri, { useNewUrlParser: true})
+  .then(() => {
+    console.log('Connected to MongoDB Atlas database...');
+    
+    // Ensure we're using the correct database
+    const db = mongoose.connection.db;
+    console.log('Database name:', db.databaseName);
 
-  try {
-    const collectionsResult = await mongoose.connection.db.command({ listCollections: 1 });
-    const collections = collectionsResult.cursor.firstBatch;
-    console.log('Collections:', collections.map(collection => collection.name));
-  } catch (err) {
-    console.error('Failed to retrieve collections:', err);
-  }
-})
-.catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
-});
+    // List collection names
+    db.listCollections().toArray((err, collections) => {
+      if (err) {
+        console.error('Error listing collections:', err);
+        return;
+      }
+      console.log('Collections:');
+      collections.forEach(collection => console.log(collection.name));
+    });
+  })
+  .catch(err => {
+    console.error('Could not connect to MongoDB...', err);
+    process.exit(1); // Exit the process to avoid running the server without a database connection
+  });
 
 // Function to check connection status
 function checkDbConnection() {
