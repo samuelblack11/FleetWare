@@ -13,22 +13,31 @@ body {
 
 .header-container {
     display: flex;
-    align-items: flex-start;
-    max-height: 300px;
-    min-height: 160px;
+    flex-direction: column; /* Stack the logo and header content vertically */
+    align-items: center;
+    padding: 10px 20px;
+    overflow: visible;
+    position: relative; /* Ensure the settings button can be positioned absolutely */
 }
 
 .header-content {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Stack the logo and title vertically */
     align-items: center;
-    justify-content: center;
-    flex-grow: 1;
+    width: 100%;
+    position: relative;
 }
 
 .header-title {
-    margin-top: -10px;
-    color:  rgba(128, 50, 50, 0.6);
+    color: rgba(128, 50, 50, 0.6);
+    text-align: center;
+    margin: 0 auto;
+}
+
+.menu-bar {
+    position: absolute;
+    top: 10px; /* Adjust as necessary */
+    right: 20px; /* Add buffer to the right edge */
 }
 
 .logo {
@@ -37,7 +46,6 @@ body {
   height: auto;
   max-height: 150px;
 }
-
 
 .settings-button-container {
   position: relative;

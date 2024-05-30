@@ -9,7 +9,7 @@ import { AuthContext } from '../App.js';
 const AboutDujour = () => {
   return (
     <div>
-      <p>Dujour is</p>
+      <p>Dujour is a delivery service connecting farmers to customers in their region.</p>
     </div>
   );
 

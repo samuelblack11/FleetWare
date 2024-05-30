@@ -26,9 +26,9 @@ const RouteOptimization = () => {
     const [selectedDrivers, setSelectedDrivers] = useState({}); // {routeIndex: driverId}
     const [routingMethod, setRoutingMethod] = useState('kmeans'); // Default to 'kmeans'
     const whLocation = {
-        latitude: 38.8433,
-        longitude: -77.2705,
-        address: "9464 Main St, FairFax, VA 22031"
+        latitude: 38.804840,
+        longitude: -77.043430,
+        address: " 301 King St, Alexandria, VA 22314"
     };
 
     useEffect(() => {

@@ -40,6 +40,7 @@ const handleSignup = async (e) => {
 };
 
 async function loginUser(email, password) {
+
   try {
     const response = await axios.post('/api/users/login', {
       email,

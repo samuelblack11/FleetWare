@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import BuildOrder from './pages/BuildOrder';
 import PlaceOrder from './pages/PlaceOrder';
 import AboutDujour from './pages/AboutDujour';
+import MyAccount from './pages/MyAccount';
 
 
 export const AuthContext = createContext(null);
@@ -159,6 +160,7 @@ function App() {
                 <Route path="/place-order" element={<PlaceOrder />} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/about-dujour" element={<AboutDujour />} />
+                <Route path="/my-account" element={<MyAccount />} />
               </>
             ) : (
               <>

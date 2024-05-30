@@ -17,6 +17,14 @@ function useAuth() {
   return useContext(AuthContext);
 }
 
+  function MenuBar() {
+  return (
+    <div className="menu-bar">
+      <SettingsButton />
+    </div>
+  );
+}
+
 function ButtonGrid() {
   const { user } = useAuth();
   // Render buttons based on user role
@@ -131,14 +139,16 @@ function App() {
         <LocationListener />
         <div className={`App ${backgroundClass}`}>
         <div className="header-container">
-          <div className="header-content">
-            <Link to="/">
-              <img src={logo} className="logo" alt="Dujour Logo" />
-            </Link>
-            <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
+            <div className="header-logo">
+              <Link to="/">
+                <img src={logo} className="logo" alt="Dujour Logo" />
+              </Link>
+            </div>
+            <div className="header-content">
+              <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
+              {user && <MenuBar />}
+            </div>
           </div>
-          {user && <SettingsButton />} {/* Positioned to the right */}
-        </div>
           <Routes>
             {user ? (
               <>

@@ -84,7 +84,7 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
             ))}
           </tbody>
         </table>
-        <button onClick={onClose} className="close-btn">Close</button>
+        <button onClick={onClose} className="add-button">Close</button>
       </div>
     </div>
   );

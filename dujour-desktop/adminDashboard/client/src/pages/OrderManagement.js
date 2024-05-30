@@ -159,13 +159,28 @@ const OrderManagement = ({ mode }) => {
 
 
   const columns = [
-    { Header: 'Customer Email', accessor: 'customerEmail' },
-    { Header: 'Order Status', accessor: 'status' },
-    { Header: 'Order Cost', accessor: 'totalCost' },
-    { Header: 'Delivery Address', accessor: 'deliveryAddress' },
-    { Header: 'Delivery Date', accessor: 'deliveryDate' },
+  { Header: 'Customer Email', accessor: 'customerEmail' },
+  { Header: 'Order Status', accessor: 'status' },
+    {
+    Header: 'Order Cost',
+    accessor: 'totalCost',
+    Cell: ({ row }) => `$${parseFloat(row.totalCost).toFixed(2)}`
+  },
+  { Header: 'Delivery Address', accessor: 'deliveryAddress' },
+    {
+    Header: 'Delivery Date',
+    accessor: 'deliveryDate',
+    Cell: ({ row }) => {
+      const date = new Date(row.deliveryDate);
+      const formattedDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'UTC'
+      }).format(date);
+      return formattedDate;
+    }
+  },
 {
   Header: 'Actions',
+  accessor: 'actions', // Assigning a unique accessor for the actions column
   Cell: ({ row }) => {
     const isDraft = row.status === 'draft';
     return (

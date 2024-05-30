@@ -80,8 +80,6 @@ const BuildOrder = () => {
 
   // Inside BuildOrder component
   useEffect(() => {
-      console.log(user); // Debugging: Log the user object
-      console.log(user.deliveryAddress);
     if (user.role !== 'admin') {
       setOrderData(currentOrderData => ({
         ...currentOrderData,
