@@ -21,16 +21,6 @@ mongoose.connect(uri, { useNewUrlParser: true})
     // Ensure we're using the correct database
     const db = mongoose.connection.db;
     console.log('Database name:', db.databaseName);
-
-    // List collection names
-    db.listCollections().toArray((err, collections) => {
-      if (err) {
-        console.error('Error listing collections:', err);
-        return;
-      }
-      console.log('Collections:');
-      collections.forEach(collection => console.log(collection.name));
-    });
   })
   .catch(err => {
     console.error('Could not connect to MongoDB...', err);

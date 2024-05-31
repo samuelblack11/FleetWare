@@ -9,13 +9,13 @@ import PlaceOrder from './pages/PlaceOrder';
 import AboutDujour from './pages/AboutDujour';
 import MyAccount from './pages/MyAccount';
 
-
 export const AuthContext = createContext(null);
 
 function useAuth() {
   return useContext(AuthContext);
 }
-  function MenuBar() {
+
+function MenuBar() {
   return (
     <div className="menu-bar">
       <AboutDujourButton />
@@ -28,43 +28,49 @@ function useAuth() {
 const AboutDujourButton = () => {
   return (
     <button className="add-button">
-    <Link 
-      to="/about-dujour" 
-      style={{ 
-        color: 'white', 
-        textDecoration: 'none' 
-      }}
-    >
-      About Dujour
-    </Link>    </button>
+      <Link 
+        to="/about-dujour" 
+        style={{ 
+          color: 'white', 
+          textDecoration: 'none' 
+        }}
+      >
+        About Dujour
+      </Link>
+    </button>
   );
 };
 
 const OrderHistoryButton = () => {
   return (
     <button className="add-button">
-    <Link 
-      to="/order-history" 
-      style={{ 
-        color: 'white', 
-        textDecoration: 'none' 
-      }}
-    >
-      Order History
-    </Link>    </button>
+      <Link 
+        to="/order-history" 
+        style={{ 
+          color: 'white', 
+          textDecoration: 'none' 
+        }}
+      >
+        Order History
+      </Link>
+    </button>
   );
 };
 
 function SettingsButton() {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const { logout } = useAuth(); // Use the custom hook to access AuthContext
 
   const toggleDropdown = () => setShowDropdown(!showDropdown);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleAccountNavigation = () => {
+    navigate('/my-account');
   };
 
   return (
@@ -74,17 +80,18 @@ function SettingsButton() {
       </button>
       {showDropdown && (
         <div className="dropdown-menu">
-          <Link to="/my-account" className="dropdown-item">My Account</Link>
-          <button onClick={handleLogout} className="dropdown-item">Logout</button>
+          <button onClick={handleAccountNavigation} className="add-button">My Account</button>
+          <button onClick={handleLogout} className="add-button">Logout</button>
         </div>
       )}
     </div>
   );
 }
 
+
 function LogoutButton() {
   const navigate = useNavigate(); // Now it's called within the context of <Router>
-  const { logout } = useContext(AuthContext);
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -99,7 +106,6 @@ function LogoutButton() {
 }
 
 function App() {
-
   const [user, setUser] = useState(null); // Store user role and authentication status
   const [backgroundClass, setBackgroundClass] = useState('');
 
@@ -111,11 +117,6 @@ function App() {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-  };
-
-    const handleLogout = () => {
-    logout(); // Call the logout function from your AuthContext
-    navigate('/'); // Redirect to login page
   };
 
   useEffect(() => {
@@ -176,4 +177,3 @@ function App() {
 }
 
 export default App;
-

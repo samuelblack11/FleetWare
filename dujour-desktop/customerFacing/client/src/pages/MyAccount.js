@@ -6,19 +6,15 @@ import { useNavigate } from 'react-router-dom';
 
 const MyAccount = () => {
   const { user, login } = useContext(AuthContext); // Access the user and login from AuthContext
-  const [maskedCreditCard, setMaskedCreditCard] = useState('');
-  const [maskedPassword, setMaskedPassword] = useState('');
   const [originalUser, setOriginalUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [updatedUser, setUpdatedUser] = useState(null);
+  const [updatedUser, setUpdatedUser] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      setMaskedCreditCard(maskCreditCard(user.creditCardInfo || ''));
-      setMaskedPassword(maskPassword(user.password || ''));
-      setOriginalUser(user); // Store the original user data
-      setUpdatedUser(user); // Initialize the updated user data
+      setOriginalUser(user);
+      setUpdatedUser({ ...user, password: '' }); // Clear the password field initially
       setLoading(false);
     }
   }, [user]);
@@ -39,43 +35,41 @@ const MyAccount = () => {
       ...updatedUser,
       [name]: type === 'checkbox' ? checked : value,
     });
-
-    if (name === 'creditCardInfo') {
-      setMaskedCreditCard(maskCreditCard(value));
-    } else if (name === 'password') {
-      setMaskedPassword(maskPassword(value));
-    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const changedFields = getChangedFields(originalUser, updatedUser);
+    console.log("^^^^");
+    console.log(changedFields);
+
     if (Object.keys(changedFields).length === 0) {
       alert('Please update at least one field.');
       return;
     }
+
+    console.log(user._id);
     axios.put(`/api/users/${user._id}`, changedFields)
       .then(response => {
         alert('User updated successfully!');
-        login(response.data); // Update context with new user data
+        console.log("@@@@@@@");
+        console.log(response.data);
+
+        // Update each attribute in updatedUser based on the response
+        const updatedUserData = { ...updatedUser };
+        for (const key in response.data) {
+          if (response.data.hasOwnProperty(key)) {
+            updatedUserData[key] = response.data[key];
+          }
+        }
+
+        login(updatedUserData); // Update context with new user data
         navigate('/'); // Navigate to the home page or another page if needed
+        console.log("User After Update:", updatedUserData); // This will now reflect the updated user data
       })
       .catch(error => {
         console.error('There was an error updating the user data!', error);
       });
-  };
-
-
-  // Mask all but the last 4 digits of the credit card number
-  const maskCreditCard = (number) => {
-    if (!number) return '';
-    return number.slice(0, -4).replace(/./g, '*') + number.slice(-4);
-  };
-
-  // Mask the password with asterisks
-  const maskPassword = (password) => {
-    if (!password) return '';
-    return password.replace(/./g, '*');
   };
 
   if (loading) {
@@ -102,11 +96,11 @@ const MyAccount = () => {
             </tr>
             <tr>
               <td><label htmlFor="creditCardInfo">Credit Card Number:</label></td>
-              <td><input type="text" name="creditCardInfo" id="creditCardInfo" value={maskedCreditCard} onChange={handleChange} /></td>
+              <td><input type="text" name="creditCardInfo" id="creditCardInfo" value={updatedUser.creditCardInfo} onChange={handleChange} /></td>
             </tr>
             <tr>
               <td><label htmlFor="password">Password:</label></td>
-              <td><input type="text" name="password" id="password" value={maskedPassword} onChange={handleChange} /></td>
+              <td><input type="password" name="password" id="password" value={updatedUser.password} onChange={handleChange} /></td>
             </tr>
           </tbody>
         </table>

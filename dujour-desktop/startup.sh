@@ -20,10 +20,10 @@ osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/
 osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/Projects/fleetware/dujour-desktop/customerFacing/server && node server.js"'
 
 # Launch React app for admin dashboard in a new Terminal window
-osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/Projects/fleetware/dujour-desktop/adminDashboard/client && npm start"'
+#osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/Projects/fleetware/dujour-desktop/adminDashboard/client && npm start"'
 
 # Start Node.js server for admin dashboard in a new Terminal window
-osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/Projects/fleetware/dujour-desktop/adminDashboard/server && node server.js"'
+#osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/Projects/fleetware/dujour-desktop/adminDashboard/server && node server.js"'
 
 # Open Mongo Shell in a new Terminal window, assuming MongoDB is installed and added to your PATH
 # osascript -e 'tell app "Terminal" to do script "mongo"'

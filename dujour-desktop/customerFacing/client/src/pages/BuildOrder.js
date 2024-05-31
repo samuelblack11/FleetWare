@@ -193,7 +193,7 @@ const handleSubmit = async (e) => {
   if (!validateCreditCardNumber(orderData.creditCardNumber)) {alert('Please enter a valid credit card number.'); return;}
   if (!validateCreditCardExpiration(orderData.creditCardExpiration)) {alert('Please enter a valid credit card expiration.'); return;}
   if (!validateCVV(orderData.creditCardCVV)) {alert('Please enter valid cvv.'); return;}
-  if (!validateItemQuantities(cartItems)) {console.log("+++"); console.log(`${cartItems.quantity}`); alert('Please ensure all item quantities are valid.'); return;}
+  if (!validateItemQuantities(cartItems)) {alert('Please ensure all item quantities are valid.'); return;}
 
   // Check for stock availability before proceeding with the order submission
   for (const cartItem of cartItems) {

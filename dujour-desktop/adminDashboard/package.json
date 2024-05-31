@@ -2,7 +2,7 @@
   "name": "fleetware-desktop",
   "version": "0.1.0",
   "scripts": {
-    "start": "PORT=3003 react-app-rewired start",
+    "start": "PORT=3001 react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject",
@@ -13,7 +13,6 @@
     "start:server:admin": "cd adminDashboard/server && npm start",
     "start:server:customer": "cd customerFacing/server && npm start"
   },
-  "proxy": "http://localhost:3001",
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
