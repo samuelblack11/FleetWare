@@ -196,16 +196,6 @@ const updateTotalCost = (cartItems) => {
 
 
 const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  // Validation checks
-  if (!validateEmail(orderData.customerEmail)) {alert('Please enter a valid email address.'); return;}
-  if (!validateDeliveryAddress(orderData.deliveryAddress)) {alert('Please enter a valid delivery address.'); return;}
-  if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery address.'); return;}
-  if (!validateCreditCardNumber(orderData.creditCardNumber)) {alert('Please enter a valid credit card number.'); return;}
-  if (!validateCreditCardExpiration(orderData.creditCardExpiration)) {alert('Please enter a valid credit card expiration.'); return;}
-  if (!validateCVV(orderData.creditCardCVV)) {alert('Please enter valid cvv.'); return;}
-  if (!validateItemQuantities(cartItems)) {alert('Please ensure all item quantities are valid.'); return;}
 
   // Check for stock availability before proceeding with the order submission
   for (const cartItem of cartItems) {

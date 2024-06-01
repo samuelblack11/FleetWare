@@ -72,6 +72,7 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
             <p>We look forward to delivering you regionally grown and supremely fresh food right to your doorstep.</p>
           </>
         )}
+        <p><strong>Order Number:</strong> {order.masterOrderNumber}</p>
         <p><strong>Customer Email:</strong> {order.customerEmail}</p>
         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
         <p><strong>Delivery Date:</strong> {new Date(order.deliveryDate).toLocaleDateString()}</p>

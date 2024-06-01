@@ -9,7 +9,6 @@ import axios from 'axios';
 import { DetailedOrderSummary } from './ReusableReactComponents';
 import logo from '../assets/logo128.png';
 
-
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
@@ -151,13 +150,9 @@ const handleItemQuantityChange = (index, newQuantity) => {
         alert('Order submitted and email sent successfully!');
         setOrderData(initialOrderState);
         setCartItems([]);
-        console.log(">>>")
-        console.log(transformedOrder)
-        for (let i = 0; i < transformedOrder.items.length; i++) {
-          const itemName = transformedOrder.items[i].item.itemName;
-          console.log(itemName);
-        }
-        navigate('/order-summary', { state: { orderData: transformedOrder, cartItems, totalCost } });
+        const savedOrder = response.data.order;
+        const masterOrderNumber = savedOrder.masterOrderNumber;
+        navigate('/order-summary', { state: { orderData: transformedOrder, cartItems, totalCost, masterOrderNumber } });
       } else {
         alert('Failed to submit the order.');
       }

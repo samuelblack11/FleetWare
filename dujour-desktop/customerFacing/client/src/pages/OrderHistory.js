@@ -153,6 +153,7 @@ const OrderManagement = ({ mode }) => {
 
   const columns = [
     { Header: 'Customer Email', accessor: 'customerEmail' },
+    { Header: 'Order Number', accessor: 'masterOrderNumber' },
     { Header: 'Order Status', accessor: 'status' },
     {
       Header: 'Order Cost',

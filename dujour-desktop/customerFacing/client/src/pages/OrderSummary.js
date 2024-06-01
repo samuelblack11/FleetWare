@@ -7,19 +7,11 @@ import axios from 'axios';
 const OrderSummary = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { orderData, cartItems: initialCartItems, totalCost: initialTotalCost } = location.state || { orderData: {}, cartItems: [], totalCost: 0 };
+  const { orderData, cartItems: initialCartItems, totalCost: initialTotalCost, masterOrderNumber } = location.state || { orderData: {}, cartItems: [], totalCost: 0, masterOrderNumber: null };
   const [showOrderPopup, setShowOrderPopup] = useState(true);  // Set to true to show the order summary initially
   const [forConfirmation, setForConfirmation] = useState(false);  // You can adjust this based on your needs
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
-
-  useEffect(() => {
-    // Log the initial state
-    console.log("........")
-    console.log("Order Data:", orderData);
-    console.log("Initial Cart Items:", initialCartItems);
-    console.log("Initial Total Cost:", initialTotalCost);
-  }, [orderData, initialCartItems, initialTotalCost]);
 
   const currentOrder = {
     customerEmail: orderData.customerEmail || '',
@@ -27,12 +19,12 @@ const OrderSummary = () => {
     deliveryDate: orderData.deliveryDate || '',
     status: orderData.status || 'Pending',
     items: orderData.items,
-    totalCost: orderData.totalCost
+    totalCost: orderData.totalCost,
+    masterOrderNumber: masterOrderNumber || ''
   };
 
   useEffect(() => {
     // Log the current order
-    console.log("Current Order:", currentOrder);
   }, [currentOrder]);
 
   const handleBackToBuildOrder = () => {
