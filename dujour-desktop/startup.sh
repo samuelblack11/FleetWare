@@ -7,6 +7,7 @@ nvm use 16
 
 # Set the OpenSSL legacy provider for Node.js 17+
 export NODE_OPTIONS=--openssl-legacy-provider
+source ../dujour-shared/config.sh
 
 # Launch MongoDB in a new Terminal window. Adjust the path and command as necessary based on your MongoDB installation.
 osascript -e 'tell app "Terminal" to do script "startmongo"'
@@ -27,8 +28,7 @@ osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/
 
 # Open Mongo Shell in a new Terminal window, assuming MongoDB is installed and added to your PATH
 # osascript -e 'tell app "Terminal" to do script "mongo"'
-#osascript -e 'tell app "Terminal" to do script "mongo mongodb+srv://sam:RayBan554@dujour.ndt80wa.mongodb.net/test"'
-osascript -e 'tell app "Terminal" to do script "mongosh mongodb+srv://sam:RayBan554@dujour.ndt80wa.mongodb.net/test"'
+osascript -e 'tell app "Terminal" to do script "mongosh mongodb+srv://$mongoUserName:$mongoPwd@$mongoClusterName.mongodb.net/test"'
 
 
 

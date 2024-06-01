@@ -3,7 +3,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateCreditCardNumber, validateCreditCardExpiration, validateCVV, validateItemQuantities } from './helperFiles/orderValidation';
-import {  } from './helperFiles/ccProcessing';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReactDOMServer from 'react-dom/server';
 import axios from 'axios';
