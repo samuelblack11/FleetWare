@@ -1,5 +1,6 @@
 // ReusableReactComponents.js
 import React from 'react';
+import logo from '../assets/logo128.png';
 
 export const GenericTable = ({ data, columns, handleEditClick, deleteCargo }) => {
   return (
@@ -52,7 +53,7 @@ export const GenericPopup = ({ show, children, onClose }) => {
   );
 };
 
-export const DetailedOrderPopup = ({ show, order, onClose }) => {
+export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, isPopup, buttonTitle }) => {
   if (!show) {
     return null;
   }
@@ -64,13 +65,22 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
   const totalOrderCost = order.items.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2);
 
   return (
-    <div className="popup">
-      <div className="popup-inner">
-        <h3>Order Details</h3>
+    <div className={isPopup ? "popup" : "order-summary"}>
+      <div className={isPopup ? "popup-inner" : ""}>
+        <h2>Order Details</h2>
+        {buttonTitle === "View Order History" && (
+          <>
+            <img src={logo} className="logo" alt="Dujour Logo" />
+            <h3>Thank You For Your Purchase!</h3>
+            <p>We look forward to delivering you regionally grown and supremely fresh food right to your doorstep.</p>
+          </>
+          )}
         <p><strong>Customer Email:</strong> {order.customerEmail}</p>
         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
         <p><strong>Delivery Date:</strong> {new Date(order.deliveryDate).toLocaleDateString()}</p>
-        <p><strong>Order Status:</strong> {order.status}</p>
+        {!forConfirmation && (
+          <p><strong>Order Status:</strong> {order.status}</p>
+        )}
         <p><strong>Total Cost:</strong> ${totalOrderCost}</p>
         <table>
           <thead>
@@ -92,7 +102,10 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
             ))}
           </tbody>
         </table>
-        <button onClick={onClose} className="add-button">Close</button>
+        {buttonTitle === "View Order History" && (
+          <p>To view your order history and check the status of this order, click the link below:</p>
+        )}
+        <button onClick={onClose} className="add-button">{buttonTitle}</button>
       </div>
     </div>
   );

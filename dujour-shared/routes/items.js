@@ -6,7 +6,6 @@ const AvailableItem = require('../models/Item');
 router.get('/', async (req, res) => {
   try {
     const items = await AvailableItem.find().populate('farm');
-    console.log(items)
     res.json(items);
   } catch (error) {
     res.status(500).send('Error fetching available items');

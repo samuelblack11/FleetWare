@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { GenericTable, DetailedOrderPopup } from './ReusableReactComponents';
+import { GenericTable, DetailedOrderSummary } from './ReusableReactComponents';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 
@@ -83,6 +83,7 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
 const OrderManagement = ({ mode }) => {
   const [orders, setOrders] = useState([]);
   const [showOrderPopup, setShowOrderPopup] = useState(false);
+  const [forConfirmation, setforConfirmation] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [filterField, setFilterField] = useState('');
   const [filterValue, setFilterValue] = useState('');
@@ -204,10 +205,13 @@ const columns = [
       </div>
       <GenericTable data={filteredOrders} columns={columns} />
       {showOrderPopup && (
-        <DetailedOrderPopup
+        <DetailedOrderSummary
           show={showOrderPopup}
           order={currentOrder}
-          onClose={() => setShowOrderPopup(false)}
+          onClose={handleClosePopup}
+          forConfirmation={false}
+          isPopup={true}  // This makes it render as a popup
+          buttonTitle={"Close"}
         />
       )}
     </div>

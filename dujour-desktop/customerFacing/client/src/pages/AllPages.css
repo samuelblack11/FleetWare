@@ -28,6 +28,16 @@
 
 }
 
+/* Add this CSS to your styles */
+.input-expiration {
+  width: 5ch; /* 4 characters wide */
+}
+
+.input-cvv {
+  width: 3ch; /* 3 characters wide */
+}
+
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

@@ -3,7 +3,13 @@ import React, { useState, useEffect, useContext } from 'react';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateCreditCardNumber, validateCreditCardExpiration, validateCVV, validateItemQuantities } from './helperFiles/orderValidation';
+import {  } from './helperFiles/ccProcessing';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ReactDOMServer from 'react-dom/server';
+import axios from 'axios';
+import { DetailedOrderSummary } from './ReusableReactComponents';
+import logo from '../assets/logo128.png';
+
 
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
@@ -27,7 +33,7 @@ const PlaceOrder = () => {
   const [orderData, setOrderData] = useState(initialOrderState);
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
- const [availableItems, setAvailableItems] = useState([]);
+  const [availableItems, setAvailableItems] = useState([]);
 
   useEffect(() => {
     const calculateTotalCost = () => {
@@ -94,12 +100,43 @@ const handleItemQuantityChange = (index, newQuantity) => {
     if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
     if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
 
-    // Add order submission logic here, e.g., send order data to the server
+    const orderHtml = ReactDOMServer.renderToString(
+      <>
+        <img src={logo} className="logo" alt="Dujour Logo" />
+        <DetailedOrderSummary
+          show={true}
+          order={orderData}
+          onClose={() => window.location.href = 'http://frontend-domain/order-history'}
+          forConfirmation={true}
+          isPopup={false}
+          buttonTitle="View Order History"
+        />
+      </>
+    );
 
-    alert('Order submitted successfully!');
-    setOrderData(initialOrderState);
-    setCartItems([]);
+    try {
+      const response = await axios.post('/api/orders', {
+        orderData,
+        paymentMethodId: 'pm_card_visa', // This should be the actual payment method ID
+        amount: totalCost * 100, // Amount in cents
+        currency: 'usd',
+        emailHtml: orderHtml
+      });
+
+      if (response.status === 200) {
+        alert('Order submitted and email sent successfully!');
+        setOrderData(initialOrderState);
+        setCartItems([]);
+        navigate('/order-summary', { state: { orderData, cartItems, totalCost } });
+      } else {
+        alert('Failed to submit the order.');
+      }
+    } catch (error) {
+      console.error('Failed to submit the order and send the email.', error);
+      alert('Failed to submit the order and send the email. Please try again.');
+    }
   };
+
 
   return (
     <div className="customer-info-section">
@@ -127,12 +164,31 @@ const handleItemQuantityChange = (index, newQuantity) => {
           </tr>
           <tr>
             <td><label htmlFor="creditCardExpiration">Expiration Date:</label></td>
-            <td><input type="text" name="creditCardExpiration" id="creditCardExpiration" value={orderData.creditCardExpiration} placeholder="MM/YY" onChange={handleChange} required /></td>
-          </tr>
-          <tr>
-            <td><label htmlFor="creditCardCVV">Security Code (CVV):</label></td>
-            <td><input type="text" name="creditCardCVV" id="creditCardCVV" value={orderData.creditCardCVV} onChange={handleChange} required /></td>
-          </tr>
+            <td><input 
+              type="text" 
+              name="creditCardExpiration" 
+              id="creditCardExpiration" 
+              value={orderData.creditCardExpiration} 
+              placeholder="MM/YY" 
+              onChange={handleChange} 
+              required 
+              className="input-expiration"
+            />
+        </td>
+      </tr>
+      <tr>
+        <td><label htmlFor="creditCardCVV">Security Code (CVV):</label></td>
+          <td><input 
+            type="text" 
+            name="creditCardCVV" 
+            id="creditCardCVV" 
+            value={orderData.creditCardCVV} 
+            onChange={handleChange} 
+            required 
+            className="input-cvv"
+          />
+      </td>
+    </tr>
         </tbody>
       </table>
       <div className="cart-summary">
