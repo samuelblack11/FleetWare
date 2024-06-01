@@ -59,10 +59,7 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
   }
 
   // Helper function to calculate the total cost of an item
-  const calculateItemTotal = (item) => (item.quantity * item.unitCost).toFixed(2);
-
-  // Calculate the total order cost
-  const totalOrderCost = order.items.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2);
+  const calculateItemTotal = (item) => (item.quantity * item.item.unitCost).toFixed(2);
 
   return (
     <div className={isPopup ? "popup" : "order-summary"}>
@@ -74,29 +71,29 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
             <h3>Thank You For Your Purchase!</h3>
             <p>We look forward to delivering you regionally grown and supremely fresh food right to your doorstep.</p>
           </>
-          )}
+        )}
         <p><strong>Customer Email:</strong> {order.customerEmail}</p>
         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
         <p><strong>Delivery Date:</strong> {new Date(order.deliveryDate).toLocaleDateString()}</p>
         {!forConfirmation && (
           <p><strong>Order Status:</strong> {order.status}</p>
         )}
-        <p><strong>Total Cost:</strong> ${totalOrderCost}</p>
+        <p><strong>Total Cost:</strong> ${order.totalCost}</p>
         <table>
           <thead>
             <tr>
               <th>Item Name</th>
               <th>Quantity</th>
               <th>Unit Cost</th>
-              <th>Total Cost</th>
+              <th>Product Cost</th>
             </tr>
           </thead>
           <tbody>
             {order.items.map((item, index) => (
               <tr key={index}>
-                <td>{item.itemName}</td>
+                <td>{item.item.itemName}</td>
                 <td>{item.quantity}</td>
-                <td>${item.unitCost.toFixed(2)}</td>
+                <td>${item.item.unitCost.toFixed(2)}</td>
                 <td>${calculateItemTotal(item)}</td>
               </tr>
             ))}
@@ -110,3 +107,4 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
     </div>
   );
 };
+

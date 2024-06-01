@@ -17,7 +17,6 @@ function Login() {
     try {
       const { token, userDetails } = await loginUser(email, password);
       localStorage.setItem('token', token); // Store token for session management
-      console.log(userDetails);
       login(userDetails);
     } catch (error) {
       alert(error.message);
@@ -30,7 +29,6 @@ function Login() {
       const { token, role: returnedRole } = await registerUser(email, password, role);
       localStorage.setItem('token', token);
       const userDetails = { email, role: returnedRole };
-      console.log(userDetails);
       login(userDetails);
       navigate('/');
     } catch (error) {

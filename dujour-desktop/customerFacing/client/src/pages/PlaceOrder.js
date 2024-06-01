@@ -21,11 +21,11 @@ const PlaceOrder = () => {
 
   const initialOrderState = {
     customerEmail: user?.email || '',
-    deliveryAddress: user?.deliveryAddress || '',
-    deliveryDate: '',
-    creditCardNumber: '',
-    creditCardExpiration: '',
-    creditCardCVV: '',
+    deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
+    deliveryDate: '2024-08-15',
+    creditCardNumber: '0000000000000000',
+    creditCardExpiration: '1028',
+    creditCardCVV: '222',
     items: initialCartItems,
   };
 
@@ -88,6 +88,28 @@ const handleItemQuantityChange = (index, newQuantity) => {
     setCartItems(updatedCartItems);
   };
 
+  const transformOrderItems = (order) => {
+  const transformedItems = order.items.map((item) => ({
+    item: {
+      _id: item._id,
+      itemName: item.itemName,
+      description: item.description,
+      quantityAvailable: item.quantityAvailable,
+      unitCost: item.unitCost,
+      farm: item.farm,
+      __v: item.__v,
+    },
+    quantity: item.quantity,
+    _id: item._id
+  }));
+
+  const totalCost = transformedItems.reduce((acc, item) => {
+    return acc + (item.quantity * item.item.unitCost);
+  }, 0);
+
+  return { ...order, items: transformedItems, totalCost: totalCost.toFixed(2) };
+};
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -99,12 +121,14 @@ const handleItemQuantityChange = (index, newQuantity) => {
     if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
     if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
 
+    const transformedOrder = transformOrderItems(orderData);
+
     const orderHtml = ReactDOMServer.renderToString(
       <>
         <img src={logo} className="logo" alt="Dujour Logo" />
         <DetailedOrderSummary
           show={true}
-          order={orderData}
+          order={transformedOrder}
           onClose={() => window.location.href = 'http://frontend-domain/order-history'}
           forConfirmation={true}
           isPopup={false}
@@ -122,11 +146,18 @@ const handleItemQuantityChange = (index, newQuantity) => {
         emailHtml: orderHtml
       });
 
+
       if (response.status === 200) {
         alert('Order submitted and email sent successfully!');
         setOrderData(initialOrderState);
         setCartItems([]);
-        navigate('/order-summary', { state: { orderData, cartItems, totalCost } });
+        console.log(">>>")
+        console.log(transformedOrder)
+        for (let i = 0; i < transformedOrder.items.length; i++) {
+          const itemName = transformedOrder.items[i].item.itemName;
+          console.log(itemName);
+        }
+        navigate('/order-summary', { state: { orderData: transformedOrder, cartItems, totalCost } });
       } else {
         alert('Failed to submit the order.');
       }

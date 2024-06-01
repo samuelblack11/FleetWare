@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './AllPages.css';
 import { DetailedOrderSummary } from './ReusableReactComponents';
@@ -13,13 +13,27 @@ const OrderSummary = () => {
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
 
+  useEffect(() => {
+    // Log the initial state
+    console.log("........")
+    console.log("Order Data:", orderData);
+    console.log("Initial Cart Items:", initialCartItems);
+    console.log("Initial Total Cost:", initialTotalCost);
+  }, [orderData, initialCartItems, initialTotalCost]);
+
   const currentOrder = {
-    customerEmail: orderData.customerEmail,
-    deliveryAddress: orderData.deliveryAddress,
-    deliveryDate: orderData.deliveryDate,
+    customerEmail: orderData.customerEmail || '',
+    deliveryAddress: orderData.deliveryAddress || '',
+    deliveryDate: orderData.deliveryDate || '',
     status: orderData.status || 'Pending',
-    items: cartItems,
+    items: orderData.items,
+    totalCost: orderData.totalCost
   };
+
+  useEffect(() => {
+    // Log the current order
+    console.log("Current Order:", currentOrder);
+  }, [currentOrder]);
 
   const handleBackToBuildOrder = () => {
     navigate('/build-order', { state: { cartItems, totalCost } });
@@ -44,14 +58,10 @@ const OrderSummary = () => {
           order={currentOrder}
           onClose={handleBackToMenu}
           forConfirmation={forConfirmation}
-          isPopup={false}  // This makes it render as part of the page
+          isPopup={false}
           buttonTitle={"Proceed"}
         />
       </div>
-      {/*<div className="order-summary-actions">
-        <button className="add-button" onClick={handleBackToBuildOrder}>Back to Build Order</button>
-        <button className="add-button" onClick={handleBackToPlaceOrder}>Back to Place Order</button>
-      </div>*/}
     </div>
   );
 };

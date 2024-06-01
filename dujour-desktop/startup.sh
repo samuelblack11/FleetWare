@@ -28,9 +28,7 @@ osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/
 
 # Open Mongo Shell in a new Terminal window, assuming MongoDB is installed and added to your PATH
 # osascript -e 'tell app "Terminal" to do script "mongo"'
-osascript -e 'tell app "Terminal" to do script "mongosh mongodb+srv://$mongoUserName:$mongoPwd@$mongoClusterName.mongodb.net/test"'
-
-
+osascript -e 'tell app "Terminal" to do script "mongosh mongodb+srv://'$mongoUserName':'$mongoPwd'@'$mongoClusterName'.mongodb.net/Dujour"'
 
 # Open a Terminal window for Git operations, ensuring the path directs to the root of your project
 osascript -e 'tell app "Terminal" to do script "cd /Users/samblack/Desktop/MERN/Projects/fleetware/dujour-desktop && git status"'

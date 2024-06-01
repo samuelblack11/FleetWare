@@ -129,15 +129,19 @@ const handleItemQuantityChange = (index, newQuantity) => {
 
 
 const handleAddToCart = (itemToAdd) => {
+  if (!itemToAdd) {
+    alert('Invalid item.');
+    return;
+  }
+
   // Find the corresponding item in availableItems to check stock
   const stockItem = availableItems.find(item => item._id === itemToAdd._id);
-
+  console.log("@@@@")
+  console.log(stockItem._id)
   if (!stockItem) {
     alert('Item not found.');
     return;
   }
-
-
 
   // Calculate the total quantity of this item already in the cart
   const cartItem = cartItems.find(item => item._id === itemToAdd._id);
@@ -160,8 +164,9 @@ const handleAddToCart = (itemToAdd) => {
   }
 
   // Update total cost
-  updateTotalCost();
+  updateTotalCost([...cartItems, { ...itemToAdd, quantity: itemToAdd.quantity }]);
 };
+
 
 const displayItemDetails = (itemToAdd) => {
   const stockItem = availableItems.find(item => item._id === itemToAdd._id);
@@ -177,11 +182,18 @@ const displayItemDetails = (itemToAdd) => {
 
 
 
-// Adjust `updateTotalCost` to work directly with `cartItems` instead of `availableItems`
-const updateTotalCost = () => {
-    const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
-    setTotalCost(total);
+const updateTotalCost = (cartItems) => {
+  const totalCost = cartItems.reduce((acc, item) => {
+    const stockItem = availableItems.find(stockItem => stockItem._id === item._id);
+    if (stockItem) {
+      return acc + (stockItem.unitCost * item.quantity);
+    }
+    return acc;
+  }, 0);
+
+  setTotalCost(totalCost);
 };
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -211,14 +223,20 @@ const handleSubmit = async (e) => {
     // Determine nextOrderNumber and userEmailToUpdate logic here
     if (user.role === 'admin' && orderData.customerEmail) {
       const userForOrder = await fetchUserByEmail(orderData.customerEmail);
-      nextOrderNumber = userForOrder ? userForOrder.lastOrderNumber + 1 : 1;
+      nextUserOrderNumber = userForOrder ? userForOrder.lastOrderNumber + 1 : 1;
       userEmailToUpdate = orderData.customerEmail;
     } else {
-      nextOrderNumber = user.lastOrderNumber + 1;
+      nextUserOrderNumber = user.lastOrderNumber + 1;
       userEmailToUpdate = user.email;
     }
 
-    let finalOrderData = { ...orderData, orderNumber: nextOrderNumber, items: cartItems };
+    const uniqueOrderId = `${userName}-${user.lastOrderNumber}`;
+
+    // Fetch the maximum master order number across all orders
+    const maxMasterOrder = await Order.findOne().sort({ masterOrderNumber: -1 }).exec();
+    const maxMasterOrderNumber = maxMasterOrder ? maxMasterOrder.masterOrderNumber : 0;
+
+    let finalOrderData = { ...orderData, customerOrderNumber: nextUserOrderNumber, items: cartItems, masterOrderNumber: maxMasterOrderNumber + 1 };
     const orderResponse = await submitFinalOrder(finalOrderData);
 
     if (orderResponse.status === 200 || orderResponse.status === 201) {
@@ -236,28 +254,6 @@ const handleSubmit = async (e) => {
   }
 };
 
-async function createNewOrderForUser(userName, orderData) {
-  // Increment the user's lastOrderNumber atomically
-  const user = await User.findOneAndUpdate(
-    { userName },
-    { $inc: { lastOrderNumber: 1 } },
-    { new: true, upsert: true } // Upsert true to create the user if they don't exist
-  );
-
-  // Construct the uniqueOrderId
-  const uniqueOrderId = `${userName}-${user.lastOrderNumber}`;
-
-  // Create a new order with the uniqueOrderId
-  const newOrder = new Order({
-    ...orderData,
-    userName,
-    orderNumber: user.lastOrderNumber,
-    uniqueOrderId
-  });
-
-  await newOrder.save();
-  return newOrder;
-}
 
 // Inside BuildOrder component, define CartSidebar
 const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOrder, handleItemQuantityChange, toggleUpdateItem }) => {

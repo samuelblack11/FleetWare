@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AllPages.css';
 import { GenericTable, GenericPopup } from './ReusableReactComponents';
-//import ItemForm from './ItemForm'; // Assuming ItemForm and FarmForm are separated into their own files
-//import FarmForm from './FarmForm';
 
 const ItemForm = ({ item, onSave, farms }) => {
   // Initialize form state with item data if editing, or blank for adding
@@ -89,6 +87,7 @@ const ItemForm = ({ item, onSave, farms }) => {
 const FarmForm = ({ farm, onSave }) => {
   const [formState, setFormState] = useState({
     name: farm ? farm.name : '',
+    vendorLocationNumber: farm ? farm.vendorLocationNumber : '',
     address: farm ? farm.address : '',
     contactNumber: farm ? farm.contactNumber : ''
   });
@@ -125,7 +124,25 @@ const FarmForm = ({ farm, onSave }) => {
         onChange={handleChange}
         required
       />
-
+      <label htmlFor="vendorLocationNumber">Stall #:</label>
+      <input
+        id="vendorLocationNumber"
+        name="vendorLocationNumber"
+        type="number"
+        value={formState.vendorLocationNumber}
+        onChange={handleChange}
+        required
+      />
+      <label htmlFor="description">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        type="text"
+        value={formState.description}
+        onChange={handleChange}
+        rows="4"
+        columns="70"
+      />
       <label htmlFor="address">Address:</label>
       <input
         id="address"
@@ -201,6 +218,14 @@ const MenuManagement = () => {
     Header: 'Name',
     accessor: 'name', // The key from the item data
   },
+    {
+    Header: 'Stall #',
+    accessor: 'vendorLocationNumber', // The key from the item data
+  },
+    {
+    Header: 'Description',
+    accessor: 'description', // The key from the item data
+    },
     {
     Header: 'Address',
     accessor: 'address', // The key from the item data
@@ -334,7 +359,7 @@ const MenuManagement = () => {
                 deleteCargo={handleDeleteItem} 
                 />
             </div>
-                        <div className="farms-table">
+            <div className="farms-table">
             <h3>Farms</h3>
             <GenericTable 
                 data={farms} 
