@@ -234,3 +234,31 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   align-items: center;
   justify-content: center;
 }
+
+.operational-overview-container {
+  padding: var(--section-padding);
+}
+
+.overview-content {
+  margin-top: var(--margin-bottom-space);
+}
+
+.overview-tables {
+  display: flex;
+  justify-content: space-between;
+}
+
+.table-container {
+  width: 48%; /* Ensure the tables take less than half the width each */
+}
+
+.overview-summary {
+  margin-bottom: var(--margin-bottom-space);
+}
+
+.overview-top-items,
+.overview-pick-plans,
+.overview-routes {
+  margin-bottom: var(--margin-bottom-space);
+}
+

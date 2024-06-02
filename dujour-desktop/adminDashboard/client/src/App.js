@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import BuildOrder from './pages/BuildOrder';
 import PlaceOrder from './pages/PlaceOrder';
 import OrderPicking from './pages/OrderPicking';
+import OperationalOverview from './pages/OperationalOverview';
 
 
 export const AuthContext = createContext(null);
@@ -40,7 +41,7 @@ function ButtonGrid() {
             <Link to="/order-management"><button className="dashboard-button">Order Management</button></Link>
             <Link to="/order-picking"><button className="dashboard-button">Order Picking</button></Link>
             <Link to="/route-optimization"><button className="dashboard-button">Route Optimization & Driver Assignment</button></Link>
-            <Link to="/onroad-overview"><button className="dashboard-button">On Road Tracking</button></Link>
+            <Link to="/operational-overview"><button className="dashboard-button">Operational Overview</button></Link>
             {/* <Link to="/driver-management"><button className="dashboard-button">Driver Management</button></Link>*/}
             {/* <Link to="/order-sortation"><button className="dashboard-button">Order Sortation</button></Link>*/}
             {/* <Link to="/operations-overview"><button className="dashboard-button">Operations Overview</button></Link>*/}
@@ -162,6 +163,7 @@ function App() {
                     <Route path="/order-picking" element={<OrderPicking />} />
                     <Route path="/route-optimization" element={<RouteOptimization />} />
                     <Route path="/driver-management" element={<DriverManagement />} />
+                    <Route path="/operational-overview" element={<OperationalOverview />} />
                   </>
                 )}
                 <Route path="/build-order" element={<BuildOrder />} />
