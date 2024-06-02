@@ -53,7 +53,7 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
         <p><strong>Customer Email:</strong> {order.customerEmail}</p>
         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
         <p><strong>Delivery Date:</strong> {new Date(order.deliveryDate).toLocaleDateString()}</p>
-        <p><strong>Order Status:</strong> {order.status}</p>
+        <p><strong>Order Status:</strong> {order.overallStatus}</p>
         <p><strong>Total Cost:</strong> ${order.totalCost}</p>
         <table>
           <thead>

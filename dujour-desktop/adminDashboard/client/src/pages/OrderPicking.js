@@ -114,6 +114,21 @@ const OrderPicking = () => {
     }));
   };
 
+
+ const updateOrderStatus = async (orders, status) => {
+    try {
+      console.log("???????")
+      console.log(status)
+      console.log(orders)
+      await Promise.all(orders.map(order =>
+        axios.put(`/api/orders/${order._id}`, { overallStatus: status })
+      ));
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
+  };
+
+
   const handleSavePickPlan = async () => {
     setIsLoading(true);
     try {
@@ -124,6 +139,7 @@ const OrderPicking = () => {
         driver: selectedDrivers[index] || null
       }));
       await axios.post('/api/pickPlans', { date, pickPlans });
+      updateOrderStatus(orders, 'Ready for Order Pick');
       setIsLoading(false);
       alert('Pick plans saved successfully.');
       setPlanSaved(true);
@@ -149,6 +165,8 @@ const OrderPicking = () => {
       setSelectedDrivers({});
       setError('');
       setPlanSaved(false);
+
+      updateOrderStatus(orders, 'Order Confirmed');
     } catch (error) {
       console.error('Error deleting pick plan:', error);
       setError('Failed to delete pick plan.');

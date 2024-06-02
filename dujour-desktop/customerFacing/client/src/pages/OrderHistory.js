@@ -51,7 +51,7 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
       </div>
       <div>
         <label>Order Status</label>
-        <input type="text" name="status" value={orderData.status} onChange={handleChange} readOnly={!isEditable} />
+        <input type="text" name="overallStatus" value={orderData.overallStatus} onChange={handleChange} readOnly={!isEditable} />
       </div>
       <div>
         <label>Total Cost:</label>
@@ -154,7 +154,7 @@ const OrderManagement = ({ mode }) => {
   const columns = [
     { Header: 'Customer Email', accessor: 'customerEmail' },
     { Header: 'Order Number', accessor: 'masterOrderNumber' },
-    { Header: 'Order Status', accessor: 'status' },
+    { Header: 'Order Status', accessor: 'overallStatus' },
     {
       Header: 'Order Cost',
       accessor: 'totalCost',
@@ -176,7 +176,7 @@ const OrderManagement = ({ mode }) => {
       Header: 'Actions',
       accessor: 'actions', // Assigning a unique accessor for the actions column
       Cell: ({ row }) => {
-        const isDraft = row.status === 'draft';
+        const isDraft = row.overallStatus === 'draft';
         return (
           <button onClick={() => {
             setCurrentOrder(row); 
@@ -196,7 +196,7 @@ const OrderManagement = ({ mode }) => {
         <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
           <option value="">Select a field to filter by</option>
           <option value="customerName">Customer Name</option>
-          <option value="status">Order Status</option>
+          <option value="overallStatus">Order Status</option>
           <option value="deliveryAddress">Delivery Address</option>
           <option value="deliveryDate">Delivery Date</option>
         </select>
