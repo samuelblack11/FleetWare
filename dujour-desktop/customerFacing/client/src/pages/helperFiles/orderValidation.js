@@ -20,25 +20,30 @@ export const validateDeliveryAddress = (address) => {
 
 
 export const validateDeliveryDate = (dateString) => {
-  // Parse the input date string to a Date object
-  const deliveryDate = new Date(dateString);
+  console.log("Validating delivery date:", dateString);
 
-  // Check if the parsed date is valid
-  if (isNaN(deliveryDate.getTime())) {
-    console.log("Invalid date format.");
-    return false; // Invalid date format
-  }
+  // Parse the input date string as UTC
+  const [year, month, day] = dateString.split('-').map(Number);
+  const deliveryDate = new Date(Date.UTC(year, month - 1, day));
+  console.log("Parsed delivery date:", deliveryDate);
+
+  // Get the current date and reset the time to midnight in UTC
+  const today = new Date();
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  console.log("Today's date:", todayUTC);
+
+  // Also reset the time of the delivery date to midnight in UTC
+  console.log("Delivery date after resetting time:", deliveryDate);
 
   // Ensure the delivery date is not in the past
-  const today = new Date();
-  if (deliveryDate < today) {
+  if (deliveryDate < todayUTC) {
     console.log("Delivery date cannot be in the past.");
     return false; // Delivery date is in the past
   }
 
   // Check if the year is within a realistic range (e.g., 1900 to 2100)
-  const year = deliveryDate.getFullYear();
-  if (year < 1900 || year > 2100) {
+  const yearCheck = deliveryDate.getUTCFullYear();
+  if (yearCheck < 1900 || yearCheck > 2100) {
     console.log("Year out of realistic range.");
     return false; // Year is out of range
   }
@@ -46,6 +51,9 @@ export const validateDeliveryDate = (dateString) => {
   // If all checks pass, the delivery date is considered valid
   return true;
 };
+
+
+
 
 export const validateCreditCardNumber = (number) => {
   // Allow spaces or dashes between number groups, accept 13 to 19 digits

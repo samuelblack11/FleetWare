@@ -17,8 +17,8 @@ const OrderPicking = () => {
   const [pickPlan, setPickPlan] = useState([]);
   const [showPickPlan, setShowPickPlan] = useState(false);
   const [numberOfPickers, setNumberOfPickers] = useState(1);
-  const [drivers, setDrivers] = useState([]);
-  const [selectedDrivers, setSelectedDrivers] = useState({});
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState({});
   const [planSaved, setPlanSaved] = useState(false);
 
   useEffect(() => {
@@ -34,17 +34,17 @@ const OrderPicking = () => {
 
         if (pickPlansData.length > 0) {
           setPickPlan(pickPlansData);
-          const driversInit = pickPlansData.reduce((acc, plan, index) => {
-            if (plan.driver) acc[index] = plan.driver._id;
+          const usersInit = pickPlansData.reduce((acc, plan, index) => {
+            if (plan.user) acc[index] = plan.user._id;
             return acc;
           }, {});
-          setSelectedDrivers(driversInit);
+          setSelectedUsers(usersInit);
           setShowPickPlan(true);
           setPlanSaved(true);
         } else {
           setShowPickPlan(false);
           setPickPlan([]);
-          setSelectedDrivers({});
+          setSelectedUsers({});
           setPlanSaved(false);
         }
       } catch (error) {
@@ -60,17 +60,17 @@ const OrderPicking = () => {
   }, [selectedDate]);
 
   useEffect(() => {
-    fetchDrivers();
+    fetchUsers();
   }, []);
 
-  const fetchDrivers = async () => {
+  const fetchUsers = async () => {
     try {
-      const response = await axios.get('/api/drivers');
-      setDrivers(response.data);
-      console.log(`DRIVERS....${response.data}`);
+      const response = await axios.get('/api/users');
+      setUsers(response.data);
+      console.log(`USERS....${response.data}`);
     } catch (error) {
-      console.error('Error fetching drivers:', error);
-      setError('Failed to fetch drivers.');
+      console.error('Error fetching users:', error);
+      setError('Failed to fetch users.');
     }
   };
 
@@ -91,7 +91,7 @@ const OrderPicking = () => {
     for (let i = 0; i < numberOfPickers; i++) {
       dividedPickPlans.push({
         items: sortedItems.slice(i * chunkSize, (i + 1) * chunkSize),
-        driver: null
+        user: null
       });
     }
 
@@ -103,14 +103,14 @@ const OrderPicking = () => {
   const handleUndoPickPlan = () => {
   setShowPickPlan(false);
   setPickPlan([]);
-  setSelectedDrivers({});
+  setSelectedUsers({});
   setPlanSaved(false);
 };
 
-  const handleDriverSelection = (planIndex, driverId) => {
-    setSelectedDrivers(prev => ({
+  const handleUserSelection = (planIndex, userId) => {
+    setSelectedUsers(prev => ({
       ...prev,
-      [planIndex]: driverId,
+      [planIndex]: userId,
     }));
   };
 
@@ -136,7 +136,7 @@ const OrderPicking = () => {
       const pickPlans = pickPlan.map((plan, index) => ({
         date,
         items: plan.items,
-        driver: selectedDrivers[index] || null
+        user: selectedUsers[index] || null
       }));
       await axios.post('/api/pickPlans', { date, pickPlans });
       updateOrderStatus(orders, 'Ready for Order Pick');
@@ -162,7 +162,7 @@ const OrderPicking = () => {
       alert('Pick plan deleted successfully.');
       setShowPickPlan(false);
       setPickPlan([]);
-      setSelectedDrivers({});
+      setSelectedUsers({});
       setError('');
       setPlanSaved(false);
 
@@ -194,17 +194,18 @@ const OrderPicking = () => {
     { Header: 'Order Number', accessor: 'masterOrderNumber' },
   ];
 
-  const DriverDropdown = ({ drivers, selectedDriverId, onDriverAssigned, planIndex }) => (
-    <select 
-      value={selectedDriverId || ''} 
-      onChange={(e) => onDriverAssigned(planIndex, e.target.value)}
-    >
-      <option value="">Select a picker</option>
-      {drivers.map((driver) => (
-        <option key={driver._id} value={driver._id.toString()}>{driver.Name}</option>
-      ))}
-    </select>
-  );
+const UserDropdown = ({ users, selectedUserId, onUserAssigned, planIndex }) => (
+  <select 
+    value={selectedUserId || ''} 
+    onChange={(e) => onUserAssigned(planIndex, e.target.value)}
+  >
+    <option value="">Select a Picker</option>
+    {users.map((user) => (
+      <option key={user._id} value={user._id}>{user.name}</option>
+    ))}
+  </select>
+);
+
 
   return (
     <div className="route-optimization-container">
@@ -253,10 +254,10 @@ const OrderPicking = () => {
           {pickPlan.map((plan, index) => (
             <div key={index}>
               <h4>Picker {index + 1}</h4>
-              <DriverDropdown
-                drivers={drivers}
-                selectedDriverId={selectedDrivers[index]}
-                onDriverAssigned={handleDriverSelection}
+              <UserDropdown
+                users={users}
+                selectedUserId={selectedUsers[index]}
+                onUserAssigned={handleUserSelection}
                 planIndex={index}
               />
               <GenericTable

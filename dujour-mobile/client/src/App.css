@@ -18,6 +18,12 @@ body {
     min-height: 160px;
 }
 
+h2,h3 {
+    color: rgba(128, 50, 50, 0.6);
+    text-align: center;
+    margin: 0 auto;
+}
+
 .header-content {
     display: flex;
     flex-direction: column;
@@ -29,6 +35,13 @@ body {
 .header-title {
     margin-top: -10px;
     color:  rgba(128, 50, 50, 0.6);
+}
+
+.menu-bar {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 20px; /* Add buffer to the right edge */
 }
 
 .logo {
@@ -85,9 +98,12 @@ body {
 
 .button-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     row-gap: 10px;
     column-gap: 60px;
+    max-width: 300px;
+    align-items: center; /* Centers text vertically */
+    margin: 0 auto; /* Centers the container horizontally */
 }
 
 .dashboard-button {

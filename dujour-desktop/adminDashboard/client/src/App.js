@@ -42,7 +42,7 @@ function ButtonGrid() {
             <Link to="/order-picking"><button className="dashboard-button">Order Picking</button></Link>
             <Link to="/route-optimization"><button className="dashboard-button">Route Optimization & Driver Assignment</button></Link>
             <Link to="/operational-overview"><button className="dashboard-button">Operational Overview</button></Link>
-            {/* <Link to="/driver-management"><button className="dashboard-button">Driver Management</button></Link>*/}
+            <Link to="/driver-management"><button className="dashboard-button">Driver Management</button></Link>
             {/* <Link to="/order-sortation"><button className="dashboard-button">Order Sortation</button></Link>*/}
             {/* <Link to="/operations-overview"><button className="dashboard-button">Operations Overview</button></Link>*/}
             {/* <Link to="/analytics-reporting"><button className="dashboard-button">Analytics & Reporting</button></Link>*/}

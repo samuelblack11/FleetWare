@@ -1,28 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const DeliveryRoute = require('../models/DeliveryRoute'); // Ensure this path matches where your Route model is saved
-const Driver = require('../models/Driver'); // Make sure the path is correct
+const User = require('../models/User'); // Make sure the path is correct
 const mongoose = require('mongoose');
 
-// PUT endpoint to update driver assignments for routes
-router.put('/updateDrivers', async (req, res) => {
-    const { updatedRoutes } = req.body;
-    try {
-        console.log("Trying to update drivers....");
-        // Execute all updates concurrently
-        await Promise.all(updatedRoutes.map(route =>
-            DeliveryRoute.updateOne(
-                { _id: route._id },
-                { $set: { driverId: route.driverId } }
-            )
-        ));
-
-        res.status(200).json({ message: "Driver assignments updated successfully." });
-    } catch (error) {
-        console.error('Failed to update driver assignments:', error);
-        res.status(500).json({ error: "Internal server error" });
-    }
+// PUT endpoint to update user assignments for routes
+router.put('/updateUsers', async (req, res) => {
+  const { updatedRoutes } = req.body;
+  try {
+    console.log("Trying to update user....");
+    console.log(updatedRoutes)
+    // Execute all updates concurrently
+    await Promise.all(updatedRoutes.map(route =>
+      DeliveryRoute.updateOne(
+        { _id: route._id },
+        { $set: { driver: route.driver } } // Update the driver field with the user object
+      )
+    ));
+    
+    res.status(200).json({ message: "User assignments updated successfully." });
+  } catch (error) {
+    console.error('Failed to update user assignments:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
+
+
 
 router.post('/', async (req, res) => {
   const { routes } = req.body;
@@ -127,26 +130,26 @@ router.get('/specificRoute', async (req, res) => {
         return res.status(500).json({ message: "Database not connected" });
     }
 
-    // Log all drivers
+    // Log all users
     try {
-        const allDrivers = await Driver.find({});
-        console.log('All drivers:', allDrivers.map(driver => `${driver.name} - ${driver.Email}`));
+        const allUsers = await User.find({});
+        console.log('All users:', allUsers.map(user => `${user.name} - ${user.Email}`));
     } catch (err) {
-        console.error('Error retrieving all drivers:', err);
-        return res.status(500).json({ message: "Error retrieving all drivers" });
+        console.error('Error retrieving all users:', err);
+        return res.status(500).json({ message: "Error retrieving all users" });
     }
 
     try {
-        console.log("Attempting to find driver with email:", email);
-        const driver = await Driver.findOne({ Email: email });
-        console.log("Driver found:", driver ? driver : "No driver found with the specified email.");
+        console.log("Attempting to find user with email:", email);
+        const user = await User.findOne({ Email: email });
+        console.log("User found:", user ? user : "No user found with the specified email.");
 
-        if (!driver) {
-            return res.status(404).json({ message: "Driver not found with the given email" });
+        if (!user) {
+            return res.status(404).json({ message: "User not found with the given email" });
         }
 
         // Construct the query for route lookup
-        let query = { driverId: driver._id };
+        let query = { userId: user._id };
         if (date) {
             
             const startOfEstDay = new Date(`${date}T00:00:00-05:00`); // Start of day in EST
@@ -155,13 +158,13 @@ router.get('/specificRoute', async (req, res) => {
         }
 
         // Lookup for existing routes
-        const existingRoutes = await DeliveryRoute.find(query).populate('driverId', 'Email');
+        const existingRoutes = await DeliveryRoute.find(query).populate('userId', 'Email');
         if (existingRoutes.length > 0) {
             console.log('Routes found:', existingRoutes);
             res.json({ exists: true, routes: existingRoutes });
         } else {
-            console.log('No routes found for this driver on the specified date.');
-            res.json({ exists: false, message: "No routes found for this driver on the specified date." });
+            console.log('No routes found for this user on the specified date.');
+            res.json({ exists: false, message: "No routes found for this user on the specified date." });
         }
     } catch (error) {
         console.error('Error checking for existing route plans:', error);

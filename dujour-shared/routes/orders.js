@@ -4,16 +4,117 @@ const Order = require('../models/Order');
 const AvailableItem = require('../models/Item');
 const nodemailer = require('nodemailer');
 const stripe = require('stripe')('your-stripe-secret-key'); // Make sure to replace 'your-stripe-secret-key' with your actual Stripe secret key
+const Farm = require('../models/Farm');
 
-// Fetch all orders
-router.get('/', async (req, res) => {
+// New route to get all orders with nested item and farm details
+router.get('/detailed-orders', async (req, res) => {
   try {
-    const orders = await Order.find();
-    res.json(orders);
+    const { date } = req.query;
+    const startOfDay = new Date(date);
+    const endOfDay = new Date(date);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    const orders = await Order.find({
+      deliveryDate: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      }
+    }).exec();
+
+    // Transform the orders to include vendorLocationNumber for each item
+    const detailedOrders = await Promise.all(orders.map(async (order) => {
+      const transformedItems = await Promise.all(order.items.map(async (orderItem) => {
+        const item = await AvailableItem.findById(orderItem._id).exec();
+        if (!item) {
+          console.error(`Item not found for orderItem: ${orderItem._id}`);
+          return {
+            itemName: 'Unknown',
+            itemUnitCost: 0,
+            quantity: orderItem.quantity,
+            vendorLocationNumber: 'Unknown',
+            farmName: 'Unknown'
+          };
+        }
+
+        const farm = await Farm.findById(item.farm).exec();
+
+        // Debug logging to check each item and farm details
+        //console.log("Order Item: ", JSON.stringify(orderItem, null, 2));
+       // console.log("Item: ", JSON.stringify(item, null, 2));
+        //console.log("Farm: ", JSON.stringify(farm, null, 2));
+
+        return {
+          itemName: item.itemName,
+          itemUnitCost: item.unitCost,
+          quantity: orderItem.quantity,
+          vendorLocationNumber: farm ? farm.vendorLocationNumber : 'Unknown',
+          farmName: farm ? farm.name : 'Unknown'
+        };
+      }));
+
+      return {
+        ...order.toObject(),
+        items: transformedItems
+      };
+    }));
+
+    //console.log("Detailed Orders: ", JSON.stringify(detailedOrders, null, 2)); // Log the detailed orders
+
+    res.json(detailedOrders);
   } catch (error) {
-    res.status(500).send('Error fetching orders');
+    console.error('Error fetching detailed orders:', error);
+    res.status(500).send('Server error');
   }
 });
+
+
+
+// Get all orders
+router.get('/', async (req, res) => {
+  try {
+    // Fetch all orders
+    const orders = await Order.find().exec();
+
+    // For each order, fetch the corresponding items
+    for (let order of orders) {
+      for (let item of order.items) {
+        const itemDetails = await AvailableItem.findById(item._id);
+        item.item = itemDetails; // Replace the item ID with the full item details
+      }
+    }
+
+    // Log the populated orders to verify the results
+    console.log('Populated Orders:', JSON.stringify(orders, null, 2));
+
+    // Send the response
+    res.json(orders);
+  } catch (error) {
+    // Log any errors
+    console.error('Error fetching orders:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { overallStatus } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    order.overallStatus = overallStatus;
+    await order.save();
+
+    res.status(200).json({ message: 'Order status updated successfully', order });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).send('Server error');
+  }
+});
+
 
 router.delete('/:id', async (req, res) => {
   try {
@@ -29,7 +130,6 @@ router.delete('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  console.log("found post order route....");
   const { orderData, paymentMethodId, amount, currency, emailHtml } = req.body;
 
   try {
@@ -47,8 +147,16 @@ router.post('/', async (req, res) => {
   //  }
 
 
-    // Step 2: Save the order
-    const order = new Order(orderData);
+    // Step 2: Generate master order number and save the order
+    const maxMasterOrder = await Order.findOne().sort({ masterOrderNumber: -1 }).exec();
+    const maxMasterOrderNumber = maxMasterOrder ? maxMasterOrder.masterOrderNumber : 0;
+    const orderStatus = 'Order Confirmed'
+    const order = new Order({
+      ...orderData,
+      masterOrderNumber: maxMasterOrderNumber + 1,
+      overallStatus: orderStatus
+    });
+
     await order.save();
 
     // Step 3: Update inventory
@@ -63,7 +171,7 @@ router.post('/', async (req, res) => {
     // Step 4: Send confirmation email
    // await sendOrderEmail(order.customerEmail, 'Your Order Summary', emailHtml);
 
-    res.send('Order data saved to MongoDB, inventory updated, and email sent.');
+    res.status(200).json({ order });
   } catch (error) {
     console.error('Error processing order:', error);
     res.status(500).send('Error processing order');

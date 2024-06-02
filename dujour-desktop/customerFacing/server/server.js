@@ -31,7 +31,6 @@ mongoose.connect(uri, { useNewUrlParser: true})
 const farmRoutes = require('../../../dujour-shared/routes/farms');
 const itemRoutes = require('../../../dujour-shared/routes/items');
 const orderRoutes = require('../../../dujour-shared/routes/orders');
-const driverRoutes = require('../../../dujour-shared/routes/drivers');
 const userRoutes = require('../../../dujour-shared/routes/users');
 const optimizeDeliveries= require('../../../dujour-shared/routes/optimize-deliveries');
 const deliveryRoutes= require('../../../dujour-shared/routes/deliveryRoutes');
@@ -39,7 +38,6 @@ const deliveryRoutes= require('../../../dujour-shared/routes/deliveryRoutes');
 app.use('/api/farms', farmRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/drivers', driverRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/optimize-deliveries', optimizeDeliveries);
 app.use('/api/deliveryRoutes', deliveryRoutes);

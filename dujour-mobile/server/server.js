@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 app.use(express.json()); // Middleware to parse JSON bodies
 app.use(cors());
-const port = process.env.PORT || 3001; // Change 3001 to your preferred port
+const port = process.env.PORT || 3004; // Change 3001 to your preferred port
 
 // URL encode the password to handle special characters
 const encodedUsername = encodeURIComponent(config.mongoUserName); // URL encode the username if needed
@@ -61,19 +61,19 @@ function checkDbConnection() {
 }
 
 // Set interval to check database connection every 5 seconds
-setInterval(checkDbConnection, 5000);
+//setInterval(checkDbConnection, 5000);
 
 
 // Import and use routes
 const orderRoutes = require('../../dujour-shared/routes/orders');
-const driverRoutes = require('../../dujour-shared/routes/drivers');
 const userRoutes = require('../../dujour-shared/routes/users');
 const deliveryRoutes = require('../../dujour-shared/routes/deliveryRoutes');
+const pickPlans = require('../../dujour-shared/routes/pickPlans');
 
 app.use('/api/orders', orderRoutes);
-app.use('/api/drivers', driverRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/deliveryRoutes', deliveryRoutes);
+app.use('/api/pickPlans', pickPlans);
 
 
 app.listen(port, () => {

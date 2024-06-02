@@ -3,7 +3,7 @@ const { Schema } = mongoose;
 
 const deliveryRouteSchema = new Schema({
   clusterId: Number,
-  driverId: { type: Schema.Types.ObjectId, ref: 'Driver' }, // Assuming you have a Driver model
+  driver: { type: Schema.Types.ObjectId, ref: 'User' },
   status: { type: String, default: 'Scheduled' },
   createdAt: { type: Date, default: Date.now },
   assignedAt: Date,
@@ -18,13 +18,18 @@ const deliveryRouteSchema = new Schema({
     deliveryDate: Date,
     dropOffTime: Date,
     orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
-    customerEmail: String, // Added to store the customer's email address
-    orderNumber: String, // Added to store the order number
+    customerEmail: String,
+    orderNumber: String,
     status: { type: String, default: 'Scheduled' },
   }],
+  status: {
+    type: String,
+    enum: ['Driver Assigned', 'En Route', 'Delivered'],
+    default: 'Driver Assigned'
+  }
 });
 
 // Here you might include any middleware (pre/post hooks) or methods relevant to the route
 
-const Route = mongoose.model('DeliveryRoute', deliveryRouteSchema, 'deliveryRoutes');
-module.exports = Route;
+const DeliveryRoute = mongoose.model('DeliveryRoute', deliveryRouteSchema, 'deliveryRoutes');
+module.exports = DeliveryRoute;

@@ -4,9 +4,7 @@ import './App.css';
 import logo from './assets/logo128.png';
 import Login from './pages/Login';
 import RouteView from './pages/RouteView';
-import RouteHistory from './pages/RouteHistory';
-import Performance from './pages/Performance';
-import Settings from './pages/Settings';
+import PickView from './pages/PickView';
 
 export const AuthContext = createContext(null);
 
@@ -14,16 +12,25 @@ function useAuth() {
   return useContext(AuthContext);
 }
 
+function MenuBar() {
+  return (
+    <div className="menu-bar">
+      <SettingsButton />
+    </div>
+  );
+}
+
 function ButtonGrid() {
   const { user } = useAuth();
-  // Render buttons based on user role
+  const today = new Date();
+  const formattedDate = `${('0' + (today.getMonth() + 1)).slice(-2)}/${('0' + today.getDate()).slice(-2)}/${today.getFullYear()}`;
   return (
     <div className="container">
       <div className="button-grid">
-        <Link to="/route-view"><button className="dashboard-button">Today's Route</button></Link>
-        <Link to="/route-history"><button className="dashboard-button">Route History</button></Link>
-        <Link to="/performance"><button className="dashboard-button">Performance</button></Link>
-        <Link to="/settings"><button className="dashboard-button">Settings & Support</button></Link>
+        <h2>Welcome</h2>
+        <h3>Choose Your Work Mode for {formattedDate}</h3>
+        <Link to="/pick-view"><button className="dashboard-button">Pick</button></Link>
+        <Link to="/route-view"><button className="dashboard-button">Deliver</button></Link>
       </div>
     </div>
   );
@@ -100,16 +107,14 @@ function App() {
             </Link>
             <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
           </div>
-          {user && <SettingsButton />} {/* Positioned to the right */}
+          {user && <MenuBar />} {/* Positioned to the right */}
         </div>
           <Routes>
             {user ? (
               <>
                 <Route path="/" element={<ButtonGrid />} />
                 <Route path="/route-view" element={<RouteView />} />
-                <Route path="/route-history" element={<RouteHistory />} />
-                <Route path="/performance" element={<Performance />} />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/pick-view" element={<PickView />} />
               </>
             ) : (
               <>
