@@ -136,8 +136,6 @@ const handleAddToCart = (itemToAdd) => {
 
   // Find the corresponding item in availableItems to check stock
   const stockItem = availableItems.find(item => item._id === itemToAdd._id);
-  console.log("@@@@")
-  console.log(stockItem._id)
   if (!stockItem) {
     alert('Item not found.');
     return;
@@ -180,8 +178,6 @@ const displayItemDetails = (itemToAdd) => {
   setPopupVisible(true);
 };
 
-
-
 const updateTotalCost = (cartItems) => {
   const totalCost = cartItems.reduce((acc, item) => {
     const stockItem = availableItems.find(stockItem => stockItem._id === item._id);
@@ -193,57 +189,6 @@ const updateTotalCost = (cartItems) => {
 
   setTotalCost(totalCost);
 };
-
-
-const handleSubmit = async (e) => {
-
-  // Check for stock availability before proceeding with the order submission
-  for (const cartItem of cartItems) {
-    const stockItem = availableItems.find(item => item._id === cartItem._id);
-    if (!stockItem || cartItem.quantity > stockItem.quantityAvailable) {
-      alert(`Sorry, there are only ${stockItem.quantityAvailable} units of ${cartItem.itemName} available in stock.`);
-      return; // Stop submission if any item exceeds available stock
-    }
-  }
-
-  let nextOrderNumber;
-  let userEmailToUpdate;
-
-  try {
-    // Determine nextOrderNumber and userEmailToUpdate logic here
-    if (user.role === 'admin' && orderData.customerEmail) {
-      const userForOrder = await fetchUserByEmail(orderData.customerEmail);
-      nextUserOrderNumber = userForOrder ? userForOrder.lastOrderNumber + 1 : 1;
-      userEmailToUpdate = orderData.customerEmail;
-    } else {
-      nextUserOrderNumber = user.lastOrderNumber + 1;
-      userEmailToUpdate = user.email;
-    }
-
-    const uniqueOrderId = `${userName}-${user.lastOrderNumber}`;
-
-    // Fetch the maximum master order number across all orders
-    const maxMasterOrder = await Order.findOne().sort({ masterOrderNumber: -1 }).exec();
-    const maxMasterOrderNumber = maxMasterOrder ? maxMasterOrder.masterOrderNumber : 0;
-
-    let finalOrderData = { ...orderData, customerOrderNumber: nextUserOrderNumber, items: cartItems, masterOrderNumber: maxMasterOrderNumber + 1 };
-    const orderResponse = await submitFinalOrder(finalOrderData);
-
-    if (orderResponse.status === 200 || orderResponse.status === 201) {
-      await incrementUserOrderNumber(userEmailToUpdate);
-      fetchAvailableItems();
-    }
-
-    // Reset form and state
-    setOrderData(initialOrderState);
-    setCartItems([]);
-    alert('Order submitted successfully!');
-  } catch (error) {
-    console.error(error.message);
-    alert('Failed to submit the order. Please try again.');
-  }
-};
-
 
 // Inside BuildOrder component, define CartSidebar
 const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOrder, handleItemQuantityChange, toggleUpdateItem }) => {

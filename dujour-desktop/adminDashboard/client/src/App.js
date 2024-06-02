@@ -9,6 +9,7 @@ import DriverManagement from './pages/DriverManagement';
 import Login from './pages/Login';
 import BuildOrder from './pages/BuildOrder';
 import PlaceOrder from './pages/PlaceOrder';
+import OrderPicking from './pages/OrderPicking';
 
 
 export const AuthContext = createContext(null);
@@ -35,15 +36,16 @@ function ButtonGrid() {
         {/*<Link to="/my-orders"><button className="dashboard-button">My Orders</button></Link>*/}
         {user.role === 'admin' && (
           <>
-            {/* <Link to="/supplier-scheduling"><button className="dashboard-button">Supplier Scheduling</button></Link>*/}
             <Link to="/menu-management"><button className="dashboard-button">Menu Management</button></Link>
             <Link to="/order-management"><button className="dashboard-button">Order Management</button></Link>
-            <Link to="/route-optimization"><button className="dashboard-button">Route Optimization</button></Link>
-            <Link to="/driver-management"><button className="dashboard-button">Driver Management</button></Link>
-            {/* <Link to="/order-sortation"><button className="dashboard-button">Order Sortation</button></Link>*/}
+            <Link to="/order-picking"><button className="dashboard-button">Order Picking</button></Link>
+            <Link to="/route-optimization"><button className="dashboard-button">Route Optimization & Driver Assignment</button></Link>
             <Link to="/onroad-overview"><button className="dashboard-button">On Road Tracking</button></Link>
+            {/* <Link to="/driver-management"><button className="dashboard-button">Driver Management</button></Link>*/}
+            {/* <Link to="/order-sortation"><button className="dashboard-button">Order Sortation</button></Link>*/}
             {/* <Link to="/operations-overview"><button className="dashboard-button">Operations Overview</button></Link>*/}
             {/* <Link to="/analytics-reporting"><button className="dashboard-button">Analytics & Reporting</button></Link>*/}
+            {/* <Link to="/supplier-scheduling"><button className="dashboard-button">Supplier Scheduling</button></Link>*/}
           </>
         )}
         {/*<Link to="/settings-support"><button className="dashboard-button">Settings & Support</button></Link>*/}
@@ -157,6 +159,7 @@ function App() {
                   <>
                     <Route path="/menu-management" element={<MenuManagement />} />
                     <Route path="/order-management" element={<OrderManagement mode="allOrders" />} />
+                    <Route path="/order-picking" element={<OrderPicking />} />
                     <Route path="/route-optimization" element={<RouteOptimization />} />
                     <Route path="/driver-management" element={<DriverManagement />} />
                   </>

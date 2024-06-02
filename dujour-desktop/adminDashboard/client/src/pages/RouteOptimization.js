@@ -168,16 +168,16 @@ const flatRoutes = optimizedRoutes.flatMap((route, clusterIndex) =>
   route.map((stop, index) => ({
     stopNumber: index + 1,
     clusterId: clusterIndex + 1,
-    address: stop.address, // Assuming each 'stop' object has an 'address' field
-    customerEmail: stop.customerEmail, // Assuming each 'stop' object has a 'customerEmail' field
-    orderNumber: stop.orderNumber, // Assuming each 'stop' object has an 'orderNumber' field
+    address: stop.address,
+    customerEmail: stop.customerEmail,
+    orderNumber: stop.masterOrderNumber,
   }))
 );
 
 
 
     const orderTableColumns = [
-        { Header: 'Order Number', accessor: 'orderNumber' },
+        { Header: 'Order Number', accessor: 'masterOrderNumber' },
         { Header: 'Customer Email', accessor: 'customerEmail' },
         { Header: 'Delivery Address', accessor: 'deliveryAddress' },
         // Add more columns as needed

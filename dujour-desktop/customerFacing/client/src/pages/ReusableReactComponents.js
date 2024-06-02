@@ -79,7 +79,7 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
         {!forConfirmation && (
           <p><strong>Order Status:</strong> {order.status}</p>
         )}
-        <p><strong>Total Cost:</strong> ${order.totalCost}</p>
+        <p><strong>Total Cost:</strong> ${order.totalCost.toFixed(2)}</p>
         <table>
           <thead>
             <tr>

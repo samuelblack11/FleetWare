@@ -45,6 +45,7 @@ const driverRoutes = require('../../../dujour-shared/routes/drivers');
 const userRoutes = require('../../../dujour-shared/routes/users');
 const optimizeDeliveries= require('../../../dujour-shared/routes/optimize-deliveries');
 const deliveryRoutes= require('../../../dujour-shared/routes/deliveryRoutes');
+const pickPlans= require('../../../dujour-shared/routes/pickPlans');
 
 app.use('/api/farms', farmRoutes);
 app.use('/api/items', itemRoutes);
@@ -53,6 +54,7 @@ app.use('/api/drivers', driverRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/optimize-deliveries', optimizeDeliveries);
 app.use('/api/deliveryRoutes', deliveryRoutes);
+app.use('/api/pickPlans', pickPlans);
 
 
 
