@@ -15,6 +15,8 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
 
   const [orderData, setOrderData] = useState(initialState);
 
+
+
   const handleChange = (e, index) => {
     if (index !== undefined) {
       // Handle change for items array
@@ -53,7 +55,7 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
       </div>
       <div>
         <label>Order Status</label>
-        <input type="text" name="status" value={orderData.status} onChange={handleChange} readOnly={!isEditable} />
+        <input type="text" name="overallStatus" value={orderData.overallStatus} onChange={handleChange} readOnly={!isEditable} />
       </div>
       <div>
       <div>
@@ -88,6 +90,8 @@ const OrderManagement = ({ mode }) => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [filterField, setFilterField] = useState('');
   const [filterValue, setFilterValue] = useState('');
+  const [editingRowIndex, setEditingRowIndex] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
   const { user } = useContext(AuthContext); // Get user info from context
 
   useEffect(() => {
@@ -124,6 +128,25 @@ const OrderManagement = ({ mode }) => {
     }
   };
 
+  const handleEditClick = (rowIndex, currentStatus) => {
+  setEditingRowIndex(rowIndex);
+  setNewStatus(currentStatus);
+};
+
+const handleStatusChange = async (rowIndex, orderId) => {
+  try {
+    await axios.put(`/api/orders/${orderId}`, { overallStatus: newStatus });
+    fetchOrders(); // Refresh orders after update
+    setEditingRowIndex(null); // Exit editing mode
+  } catch (error) {
+    console.error('Error updating order status:', error);
+  }
+};
+
+const handleCancelEdit = () => {
+  setEditingRowIndex(null); // Exit editing mode
+};
+
   const handleSaveOrder = async (orderData) => {
     const method = orderData._id ? 'put' : 'post';
     const url = orderData._id ? `/api/orders/${orderData._id}` : '/api/orders';
@@ -157,14 +180,42 @@ const OrderManagement = ({ mode }) => {
   return orderValue.includes(filterValue.toLowerCase());
 });
 
+const statusOptions = [
+  'Order Confirmed', 
+  'Preparing for Order Pick', 
+  'Order Pick in Progress', 
+  'Ready for Driver Pick Up', 
+  'Out for Delivery', 
+  'Delivered'
+];
 
   const columns = [
   { Header: 'Customer Email', accessor: 'customerEmail' },
-  { Header: 'Order Status', accessor: 'status' },
+    {
+    Header: 'Order Status',
+    accessor: 'overallStatus',
+    Cell: ({ row, rowIndex }) => {
+      if (editingRowIndex === rowIndex) {
+        return (
+          <select
+            value={newStatus}
+            onChange={(e) => setNewStatus(e.target.value)}
+          >
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        );
+      }
+      return row.overallStatus;
+    }
+  },
     {
     Header: 'Order Cost',
     accessor: 'totalCost',
-    Cell: ({ row }) => `$${parseFloat(row.totalCost).toFixed(2)}`
+    Cell: ({ row }) => `$${parseFloat(row.totalCost)}`
   },
   { Header: 'Delivery Address', accessor: 'deliveryAddress' },
     {
@@ -182,16 +233,18 @@ const OrderManagement = ({ mode }) => {
   Header: 'Actions',
   accessor: 'actions', // Assigning a unique accessor for the actions column
   Cell: ({ row }) => {
-    const isDraft = row.status === 'draft';
+    const isDraft = row.overallStatus === 'draft';
     return (
       <>
         <button onClick={() => {
           setCurrentOrder(row);
+          console.log("&&&");
+          console.log(row);
+          console.log("<<<")
+          console.log(currentOrder)
           setShowOrderPopup(true);
         }} className="edit-btn">{isDraft && mode === 'myOrders' ? 'View/Update' : 'View'}</button>
       {mode !== 'myOrders' && <button onClick={() => {
-        console.log(row);
-        console.log(row.original);
         deleteOrder(row._id); // Assuming row.original contains your order data
       }} className="delete-btn">Delete</button>}
       </>
@@ -208,7 +261,7 @@ const OrderManagement = ({ mode }) => {
       <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
         <option value="">Select a field to filter by</option>
         <option value="customerName">Customer Name</option>
-        <option value="status">Order Status</option>
+        <option value="overallStatus">Order Status</option>
         <option value="deliveryAddress">Delivery Address</option>
         <option value="deliveryDate">Delivery Date</option>
     </select>

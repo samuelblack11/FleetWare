@@ -17,7 +17,7 @@ const OrderSummary = () => {
     customerEmail: orderData.customerEmail || '',
     deliveryAddress: orderData.deliveryAddress || '',
     deliveryDate: orderData.deliveryDate || '',
-    status: orderData.status || 'Pending',
+    overallStatus: orderData.overallStatus || 'Order Confirmed',
     items: orderData.items,
     totalCost: orderData.totalCost,
     masterOrderNumber: masterOrderNumber || ''
