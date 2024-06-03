@@ -100,15 +100,15 @@ function App() {
       <Router>
         <LocationListener />
         <div className={`App ${backgroundClass}`}>
-        <div className="header-container">
-          <div className="header-content">
-            <Link to="/">
+          <header className="header">
+            <div className="settings-container">
+              {user && <MenuBar />}
+            </div>
+            <div className="logo-title-container">
               <img src={logo} className="logo" alt="Dujour Logo" />
-            </Link>
-            <h2 className="header-title">Dujour</h2>
-          </div>
-          {user && <MenuBar />} {/* Positioned to the right */}
-        </div>
+              <h2 className="header-title">Dujour</h2>
+            </div>
+          </header>
           <Routes>
             {user ? (
               <>
@@ -118,7 +118,7 @@ function App() {
               </>
             ) : (
               <>
-              <Route path="/" element={<Login />} />
+                <Route path="/" element={<Login />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </>
             )}

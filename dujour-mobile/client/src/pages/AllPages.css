@@ -23,7 +23,7 @@
   --button-color-danger-hover: #bd2130;
   --button-color-info: #007bff;
   --button-color-info-hover: #0056b3;
-  #--table-margin: 20px;
+  --table-margin: 20px;
 }
 
 @keyframes spin {
@@ -46,7 +46,6 @@
   height: 50px;
   animation: spin 2s linear infinite;
 }
-
 
 /* General Styles for Layout */
 .load-optimization-container, .menu-management-container {
@@ -72,9 +71,7 @@
   height: auto; /* This could be adjusted based on your specific needs */
   margin-left: 20px;
   margin-right: 20px;
- 
 }
-
 
 /* Grid Layout for Load Optimization */
 .load-optimization-container {
@@ -97,7 +94,14 @@
   max-height: 90vh;
 }
 
-/* Table Styles */
+.table-container {
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  position: relative; /* Needed for JavaScript centering */
+  width: 100%;
+  max-width: 100%;
+}
+
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -109,6 +113,7 @@ th, td {
   border: 1px solid var(--border-color);
   padding: 8px;
   text-align: center;
+  position: relative;
 }
 
 th {
@@ -117,6 +122,86 @@ th {
 
 tr:nth-child(even) {
   background-color: var(--background-color-light);
+}
+
+.cell-header {
+  display: block;
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+/* Responsive Table */
+@media (max-width: 768px) {
+  table {
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 6px;
+  }
+
+  .add-button {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+
+  .hide-on-mobile {
+    display: none;
+  }
+}
+
+/* Stacked rows for small screens */
+@media (max-width: 480px) {
+  table {
+    display: block;
+  }
+
+  thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  th {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  tr {
+    border: 1px solid var(--border-color);
+    margin-bottom: 10px;
+    display: block;
+    padding: 10px;
+    clear: both;
+  }
+
+  td {
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    padding-left: 50%;
+    text-align: center;  /* Center align text */
+    display: block;
+    padding: 8px 0;
+    min-height: 30px;
+  }
+
+  td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    text-align: left;  /* Ensure the label text is left-aligned */
+    width: 45%;  /* Reserve space for the label */
+  }
+
+  .cell-header {
+    display: block;
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 2px;
+  }
 }
 
 /* Popup Styles */
@@ -233,4 +318,76 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Pick View Specific Styles */
+.pick-view-container {
+  padding: var(--section-padding);
+}
+
+@media (max-width: 768px) {
+  .pick-view-container {
+    padding: 10px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 6px;
+  }
+
+  .add-button {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+}
+
+/* Stacked rows for small screens */
+@media (max-width: 480px) {
+  table {
+    display: block;
+  }
+
+  thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  th {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  tr {
+    border: 1px solid var(--border-color);
+    margin-bottom: 10px;
+    display: block;
+    padding: 10px;
+    clear: both;
+  }
+
+  td {
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    padding-left: 50%;
+    text-align: center;  /* Center align text */
+    display: block;
+    padding: 8px 0;
+    min-height: 30px;
+  }
+
+
+  .cell-header {
+    display: block;
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 2px;
+  }
 }

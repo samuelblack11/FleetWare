@@ -1,8 +1,40 @@
 // ReusableReactComponents.js
 import React from 'react';
 import logo from '../assets/logo128.png';
+import { useEffect } from 'react';
+
+
+export const useBounceBack = () => {
+  useEffect(() => {
+    const handleBounceBack = () => {
+      const container = document.querySelector('.table-container');
+      if (container) {
+        const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+        // If user scrolls left or right, bring them back to the center
+        if (container.scrollLeft !== 0) {
+          container.scrollLeft = 0;
+        }
+      }
+    };
+
+    const container = document.querySelector('.table-container');
+    if (container) {
+      container.addEventListener('scroll', handleBounceBack);
+    }
+
+    // Cleanup event listener on unmount
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleBounceBack);
+      }
+    };
+  }, []);
+};
 
 export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
+    useBounceBack();
+
   return (
     <table>
       <thead>
@@ -18,10 +50,11 @@ export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, full
             {columns.map((column, index) => {
               const accessor = column.accessor || `static-${index}`;
               const cellKey = `${row._id}-${accessor}`;
-              const isFullyPicked = fullyPickedOrders.includes(row.masterOrderNumber.toString()); // Convert to string for comparison
-              const cellStyle = (accessor === 'masterOrderNumber' && isFullyPicked) ? { backgroundColor: 'lightgreen' } : {}; // Apply light green color if fully picked and accessor is 'masterOrderNumber'
+              const isFullyPicked = fullyPickedOrders.includes(row.masterOrderNumber.toString());
+              const cellStyle = (accessor === 'masterOrderNumber' && isFullyPicked) ? { backgroundColor: 'lightgreen' } : {};
               return (
                 <td key={cellKey} style={cellStyle}>
+                  <span className="cell-header">{column.Header}</span>
                   {column.Cell 
                     ? column.Cell({ row, handleEditClick, deleteCargo }) 
                     : accessor.startsWith('static')

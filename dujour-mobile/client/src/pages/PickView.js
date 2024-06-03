@@ -13,6 +13,26 @@ function PickView() {
   const [fullyPickedOrders, setFullyPickedOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
 
+  const handleBounceBack = () => {
+  const container = document.querySelector('.table-container');
+  const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+  if (container.scrollLeft > 0) {
+    container.scrollLeft = 0;
+  } else if (container.scrollLeft < maxScrollLeft) {
+    container.scrollLeft = maxScrollLeft;
+  }
+};
+
+useEffect(() => {
+  const container = document.querySelector('.table-container');
+  container.addEventListener('scroll', handleBounceBack);
+
+  return () => {
+    container.removeEventListener('scroll', handleBounceBack);
+  };
+}, []);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user || !user._id) { // Assuming user.id is the driver's ID
@@ -122,28 +142,49 @@ const updateCompletedOrders = (items) => {
     return `${month}/${day}/${year}`;
   }
 
-  const columns = [
-    { Header: 'Location #', accessor: 'vendorLocationNumber' },
-    { Header: 'Farm Name', accessor: 'farmName' },
-    { Header: 'Item Name', accessor: 'itemName' },
-    { Header: 'Quantity', accessor: 'quantity' },
-    { Header: 'Order #', accessor: 'masterOrderNumber' },
-    {
-      Header: 'Status',
-      accessor: 'status',
-      Cell: ({ row }) => (
-        <span>{row.status}</span>
-      )
-    },
+
+
+const columns = [
+  {
+    Header: 'Farm Name (Location #)',
+    Cell: ({ row }) => (
+      <span data-label="Farm Name (Location #)">{`${row.farmName} (${row.vendorLocationNumber})`}</span>
+    )
+  },
+  { 
+    Header: 'Item Name', 
+    accessor: 'itemName', 
+    Cell: ({ row }) => <span data-label="Item Name">{row.itemName}</span> 
+  },
+  { 
+    Header: 'Quantity', 
+    accessor: 'quantity', 
+    Cell: ({ row }) => <span data-label="Quantity">{row.quantity}</span> 
+  },
+  { 
+    Header: 'Order #', 
+    accessor: 'masterOrderNumber', 
+    Cell: ({ row }) => <span data-label="Order #">{row.masterOrderNumber}</span> 
+  },
+  {
+    Header: 'Status',
+    accessor: 'status',
+    Cell: ({ row }) => (
+      <span data-label="Status">{row.status}</span>
+    )
+  },
   {
     Header: 'Actions',
     Cell: ({ row }) => (
-      <button className="add-button" onClick={() => handleStatusUpdate(row)}>
+      <button className="add-button" onClick={() => handleStatusUpdate(row)} data-label="Actions">
         {row.status === 'Picked' ? 'Revert Status' : 'Pick Item'}
       </button>
     )
   }
 ];
+
+
+
 
   const completedOrdersColumns = [
     { Header: 'Order #', accessor: 'masterOrderNumber' },
@@ -159,17 +200,21 @@ const updateCompletedOrders = (items) => {
   ];
 
   return (
-    <div>
-      <h2>Pick Plan for {reformatDate(formattedDate)}</h2>
-      {pickPlanDetails ? (
+  <div className="pick-view-container">
+    <h2>Pick Plan for {reformatDate(formattedDate)}</h2>
+    {pickPlanDetails ? (
+      <div className="table-container">
         <GenericTable data={pickPlanDetails.items} columns={columns} fullyPickedOrders={fullyPickedOrders} />
-      ) : (
-        <p>No pick plan available for this date.</p>
-      )}
-      <h2>Completed Orders</h2>
+      </div>
+    ) : (
+      <p>No pick plan available for this date.</p>
+    )}
+    <h2>Completed Orders</h2>
+    <div className="table-container">
       <GenericTable data={completedOrders} columns={completedOrdersColumns} />
     </div>
+  </div>
   );
-}
+  }
 
 export default PickView;
