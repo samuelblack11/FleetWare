@@ -99,7 +99,20 @@ router.get('/', async (req, res) => {
               $gte: startOfEstDay,
               $lte: endOfEstDay
           }
-      });
+      }).populate({
+            path: 'driver',
+            select: 'name startTime'
+        });
+
+        // Loop through each route and print the datatype of startTime
+        existingRoutes.forEach(route => {
+            console.log('Route ID:', route._id);
+            console.log('startTime:', route.startTime);
+            console.log('Type of startTime:', typeof route.startTime);
+        });
+
+
+
         if (existingRoutes.length > 0) {
             res.json({ exists: true, routes: existingRoutes });
         } else {

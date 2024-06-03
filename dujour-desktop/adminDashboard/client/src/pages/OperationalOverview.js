@@ -47,9 +47,6 @@ const OperationalOverview = () => {
         .slice(0, 5)
         .map(([itemName, quantity]) => ({ itemName, quantity }));
 
-      console.log("||||||||")
-      console.log(pickPlans)
-      console.log("------")
       pickPlans.forEach(pickPlan => {
         if (pickPlan.user && pickPlan.user.name) {
           console.log(`Driver Name: ${pickPlan.user.name}`);
@@ -67,9 +64,12 @@ const OperationalOverview = () => {
 
       const routeStatuses = routes.map(route => ({
         startTime: route.startTime,
-        driver: route.driverId ? route.driverId.name : 'Unassigned',
+        driver: route.driver ? route.driver.name : 'Unassigned',
         stops: route.stops.length
       }));
+
+          console.log("Route Statuses:", routeStatuses);
+
 
       setOverviewData({
         numberOfOrders,
@@ -128,10 +128,49 @@ const OperationalOverview = () => {
   ];
 
   const routeColumns = [
-    { Header: 'Start Time', accessor: row => new Date(row.startTime).toLocaleString() },
+    {
+      Header: 'Start Time',
+      accessor: 'startTime',
+      Cell: ({ row }) => {
+        console.log('Row Data:', row);
+        return formatEST(row.startTime);
+    },
+  },
     { Header: 'Driver', accessor: 'driver' },
     { Header: 'Stops', accessor: 'stops' }
   ];
+
+  const formatEST = (utcDateString) => {
+    // Parse the UTC date string
+    const utcDate = new Date(utcDateString);
+    // Check if the date is valid
+    if (isNaN(utcDate)) {
+      return 'Invalid Date';
+    }
+
+    // Convert to EST (Eastern Standard Time)
+    // Note: toLocaleString with options is used for correct time zone conversion
+    const estDate = new Date(utcDate.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+
+    // Get date components
+    const year = estDate.getFullYear();
+    const month = String(estDate.getMonth() + 1).padStart(2, '0');
+    const day = String(estDate.getDate()).padStart(2, '0');
+
+    // Get time components
+    let hours = estDate.getHours();
+    const minutes = String(estDate.getMinutes()).padStart(2, '0');
+    const seconds = String(estDate.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    hours = String(hours).padStart(2, '0');
+
+    // Format the date and time
+    return `${month}/${day}/${year} ${hours}:${minutes}:${seconds} ${ampm}`;
+  };
+
+
 
   return (
     <div className="operational-overview-container">
