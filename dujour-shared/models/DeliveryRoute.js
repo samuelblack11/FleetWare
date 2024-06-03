@@ -19,7 +19,7 @@ const deliveryRouteSchema = new Schema({
     dropOffTime: Date,
     orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
     customerEmail: String,
-    orderNumber: String,
+    masterOrderNumber: Number,
     status: { type: String, default: 'Scheduled' },
   }],
   status: {

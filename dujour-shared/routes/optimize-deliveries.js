@@ -135,7 +135,7 @@ function optimizeRouteForCluster(clusterId, clusterAssignments, coordinates, ord
   // Map the sorted orders to the required response structure including coordinates
   return sortedOrders.map(order => ({
     customerEmail: order.customerEmail,
-    orderNumber: order.orderNumber,
+    masterOrderNumber: order.masterOrderNumber,
     address: order.deliveryAddress,
     latitude: order.latitude,  // Include latitude in the response
     longitude: order.longitude // Include longitude in the response

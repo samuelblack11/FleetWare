@@ -215,7 +215,7 @@ const statusOptions = [
     {
     Header: 'Order Cost',
     accessor: 'totalCost',
-    Cell: ({ row }) => `$${parseFloat(row.totalCost)}`
+    Cell: ({ row }) => `$${parseFloat(row.totalCost.toFixed(2))}`
   },
   { Header: 'Delivery Address', accessor: 'deliveryAddress' },
     {

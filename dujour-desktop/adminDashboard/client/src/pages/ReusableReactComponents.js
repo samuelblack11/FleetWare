@@ -41,10 +41,10 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
   }
 
   // Helper function to calculate the total cost of an item
-  const calculateItemTotal = (item) => (item.quantity * item.unitCost).toFixed(2);
+  const calculateItemTotal = (item) => (item.quantity * item.item.unitCost).toFixed(2);
 
   // Calculate the total order cost
-  const totalOrderCost = order.items.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2);
+  const totalOrderCost = order.items.reduce((total, item) => total + item.quantity * item.item.unitCost, 0).toFixed(2);
 
   return (
     <div className="popup">

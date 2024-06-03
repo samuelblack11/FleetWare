@@ -129,26 +129,35 @@ const OrderPicking = () => {
   };
 
 
-  const handleSavePickPlan = async () => {
-    setIsLoading(true);
-    try {
-      const date = selectedDate;
-      const pickPlans = pickPlan.map((plan, index) => ({
-        date,
-        items: plan.items,
-        user: selectedUsers[index] || null
-      }));
-      await axios.post('/api/pickPlans', { date, pickPlans });
-      updateOrderStatus(orders, 'Ready for Order Pick');
-      setIsLoading(false);
-      alert('Pick plans saved successfully.');
-      setPlanSaved(true);
-    } catch (error) {
-      console.error('Error saving pick plans:', error);
-      setIsLoading(false);
-      setError('Failed to save pick plans.');
+const handleSavePickPlan = async () => {
+  // Check if every pick plan has a user assigned
+  for (let i = 0; i < pickPlan.length; i++) {
+    if (!selectedUsers[i]) {
+      alert(`Picker ${i + 1} is not assigned. Please assign a picker to each pick plan.`);
+      return;
     }
-  };
+  }
+
+  setIsLoading(true);
+  try {
+    const date = selectedDate;
+    const pickPlans = pickPlan.map((plan, index) => ({
+      date,
+      items: plan.items,
+      user: selectedUsers[index]
+    }));
+    await axios.post('/api/pickPlans', { date, pickPlans });
+    updateOrderStatus(orders, 'Ready for Order Pick');
+    setIsLoading(false);
+    alert('Pick plans saved successfully.');
+    setPlanSaved(true);
+  } catch (error) {
+    console.error('Error saving pick plans:', error);
+    setIsLoading(false);
+    setError('Failed to save pick plans.');
+  }
+};
+
 
   const handleDeletePickPlan = async () => {
     setIsLoading(true);

@@ -113,29 +113,41 @@ router.put('/updatePickStatus', async (req, res) => {
       return res.status(404).json({ message: "Item not found" });
     }
 
+    // Update the item status
     item.status = newStatus;
-    
-    // Update pick plan status
-    if (pickPlan.items.some(item => item.status === 'Picked')) {
-      pickPlan.status = 'Pick In Progress';
-    }
-    if (pickPlan.items.every(item => item.status === 'Picked')) {
-      pickPlan.status = 'Packaged for Delivery';
-    }
 
+    // Save the pick plan after updating the item status
     await pickPlan.save();
 
-    // Update order status
-    const order = await Order.findOne({ masterOrderNumber: item.masterOrderNumber });
-    if (order) {
-      if (pickPlan.items.some(item => item.status === 'Picked')) {
-        order.overallStatus = 'Order Pick in Progress';
-      }
-      if (pickPlan.items.every(item => item.status === 'Picked')) {
-        order.overallStatus = 'Ready for Driver Pickup';
-      }
-      await order.save();
+    // Update pick plan status based on the updated items
+    if (pickPlan.items.some(item => item.status === 'Not Picked')) {
+      pickPlan.status = 'Pick In Progress';
+    } else {
+      pickPlan.status = 'Pick Complete';
     }
+
+    // Save the pick plan after updating the pick plan status
+    await pickPlan.save();
+
+    // Find the order associated with this item
+    const order = await Order.findOne({ masterOrderNumber: item.masterOrderNumber });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Find all pick plans associated with this order
+    const allPickPlansForOrder = await PickPlan.find({ 'items.masterOrderNumber': item.masterOrderNumber });
+    const allItemsForOrder = allPickPlansForOrder.flatMap(pp => pp.items);
+
+    // Update the order status based on the statuses of all items across all pick plans
+    if (allItemsForOrder.some(item => item.status === 'Not Picked')) {
+      order.overallStatus = 'Order Pick in Progress';
+    } else {
+      order.overallStatus = 'Order Pick Complete';
+    }
+
+    // Save the order after updating the order status
+    await order.save();
 
     res.status(200).json({ message: "Item status updated successfully", pickPlan });
   } catch (error) {
@@ -143,6 +155,7 @@ router.put('/updatePickStatus', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 
 

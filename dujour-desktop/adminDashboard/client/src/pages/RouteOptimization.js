@@ -47,6 +47,8 @@ const RouteOptimization = () => {
       } else {
         try {
           const routePlanDetails = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
+          console.log("@@@@@")
+          console.log(routePlanDetails.data)
           setRouteDetails(routePlanDetails.data);
           setOrders([]);
         } catch (error) {
@@ -178,11 +180,14 @@ useEffect(() => {
           customerEmail: stop.customerEmail,
           masterOrderNumber: stop.masterOrderNumber,
           latitude: stop.latitude,
-          longitude: stop.longitude
+          longitude: stop.longitude,
+          //user: selectedUsers[index] || null
         })),
         startTime: startTimeIso
       }));
 
+      console.log("ROUTES....")
+      console.log(routes)
       await axios.post('/api/deliveryRoutes', { routes });
       setRoutePlanExists(true);
       setRouteDetails({ routes });
@@ -232,10 +237,15 @@ useEffect(() => {
 
 const handleConfirmDriverAssignments = async () => {
   setIsLoading(true);
-  const updatedRoutes = routeDetails.routes.map((route, index) => ({
-    ...route,
-    driver: users.find(user => user._id === selectedUsers[index])._id // Find the user ID by ID and set it as driver
-  }));
+  console.log(selectedUsers);
+
+  const updatedRoutes = routeDetails.routes.map((route, index) => {
+    const user = users.find(user => user._id === selectedUsers[index]);
+    return {
+      ...route,
+      driver: user ? user._id : null // Ensure we have a valid user before accessing _id
+    };
+  });
 
   console.log("Updated Routes:");
   console.log(updatedRoutes);
@@ -253,6 +263,7 @@ const handleConfirmDriverAssignments = async () => {
     alert('Failed to confirm user assignments.');
   }
 };
+
 
 
 

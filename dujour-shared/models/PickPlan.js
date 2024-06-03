@@ -17,7 +17,7 @@ const pickPlanSchema = new Schema({
   }],
   status: {
     type: String,
-    enum: ['Pick Plan Created', 'Pick In Progress', 'Packaged for Delivery'],
+    enum: ['Pick Plan Created', 'Pick In Progress', 'Pick Complete'],
     default: 'Pick Plan Created'
   },
   user: { type: Schema.Types.ObjectId, ref: 'User' },

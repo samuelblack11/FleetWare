@@ -10,13 +10,10 @@ router.put('/updateUsers', async (req, res) => {
   try {
     console.log("Trying to update user....");
     console.log(updatedRoutes)
-    // Execute all updates concurrently
-    await Promise.all(updatedRoutes.map(route =>
-      DeliveryRoute.updateOne(
-        { _id: route._id },
-        { $set: { driver: route.driver } } // Update the driver field with the user object
-      )
-    ));
+
+    for (const route of updatedRoutes) {
+      await DeliveryRoute.updateOne({ _id: route._id }, { driver: route.driver });
+    }
     
     res.status(200).json({ message: "User assignments updated successfully." });
   } catch (error) {
@@ -25,11 +22,8 @@ router.put('/updateUsers', async (req, res) => {
   }
 });
 
-
-
 router.post('/', async (req, res) => {
   const { routes } = req.body;
-
   try {
   const transformedRoutes = routes.map(route => {
     const { startTime, stops } = route;
@@ -37,7 +31,7 @@ router.post('/', async (req, res) => {
       // Ensure this matches your frontend submission structure
       address: stop.address,
       customerEmail: stop.customerEmail,
-      orderNumber: stop.orderNumber,
+      masterOrderNumber: stop.masterOrderNumber,
       latitude: stop.latitude,
       longitude: stop.longitude
     }));
