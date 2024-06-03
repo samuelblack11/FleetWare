@@ -9,6 +9,7 @@ const pickPlanSchema = new Schema({
     vendorLocationNumber: Number,
     farmName: String,
     masterOrderNumber: Number,
+    orderID: { type: Schema.Types.ObjectId, ref: 'Order' },
     status: {
       type: String,
       enum: ['Not Picked', 'Picked'],

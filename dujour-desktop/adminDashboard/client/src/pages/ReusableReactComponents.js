@@ -2,7 +2,7 @@
 import React from 'react';
 import logo from '../assets/logo128.png';
 
-export const GenericTable = ({ data, columns, handleEditClick, deleteCargo }) => {
+export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
   return (
     <table>
       <thead>
@@ -18,8 +18,10 @@ export const GenericTable = ({ data, columns, handleEditClick, deleteCargo }) =>
             {columns.map((column, index) => {
               const accessor = column.accessor || `static-${index}`;
               const cellKey = `${row._id}-${accessor}`;
+              const isFullyPicked = fullyPickedOrders.includes(row.masterOrderNumber);
+              const cellStyle = isFullyPicked ? { backgroundColor: 'lightgreen' } : {}; // Apply light green color if fully picked
               return (
-                <td key={cellKey}>
+                <td key={cellKey} style={cellStyle}>
                   {column.Cell 
                     ? column.Cell({ row, handleEditClick, deleteCargo }) 
                     : accessor.startsWith('static')
@@ -34,6 +36,7 @@ export const GenericTable = ({ data, columns, handleEditClick, deleteCargo }) =>
     </table>
   );
 };
+
 
 export const DetailedOrderPopup = ({ show, order, onClose }) => {
   if (!show) {

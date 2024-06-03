@@ -20,6 +20,15 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { date, pickPlans } = req.body;
+    console.log("Received pick plans:", pickPlans);
+
+    // Loop through each pick plan and each item to print the orderId
+    pickPlans.forEach(plan => {
+      plan.items.forEach(item => {
+        console.log(`Order ID for item ${item.itemName}: ${item.orderID}`);
+      });
+    });
+
     await PickPlan.deleteMany({ date }); // Remove existing plans for the date
     const newPickPlans = pickPlans.map(plan => new PickPlan(plan));
     await PickPlan.insertMany(newPickPlans);
@@ -29,6 +38,7 @@ router.post('/', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
 
 // Update pick plan users
 router.put('/updateUsers', async (req, res) => {
@@ -103,21 +113,27 @@ router.put('/updatePickStatus', async (req, res) => {
   const { pickPlanId, itemId, newStatus } = req.body;
 
   try {
+    console.log(`Updating pick plan ID: ${pickPlanId}, item ID: ${itemId}, new status: ${newStatus}`);
+    
     const pickPlan = await PickPlan.findById(pickPlanId);
     if (!pickPlan) {
+      console.log("Pick Plan not found");
       return res.status(404).json({ message: "Pick Plan not found" });
     }
 
     const item = pickPlan.items.id(itemId);
     if (!item) {
+      console.log("Item not found in Pick Plan");
       return res.status(404).json({ message: "Item not found" });
     }
 
     // Update the item status
     item.status = newStatus;
+    console.log(`Updated item status to: ${newStatus}`);
 
     // Save the pick plan after updating the item status
     await pickPlan.save();
+    console.log("Pick Plan saved after item status update");
 
     // Update pick plan status based on the updated items
     if (pickPlan.items.some(item => item.status === 'Not Picked')) {
@@ -125,19 +141,26 @@ router.put('/updatePickStatus', async (req, res) => {
     } else {
       pickPlan.status = 'Pick Complete';
     }
+    console.log(`Updated Pick Plan status to: ${pickPlan.status}`);
 
     // Save the pick plan after updating the pick plan status
     await pickPlan.save();
+    console.log("Pick Plan saved after status update");
 
     // Find the order associated with this item
     const order = await Order.findOne({ masterOrderNumber: item.masterOrderNumber });
     if (!order) {
+      console.log("Order not found");
       return res.status(404).json({ message: "Order not found" });
     }
 
     // Find all pick plans associated with this order
     const allPickPlansForOrder = await PickPlan.find({ 'items.masterOrderNumber': item.masterOrderNumber });
-    const allItemsForOrder = allPickPlansForOrder.flatMap(pp => pp.items);
+    console.log(`All pick plans for order (masterOrderNumber: ${item.masterOrderNumber}):`, allPickPlansForOrder);
+
+    // Transform allPickPlansForOrder to get all items associated with the order
+    const allItemsForOrder = allPickPlansForOrder.flatMap(pp => pp.items.filter(i => i.masterOrderNumber === item.masterOrderNumber));
+    console.log(`All items for order:`, allItemsForOrder);
 
     // Update the order status based on the statuses of all items across all pick plans
     if (allItemsForOrder.some(item => item.status === 'Not Picked')) {
@@ -145,9 +168,11 @@ router.put('/updatePickStatus', async (req, res) => {
     } else {
       order.overallStatus = 'Order Pick Complete';
     }
+    console.log(`Updated Order overall status to: ${order.overallStatus}`);
 
     // Save the order after updating the order status
     await order.save();
+    console.log("Order saved after status update");
 
     res.status(200).json({ message: "Item status updated successfully", pickPlan });
   } catch (error) {
@@ -155,10 +180,6 @@ router.put('/updatePickStatus', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-
-
-
 
 
 module.exports = router;

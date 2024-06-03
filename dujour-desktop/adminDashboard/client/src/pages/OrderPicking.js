@@ -67,7 +67,6 @@ const OrderPicking = () => {
     try {
       const response = await axios.get('/api/users');
       setUsers(response.data);
-      console.log(`USERS....${response.data}`);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to fetch users.');
@@ -80,7 +79,8 @@ const OrderPicking = () => {
     const allItems = orders.flatMap(order => 
       order.items.map(item => ({
         ...item,
-        masterOrderNumber: order.masterOrderNumber
+        masterOrderNumber: order.masterOrderNumber,
+        orderID: order._id
       }))
     );
     const sortedItems = allItems.sort((a, b) => a.vendorLocationNumber - b.vendorLocationNumber);
@@ -117,9 +117,6 @@ const OrderPicking = () => {
 
  const updateOrderStatus = async (orders, status) => {
     try {
-      console.log("???????")
-      console.log(status)
-      console.log(orders)
       await Promise.all(orders.map(order =>
         axios.put(`/api/orders/${order._id}`, { overallStatus: status })
       ));
