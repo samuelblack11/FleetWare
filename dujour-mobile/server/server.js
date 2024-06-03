@@ -2,13 +2,14 @@ const express = require('express');
 const mongoose = require('../../dujour-shared/node_modules/mongoose');
 const config = require('../../dujour-shared/config');
 const cors = require('cors');
+const path = require('path');
 const app = express();
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.json());
 app.use(cors());
-const port = process.env.PORT || 3004; // Change 3001 to your preferred port
+const port = process.env.PORT || 3004;
 
 // URL encode the password to handle special characters
-const encodedUsername = encodeURIComponent(config.mongoUserName); // URL encode the username if needed
+const encodedUsername = encodeURIComponent(config.mongoUserName);
 const encodedPassword = encodeURIComponent(config.mongoPwd);
 
 // Construct the MongoDB URI using imported configuration
@@ -37,32 +38,8 @@ mongoose.connect(uri, { useNewUrlParser: true})
     process.exit(1); // Exit the process to avoid running the server without a database connection
   });
 
-// Function to check connection status
-function checkDbConnection() {
-  const state = mongoose.connection.readyState;
-  console.log(`Checking DB connection: State ${state}`);
-  switch (state) {
-    case 0:
-      console.log('Database disconnected.');
-      break;
-    case 1:
-      console.log('Database connected.');
-      break;
-    case 2:
-      console.log('Database connecting...');
-      break;
-    case 3:
-      console.log('Database disconnecting...');
-      break;
-    default:
-      console.log('Unknown database connection state.');
-      break;
-  }
-}
-
-// Set interval to check database connection every 5 seconds
-//setInterval(checkDbConnection, 5000);
-
+app.use(express.static(path.join(__dirname, 'client/build')));
+app.use(express.static(path.join(__dirname, 'client/public')));
 
 // Import and use routes
 const orderRoutes = require('../../dujour-shared/routes/orders');

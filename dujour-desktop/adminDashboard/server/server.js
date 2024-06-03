@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('../../../dujour-shared/node_modules/mongoose');
 const config = require('../../../dujour-shared/config');
 const cors = require('cors');
+const path = require('path');  // Import the 'path' module here
 const app = express();
 const port = process.env.PORT || 3000; // Change 3001 to your preferred port
 app.use(cors());
@@ -36,6 +37,9 @@ mongoose.connect(uri, { useNewUrlParser: true})
     console.error('Could not connect to MongoDB...', err);
     process.exit(1); // Exit the process to avoid running the server without a database connection
   });
+
+app.use(express.static(path.join(__dirname, 'client/build')));
+app.use(express.static(path.join(__dirname, 'client/public')));
 
 // Import and use routes
 const farmRoutes = require('../../../dujour-shared/routes/farms');

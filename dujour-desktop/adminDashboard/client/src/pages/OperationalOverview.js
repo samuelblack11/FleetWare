@@ -4,7 +4,9 @@ import { GenericTable } from './ReusableReactComponents';
 import './AllPages.css';
 
 const OperationalOverview = () => {
-  const [selectedDate, setSelectedDate] = useState('');
+  const today = new Date();
+  const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+  const [selectedDate, setSelectedDate] = useState(formattedDate);
   const [overviewData, setOverviewData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,8 +51,8 @@ const OperationalOverview = () => {
       console.log(pickPlans)
       console.log("------")
       pickPlans.forEach(pickPlan => {
-        if (pickPlan.driver && pickPlan.driver.Name) {
-          console.log(`Driver Name: ${pickPlan.driver.Name}`);
+        if (pickPlan.user && pickPlan.user.name) {
+          console.log(`Driver Name: ${pickPlan.user.name}`);
         } else {
           console.log('Driver Name: Unassigned');
         }
@@ -59,7 +61,7 @@ const OperationalOverview = () => {
 
       const pickPlanStatuses = pickPlans.map(plan => ({
         date: plan.date,
-        driver: plan.driver ? plan.driver.Name : 'Unassigned',
+        user: plan.user ? plan.user.name : 'Unassigned',
         status: plan.status
       }));
 
@@ -115,10 +117,10 @@ const OperationalOverview = () => {
     }
   },
     {
-    Header: 'Driver',
-    accessor: 'driver',
+    Header: 'Picker',
+    accessor: 'user',
     Cell: ({ row }) => {
-      return row.driver ? row.driver : 'Unassigned';
+      return row.user ? row.user : 'Unassigned';
     }
   },
 

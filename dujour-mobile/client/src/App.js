@@ -105,7 +105,7 @@ function App() {
             <Link to="/">
               <img src={logo} className="logo" alt="Dujour Logo" />
             </Link>
-            <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
+            <h2 className="header-title">Dujour</h2>
           </div>
           {user && <MenuBar />} {/* Positioned to the right */}
         </div>
