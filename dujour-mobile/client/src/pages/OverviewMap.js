@@ -70,51 +70,49 @@ const OverviewMap = ({ stops }) => {
     }
   };
 
-  useEffect(() => {
-    loader.load().then(() => {
-      const map = new window.google.maps.Map(document.getElementById("map"), {
-        center: center,
-        zoom: 10
-      });
-
-      mapRef.current = map;
-      loadMarkers(map);
-
-      if (stops && stops.length > 0) {
-        const directionsService = new window.google.maps.DirectionsService();
-        const waypoints = stops.map(stop => ({
-          location: { lat: stop.latitude, lng: stop.longitude },
-          stopover: true
-        }));
-
-        directionsService.route(
-          {
-            origin: center,
-            destination: waypoints[waypoints.length - 1].location,
-            waypoints: waypoints.slice(0, -1),
-            travelMode: window.google.maps.TravelMode.DRIVING
-          },
-          (result, status) => {
-            if (status === window.google.maps.DirectionsStatus.OK) {
-              setDirections(result);
-              if (!directionsRendererRef.current) {
-                directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
-                  map: map,
-                  directions: result
-                });
-              } else {
-                directionsRendererRef.current.setDirections(result);
-              }
-            } else {
-              console.error(`Error fetching directions ${result}`);
-            }
-          }
-        );
-      }
-    }).catch(e => {
-      console.error('Error loading Google Maps API:', e);
+useEffect(() => {
+  loader.load().then(() => {
+    const map = new window.google.maps.Map(document.getElementById("map"), {
+      center: center,
+      zoom: 10
     });
-  }, [stops]);
+
+    mapRef.current = map;
+    loadMarkers(map);
+
+    if (stops && stops.length > 0) {
+      const directionsService = new window.google.maps.DirectionsService();
+      const directionsRenderer = new window.google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(map);
+      directionsRendererRef.current = directionsRenderer;
+
+      const waypoints = stops.map(stop => ({
+        location: { lat: stop.latitude, lng: stop.longitude },
+        stopover: true
+      }));
+
+      directionsService.route(
+        {
+          origin: center,
+          destination: waypoints[waypoints.length - 1].location,
+          waypoints: waypoints.slice(0, -1),
+          travelMode: window.google.maps.TravelMode.DRIVING
+        },
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK) {
+            setDirections(result);
+            directionsRenderer.setDirections(result);
+          } else {
+            console.error(`Error fetching directions ${result}`);
+          }
+        }
+      );
+    }
+  }).catch(e => {
+    console.error('Error loading Google Maps API:', e);
+  });
+}, [stops]); // Adding stops to dependency array
+
 
   return (
     <div style={containerStyle} id="map">
