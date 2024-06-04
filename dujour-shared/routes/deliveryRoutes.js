@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const DeliveryRoute = require('../models/DeliveryRoute'); // Ensure this path matches where your Route model is saved
-const User = require('../models/User'); // Make sure the path is correct
+const DeliveryRoute = require('../models/DeliveryRoute');
+const User = require('../models/User');
 const mongoose = require('mongoose');
-const Order = require('../models/Order'); // Make sure the path is correct
+const Order = require('../models/Order');
 
 // PUT endpoint to update user assignments for routes
 router.put('/updateUsers', async (req, res) => {
@@ -153,10 +153,7 @@ router.get('/specificRoute', async (req, res) => {
 
         // Lookup for existing deliveryRoutes
         const existingDeliveryRoutes = await DeliveryRoute.find(query).populate('driver');
-        console.log("existingDeliveryRoutes....")
-        console.log(existingDeliveryRoutes);
         if (existingDeliveryRoutes.length > 0) {
-            console.log('Routes found:', existingDeliveryRoutes);
             res.json({ exists: true, routes: existingDeliveryRoutes });
         } else {
             console.log('No deliveryRoutes found for this user on the specified date.');

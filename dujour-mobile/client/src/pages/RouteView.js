@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
-import MapComponent from './MapComponent';
+import OverviewMap from './OverviewMap';
+import InteractiveMap from './InteractiveMap';
 import { GenericTable } from './ReusableReactComponents';
 
 function RouteView() {
@@ -16,12 +17,8 @@ function RouteView() {
   const [routePlanExists, setRoutePlanExists] = useState(false);
   const [deliveredOrders, setDeliveredOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
-
-  const whLocation = {
-    latitude: 38.804840,
-    longitude: -77.043430,
-    address: "301 King St, Alexandria, VA 22314"
-  };
+  const [showMap, setShowMap] = useState(false);
+  const [currentStop, setCurrentStop] = useState(null);
 
   const handleBounceBack = () => {
     const container = document.querySelector('.table-container');
@@ -82,62 +79,7 @@ function RouteView() {
 
   useEffect(() => {}, [routeDetails]);
 
-
-const handleStatusUpdate = async (stop) => {
-  try {
-    // Update all stops to "Out for Delivery"
-    const updatedStops = routeDetails.routes[0].stops.map(s => ({
-      ...s,
-      status: 'Out for Delivery'
-    }));
-
-    const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
-      deliveryRouteId: routeDetails.routes[0]._id,
-      stops: updatedStops
-    });
-
-    console.log('Status update response:', response.data);
-    setRouteDetails({ routes: [response.data.deliveryRoute] });
-    updateDeliveredOrders(response.data.deliveryRoute.stops);
-    updateCompletedOrders(response.data.deliveryRoute.stops);
-
-    // Open navigation to the address of the clicked stop
-    const navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
-    window.open(navigationUrl, '_blank');
-  } catch (error) {
-    console.error('Error updating delivery status:', error);
-  }
-};
-
- {/*} const handleDeliverPackage = async (stop) => {
-    try {
-      // Prompt the user to scan the package and confirm delivery
-      const barcode = prompt('Scan the package barcode:');
-      if (barcode) {
-        const confirmation = confirm('Do you want to deliver the package?');
-        if (confirmation) {
-          // Update the stop status to "Delivered"
-          const updatedStops = routeDetails.routes[0].stops.map(s => 
-            s._id === stop._id ? { ...s, status: 'Delivered' } : s
-          );
-
-          const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
-            deliveryRouteId: routeDetails.routes[0]._id,
-            stops: updatedStops
-          });
-
-          console.log('Delivery status update response:', response.data);
-          setRouteDetails({ routes: [response.data.deliveryRoute] });
-          updateDeliveredOrders(response.data.deliveryRoute.stops);
-          updateCompletedOrders(response.data.deliveryRoute.stops);
-        }
-      }
-    } catch (error) {
-      console.error('Error delivering package:', error);
-    }
-  }; */}
-
-    const updateDeliveredOrders = (stops) => {
+  const updateDeliveredOrders = (stops) => {
     const deliveredOrders = stops.reduce((acc, stop) => {
       acc[stop.masterOrderNumber] = acc[stop.masterOrderNumber] || [];
       acc[stop.masterOrderNumber].push(stop.status === 'Delivered');
@@ -152,6 +94,68 @@ const handleStatusUpdate = async (stop) => {
     console.log("Fully Delivered Orders updated:", fullyDelivered);
   };
 
+  const handleStatusUpdate = async (stop) => {
+    try {
+      let updatedStops;
+      if (stop.status === 'Out for Delivery') {
+        updatedStops = routeDetails.routes[0].stops.map(s => 
+          s._id === stop._id ? { ...s, status: 'Scheduled' } : s
+        );
+      } else {
+        updatedStops = routeDetails.routes[0].stops.map(s => ({
+          ...s,
+          status: 'Out for Delivery'
+        }));
+      }
+
+      const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+        deliveryRouteId: routeDetails.routes[0]._id,
+        stops: updatedStops
+      });
+
+      console.log('Status update response:', response.data);
+      setRouteDetails({ routes: [response.data.deliveryRoute] });
+      updateDeliveredOrders(response.data.deliveryRoute.stops);
+      updateCompletedOrders(response.data.deliveryRoute.stops);
+
+      if (stop.status !== 'Out for Delivery') {
+        // Open navigation to the address of the clicked stop
+        setShowMap(true);
+        setCurrentStop(stop);
+      }
+    } catch (error) {
+      console.error('Error updating delivery status:', error);
+    }
+  };
+
+  const handleBack = () => {
+    setShowMap(false);
+    setCurrentStop(null);
+  };
+
+  const handleDeliverPackage = async () => {
+    try {
+      // Deliver the package logic here
+      console.log(`Delivering package for stop ${currentStop._id}`);
+      // Update stop status to 'Delivered'
+      const updatedStops = routeDetails.routes[0].stops.map(s => 
+        s._id === currentStop._id ? { ...s, status: 'Delivered' } : s
+      );
+
+      const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+        deliveryRouteId: routeDetails.routes[0]._id,
+        stops: updatedStops
+      });
+
+      console.log('Delivery status update response:', response.data);
+      setRouteDetails({ routes: [response.data.deliveryRoute] });
+      updateDeliveredOrders(response.data.deliveryRoute.stops);
+      updateCompletedOrders(response.data.deliveryRoute.stops);
+      setShowMap(false);
+    } catch (error) {
+      console.error('Error delivering package:', error);
+    }
+  };
 
   const updateCompletedOrders = (stops) => {
     const deliveredOrders = stops.reduce((acc, stop) => {
@@ -207,18 +211,8 @@ const handleStatusUpdate = async (stop) => {
       Cell: ({ row }) => (
         <div data-label="Actions">
           <button className="add-button" onClick={() => handleStatusUpdate(row)}>
-            Navigate
+            {row.status === 'Out for Delivery' ? 'Revert Status' : 'Navigate'}
           </button>
-          {row.status === 'Out for Delivery' && (
-            <button className="add-button" onClick={() => handleStatusUpdate(row)}>
-              Deliver Package
-            </button>
-          )}
-          {row.status === 'Delivered' && (
-            <button className="add-button" onClick={() => handleStatusUpdate(row)}>
-              Revert Status
-            </button>
-          )}
         </div>
       )
     }
@@ -226,19 +220,31 @@ const handleStatusUpdate = async (stop) => {
 
   return (
     <div>
-      <>
-        <h2>Route Plan for {reformatDate(formattedDate)}</h2>
-        <MapComponent whLocation={whLocation} routes={routeDetails.routes} />
-        {routeDetails.routes.length > 0 ? (
-          <div className="table-container">
-            <GenericTable data={routeDetails.routes[0].stops} columns={columns} fullyPickedOrders={deliveredOrders} />
-          </div>
-        ) : (
-          <p>No delivery route available for this date.</p>
-        )}
-      </>
+      {showMap ? (
+        <InteractiveMap 
+          stop={currentStop}
+          stops={routeDetails.routes[0]?.stops || []}
+          onBack={handleBack}
+          onDeliver={handleDeliverPackage}
+        />
+      ) : (
+        <>
+          <h2>Route Plan for {reformatDate(formattedDate)}</h2>
+          {routeDetails.routes.length > 0 ? (
+            <>
+              <OverviewMap stops={routeDetails.routes[0].stops} />
+              <div className="table-container">
+                <GenericTable data={routeDetails.routes[0].stops} columns={columns} fullyPickedOrders={deliveredOrders} />
+              </div>
+            </>
+          ) : (
+            <p>No delivery route available for this date.</p>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
 export default RouteView;
+

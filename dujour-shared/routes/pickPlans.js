@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const PickPlan = require('../models/PickPlan'); // Assuming you have a PickPlan model
-const User = require('../models/User'); // Assuming you have a User model
-const Order = require('../models/Order'); // Assuming you have a User model
+const PickPlan = require('../models/PickPlan');
+const User = require('../models/User');
+const Order = require('../models/Order');
 
 // Get pick plans by date
 router.get('/', async (req, res) => {
@@ -20,7 +20,6 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { date, pickPlans } = req.body;
-    console.log("Received pick plans:", pickPlans);
 
     // Loop through each pick plan and each item to print the orderId
     pickPlans.forEach(plan => {
@@ -73,7 +72,6 @@ router.get('/specificPickPlan', async (req, res) => {
         // Lookup for the user by userId
         console.log("Attempting to find user with ID:", userId);
         const user = await User.findById(userId);
-        console.log("User found:", user ? user : "No user found with the specified ID.");
 
         if (!user) {
             return res.status(404).json({ message: "User not found with the given ID" });
@@ -94,8 +92,6 @@ router.get('/specificPickPlan', async (req, res) => {
 
         // Lookup for existing pickPlans
         const existingPickPlans = await PickPlan.find(query).populate('user');
-        console.log("existingPickPlans....")
-        console.log(existingPickPlans);
         if (existingPickPlans.length > 0) {
             console.log('Routes found:', existingPickPlans);
             res.json({ exists: true, pickPlans: existingPickPlans });

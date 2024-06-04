@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { GoogleMap, LoadScript, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
-import './AllPages.css';
+const config = require('../config');
 
 const containerStyle = {
   width: '100%',
-  height: '400px'
+  height: '100vh',
+  position: 'relative'
 };
 
 const center = {
@@ -12,13 +13,13 @@ const center = {
   lng: -77.043430
 };
 
-const MapComponent = ({ stops, onBack, onDeliver }) => {
+const InteractiveMap = ({ stop, stops, onBack, onDeliver }) => {
   const [directions, setDirections] = useState(null);
 
   useEffect(() => {
     if (stops && stops.length > 0) {
       const origin = stops[0];
-      const destination = stops[stops.length - 1];
+      const destination = stop;
       const waypoints = stops.slice(1, -1).map(stop => ({ location: { lat: stop.latitude, lng: stop.longitude } }));
 
       const directionsService = new window.google.maps.DirectionsService();
@@ -38,15 +39,17 @@ const MapComponent = ({ stops, onBack, onDeliver }) => {
         }
       );
     }
-  }, [stops]);
+  }, [stop, stops]);
 
   return (
-    <LoadScript googleMapsApiKey="YOUR_API_KEY">
-      <div style={{ position: 'relative' }}>
+    <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
+      <div style={containerStyle}>
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={center}
           zoom={10}
+          onLoad={(map) => console.log('Map loaded:', map)}
+          onUnmount={(map) => console.log('Map unmounted:', map)}
         >
           {directions && (
             <DirectionsRenderer
@@ -63,4 +66,4 @@ const MapComponent = ({ stops, onBack, onDeliver }) => {
   );
 };
 
-export default MapComponent;
+export default InteractiveMap;
