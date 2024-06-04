@@ -3,6 +3,7 @@ const router = express.Router();
 const DeliveryRoute = require('../models/DeliveryRoute'); // Ensure this path matches where your Route model is saved
 const User = require('../models/User'); // Make sure the path is correct
 const mongoose = require('mongoose');
+const Order = require('../models/Order'); // Make sure the path is correct
 
 // PUT endpoint to update user assignments for routes
 router.put('/updateUsers', async (req, res) => {
@@ -125,59 +126,109 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/specificRoute', async (req, res) => {
-    const { date, email } = req.query;
-
-    console.log(`Received email: ${email} (Type: ${typeof email})`);
-    console.log(`DATE....${date}`);
-    console.log(`EMAIL....${email}`);
-
-    // Ensure the connection is ready
-    if (mongoose.connection.readyState !== 1) {
-        console.error("Database not connected!");
-        return res.status(500).json({ message: "Database not connected" });
-    }
-
-    // Log all users
-    try {
-        const allUsers = await User.find({});
-        console.log('All users:', allUsers.map(user => `${user.name} - ${user.Email}`));
-    } catch (err) {
-        console.error('Error retrieving all users:', err);
-        return res.status(500).json({ message: "Error retrieving all users" });
-    }
+    const { date, userId } = req.query; // Assuming userId is passed as a query parameter
 
     try {
-        console.log("Attempting to find user with email:", email);
-        const user = await User.findOne({ Email: email });
-        console.log("User found:", user ? user : "No user found with the specified email.");
+        // Lookup for the user by userId
+        console.log("Attempting to find user with ID:", userId);
+        const user = await User.findById(userId);
+        console.log("User found:", user ? user : "No user found with the specified ID.");
 
         if (!user) {
-            return res.status(404).json({ message: "User not found with the given email" });
+            return res.status(404).json({ message: "User not found with the given ID" });
         }
 
-        // Construct the query for route lookup
-        let query = { userId: user._id };
+        // Construct the query for deliveryRoute lookup
+        let query = { driver: user._id };
+
         if (date) {
+            // Create a date object for the given date
+            const [year, month, day] = date.split('-').map(Number);
+            const targetDate = new Date(Date.UTC(year, month - 1, day));
             
-            const startOfEstDay = new Date(`${date}T00:00:00-05:00`); // Start of day in EST
-            const endOfEstDay = new Date(`${date}T23:59:59-05:00`); // End of day in EST
-            query.startTime = { $gte: startOfEstDay, $lte: endOfEstDay };
+            // Only consider the date part for the comparison
+            query.createdAt = { $gte: targetDate, $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000) };
+            console.log(`Query date range: ${targetDate.toISOString()} to ${new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString()}`);
         }
 
-        // Lookup for existing routes
-        const existingRoutes = await DeliveryRoute.find(query).populate('userId', 'Email');
-        if (existingRoutes.length > 0) {
-            console.log('Routes found:', existingRoutes);
-            res.json({ exists: true, routes: existingRoutes });
+        // Lookup for existing deliveryRoutes
+        const existingDeliveryRoutes = await DeliveryRoute.find(query).populate('driver');
+        console.log("existingDeliveryRoutes....")
+        console.log(existingDeliveryRoutes);
+        if (existingDeliveryRoutes.length > 0) {
+            console.log('Routes found:', existingDeliveryRoutes);
+            res.json({ exists: true, routes: existingDeliveryRoutes });
         } else {
-            console.log('No routes found for this user on the specified date.');
-            res.json({ exists: false, message: "No routes found for this user on the specified date." });
+            console.log('No deliveryRoutes found for this user on the specified date.');
+            res.json({ exists: false, message: "No deliveryRoutes found for this user on the specified date." });
         }
     } catch (error) {
-        console.error('Error checking for existing route plans:', error);
-        res.status(500).send('Error finding route plans');
+        console.error('Error checking for existing deliveryRoute plans:', error);
+        res.status(500).send('Error finding deliveryRoute plans');
     }
 });
+
+module.exports = router;
+
+
+router.put('/updateDeliveryStatus', async (req, res) => {
+  const { deliveryRouteId, stops } = req.body;
+
+  try {
+    console.log(`Updating delivery route ID: ${deliveryRouteId}`);
+
+    const deliveryRoute = await DeliveryRoute.findById(deliveryRouteId);
+    if (!deliveryRoute) {
+      console.log("Delivery Route not found");
+      return res.status(404).json({ message: "Delivery Route not found" });
+    }
+
+    // Update all stops' status to "Out for Delivery"
+    deliveryRoute.stops = stops.map(stop => ({
+      ...stop,
+      status: 'Out for Delivery'
+    }));
+    console.log("All stops status updated to 'Out for Delivery'");
+
+    // Save the delivery route after updating the stops' status
+    await deliveryRoute.save();
+    console.log("Delivery Route saved after stops' status update");
+
+    // Update delivery route status based on the updated stops
+    if (deliveryRoute.stops.some(stop => stop.status === 'Scheduled')) {
+      deliveryRoute.status = 'En Route';
+    } else if (deliveryRoute.stops.every(stop => stop.status === 'Delivered')) {
+      deliveryRoute.status = 'Delivered';
+    }
+    console.log(`Updated Delivery Route status to: ${deliveryRoute.status}`);
+
+    // Save the delivery route after updating the delivery route status
+    await deliveryRoute.save();
+    console.log("Delivery Route saved after status update");
+
+    // Find the orders associated with these stops
+    const masterOrderNumbers = deliveryRoute.stops.map(stop => stop.masterOrderNumber);
+    const orders = await Order.find({ masterOrderNumber: { $in: masterOrderNumbers } });
+
+    // Update the order statuses based on the updated stops
+    for (const order of orders) {
+      const allStopsForOrder = deliveryRoute.stops.filter(stop => stop.masterOrderNumber === order.masterOrderNumber);
+      if (allStopsForOrder.some(stop => stop.status !== 'Delivered')) {
+        order.overallStatus = 'Out for Delivery';
+      } else {
+        order.overallStatus = 'Order Delivered';
+      }
+      await order.save();
+      console.log(`Updated Order ${order.masterOrderNumber} overall status to: ${order.overallStatus}`);
+    }
+
+    res.status(200).json({ message: "Stop status updated successfully", deliveryRoute });
+  } catch (error) {
+    console.error('Error updating delivery status:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 
 
 module.exports = router;

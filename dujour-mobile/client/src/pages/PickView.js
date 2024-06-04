@@ -142,8 +142,6 @@ const updateCompletedOrders = (items) => {
     return `${month}/${day}/${year}`;
   }
 
-
-
 const columns = [
   {
     Header: 'Farm Name (Location #)',

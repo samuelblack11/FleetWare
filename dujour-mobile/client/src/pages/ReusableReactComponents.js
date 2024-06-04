@@ -3,7 +3,6 @@ import React from 'react';
 import logo from '../assets/logo128.png';
 import { useEffect } from 'react';
 
-
 export const useBounceBack = () => {
   useEffect(() => {
     const handleBounceBack = () => {
@@ -32,8 +31,8 @@ export const useBounceBack = () => {
   }, []);
 };
 
-export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
-    useBounceBack();
+export const GenericTable = ({ data = [], columns = [], handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
+  useBounceBack();
 
   return (
     <table>
@@ -50,7 +49,7 @@ export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, full
             {columns.map((column, index) => {
               const accessor = column.accessor || `static-${index}`;
               const cellKey = `${row._id}-${accessor}`;
-              const isFullyPicked = fullyPickedOrders.includes(row.masterOrderNumber.toString());
+              const isFullyPicked = fullyPickedOrders.includes(row.masterOrderNumber?.toString());
               const cellStyle = (accessor === 'masterOrderNumber' && isFullyPicked) ? { backgroundColor: 'lightgreen' } : {};
               return (
                 <td key={cellKey} style={cellStyle}>

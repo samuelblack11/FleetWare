@@ -3,6 +3,7 @@ import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import MapComponent from './MapComponent';
+import { GenericTable } from './ReusableReactComponents';
 
 function RouteView() {
   const authContext = useContext(AuthContext);
@@ -13,86 +14,228 @@ function RouteView() {
   const [orders, setOrders] = useState([]);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [routePlanExists, setRoutePlanExists] = useState(false);
+  const [deliveredOrders, setDeliveredOrders] = useState([]);
+  const [completedOrders, setCompletedOrders] = useState([]);
+
   const whLocation = {
-    latitude: 38.8433,
-    longitude: -77.2705,
-    address: "9464 Main St, FairFax, VA 22031"
+    latitude: 38.804840,
+    longitude: -77.043430,
+    address: "301 King St, Alexandria, VA 22314"
+  };
+
+  const handleBounceBack = () => {
+    const container = document.querySelector('.table-container');
+    if (container) {
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+      if (container.scrollLeft > 0) {
+        container.scrollLeft = 0;
+      } else if (container.scrollLeft < maxScrollLeft) {
+        container.scrollLeft = maxScrollLeft;
+      }
+    }
   };
 
   useEffect(() => {
+    const container = document.querySelector('.table-container');
+    if (container) {
+      container.addEventListener('scroll', handleBounceBack);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleBounceBack);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
-      if (!user || !user.email) {
-        console.log("User or user.email is not defined.");
+      if (!user || !user._id) {
         return;
       }
 
       console.log("Fetching data with formattedDate:", formattedDate, "and driver email:", user.email);
-
+      
       try {
-        const response = await axios.get(`/api/deliveryRoutes/specificRoute?date=2024-04-15&email=jane.smith@email.com`);
+        const response = await axios.get(`/api/deliveryRoutes/specificRoute?date=${formattedDate}&userId=${user._id}`);
         console.log("API response:", response.data);
         setRoutePlanExists(response.data.exists);
 
         if (response.data.exists) {
           setRouteDetails({ routes: response.data.routes });
+          updateDeliveredOrders(response.data.routes[0].stops);
         } else {
           setRouteDetails({ routes: [] });
         }
       } catch (error) {
-        console.error("Error fetching route plan details:", error);
+        console.error("Error fetching route details:", error);
         setRouteDetails({ routes: [] });
       }
     };
 
     fetchData();
 
-    const handler = setTimeout(fetchData, 500); // Delayed fetch to ensure user info is loaded
+    const handler = setTimeout(fetchData, 500);
     return () => clearTimeout(handler);
   }, [user, formattedDate]);
 
-  useEffect(() => {
-  }, [routeDetails]);
+  useEffect(() => {}, [routeDetails]);
+
+
+const handleStatusUpdate = async (stop) => {
+  try {
+    // Update all stops to "Out for Delivery"
+    const updatedStops = routeDetails.routes[0].stops.map(s => ({
+      ...s,
+      status: 'Out for Delivery'
+    }));
+
+    const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+      deliveryRouteId: routeDetails.routes[0]._id,
+      stops: updatedStops
+    });
+
+    console.log('Status update response:', response.data);
+    setRouteDetails({ routes: [response.data.deliveryRoute] });
+    updateDeliveredOrders(response.data.deliveryRoute.stops);
+    updateCompletedOrders(response.data.deliveryRoute.stops);
+
+    // Open navigation to the address of the clicked stop
+    const navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
+    window.open(navigationUrl, '_blank');
+  } catch (error) {
+    console.error('Error updating delivery status:', error);
+  }
+};
+
+ {/*} const handleDeliverPackage = async (stop) => {
+    try {
+      // Prompt the user to scan the package and confirm delivery
+      const barcode = prompt('Scan the package barcode:');
+      if (barcode) {
+        const confirmation = confirm('Do you want to deliver the package?');
+        if (confirmation) {
+          // Update the stop status to "Delivered"
+          const updatedStops = routeDetails.routes[0].stops.map(s => 
+            s._id === stop._id ? { ...s, status: 'Delivered' } : s
+          );
+
+          const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+            deliveryRouteId: routeDetails.routes[0]._id,
+            stops: updatedStops
+          });
+
+          console.log('Delivery status update response:', response.data);
+          setRouteDetails({ routes: [response.data.deliveryRoute] });
+          updateDeliveredOrders(response.data.deliveryRoute.stops);
+          updateCompletedOrders(response.data.deliveryRoute.stops);
+        }
+      }
+    } catch (error) {
+      console.error('Error delivering package:', error);
+    }
+  }; */}
+
+    const updateDeliveredOrders = (stops) => {
+    const deliveredOrders = stops.reduce((acc, stop) => {
+      acc[stop.masterOrderNumber] = acc[stop.masterOrderNumber] || [];
+      acc[stop.masterOrderNumber].push(stop.status === 'Delivered');
+      return acc;
+    }, {});
+
+    const fullyDelivered = Object.keys(deliveredOrders).filter(orderNumber => 
+      deliveredOrders[orderNumber].every(status => status)
+    );
+
+    setDeliveredOrders(fullyDelivered);
+    console.log("Fully Delivered Orders updated:", fullyDelivered);
+  };
+
+
+  const updateCompletedOrders = (stops) => {
+    const deliveredOrders = stops.reduce((acc, stop) => {
+      if (!acc[stop.masterOrderNumber]) {
+        acc[stop.masterOrderNumber] = {
+          orderID: stop.orderId,
+          statuses: []
+        };
+      }
+      acc[stop.masterOrderNumber].statuses.push(stop.status === 'Delivered');
+      return acc;
+    }, {});
+
+    const completed = Object.keys(deliveredOrders).filter(masterOrderNumber => 
+      deliveredOrders[masterOrderNumber].statuses.every(status => status)
+    ).map(masterOrderNumber => ({
+      masterOrderNumber,
+      orderID: deliveredOrders[masterOrderNumber].orderID,
+      status: 'Order Delivered'
+    }));
+
+    setCompletedOrders(completed);
+  };
 
   function reformatDate(selectedDate) {
-    const dateParts = selectedDate.split('-'); // Split the date by '-'
-    const year = dateParts[0].substr(2); // Get the last two digits of the year
-    const month = dateParts[1]; // Month
-    const day = dateParts[2]; // Day
-
-    // Construct the new date format as 'mm/dd/yy'
+    const dateParts = selectedDate.split('-');
+    const year = dateParts[0].substr(2);
+    const month = dateParts[1];
+    const day = dateParts[2];
     return `${month}/${day}/${year}`;
   }
+
+  const columns = [
+    { 
+      Header: 'Order #', 
+      accessor: 'masterOrderNumber', 
+      Cell: ({ row }) => <span data-label="Order #">{row.masterOrderNumber}</span> 
+    },
+    { 
+      Header: 'Address', 
+      accessor: 'address', 
+      Cell: ({ row }) => <span data-label="Address">{row.address}</span> 
+    },
+    {
+      Header: 'Status',
+      accessor: 'status',
+      Cell: ({ row }) => (
+        <span data-label="Status">{row.status}</span>
+      )
+    },
+    {
+      Header: 'Actions',
+      Cell: ({ row }) => (
+        <div data-label="Actions">
+          <button className="add-button" onClick={() => handleStatusUpdate(row)}>
+            Navigate
+          </button>
+          {row.status === 'Out for Delivery' && (
+            <button className="add-button" onClick={() => handleStatusUpdate(row)}>
+              Deliver Package
+            </button>
+          )}
+          {row.status === 'Delivered' && (
+            <button className="add-button" onClick={() => handleStatusUpdate(row)}>
+              Revert Status
+            </button>
+          )}
+        </div>
+      )
+    }
+  ];
 
   return (
     <div>
       <>
-        <h2>Route Plan for {reformatDate("2024-04-15")}</h2>
+        <h2>Route Plan for {reformatDate(formattedDate)}</h2>
         <MapComponent whLocation={whLocation} routes={routeDetails.routes} />
-        {routeDetails.routes.map((route, routeIndex) => (
-          <div key={routeIndex}>
-            <h3>Route {routeIndex + 1}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Stop Number</th>
-                  <th>Address</th>
-                  <th>Customer Email</th>
-                  <th>Order Number</th>
-                </tr>
-              </thead>
-              <tbody>
-                {route.stops.map((stop, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{stop.address}</td>
-                    <td>{stop.customerEmail}</td>
-                    <td>{stop.orderNumber}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {routeDetails.routes.length > 0 ? (
+          <div className="table-container">
+            <GenericTable data={routeDetails.routes[0].stops} columns={columns} fullyPickedOrders={deliveredOrders} />
           </div>
-        ))}
+        ) : (
+          <p>No delivery route available for this date.</p>
+        )}
       </>
     </div>
   );
