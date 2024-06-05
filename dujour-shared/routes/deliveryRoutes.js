@@ -8,21 +8,48 @@ const Order = require('../models/Order');
 // PUT endpoint to update user assignments for routes
 router.put('/updateUsers', async (req, res) => {
   const { updatedRoutes } = req.body;
+  console.log("In updateUsers API Route")
+  console.log(updatedRoutes)
   try {
 
     for (const route of updatedRoutes) {
       // Retrieve the current status of the route
+      console.log(`routeID: ${route._id}`); // Print out the type of userId
+      console.log("Type of routeID:", typeof route._id); // Print out the type of userId
+      const routeID = new mongoose.Types.ObjectId(route._id);
+
       const currentRoute = await DeliveryRoute.findById(route._id).select('status');
 
-      if (currentRoute && currentRoute.status !== 'Ready for Driver Pickup') {
-        // Update driver and status to 'Driver Assigned'
-        await DeliveryRoute.updateOne({ _id: route._id }, { driver: route.driver, status: 'Driver Assigned' });
-      } else {
-        // Update driver only
-        await DeliveryRoute.updateOne({ _id: route._id }, { driver: route.driver });
+      // Update driver and status to 'Driver Assigned'
+      let allOrdersReadyForPickup = true;
+
+      // Check the status of each order associated with the stops
+      for (const stop of route.stops) {
+          const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
+          const order = await Order.findById(orderObjectId);
+          console.log("+++")
+          console.log(order)
+          console.log(order.overallStatus)
+          if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
+              allOrdersReadyForPickup = false;
+              break;
+          }
       }
+
+    const deliveryRouteStatus = allOrdersReadyForPickup ? 'Ready for Driver Pickup' : 'Driver Assigned';
+
+      // Update driver and status directly in the existing document
+      await DeliveryRoute.updateOne(
+        { _id: route._id },
+        {
+          driver: route.driver,
+          status: deliveryRouteStatus
+        }
+      );
     }
-    
+
+
+
     res.status(200).json({ message: "Driver assignments updated successfully." });
   } catch (error) {
     console.error('Failed to update driver assignments:', error);
@@ -32,6 +59,8 @@ router.put('/updateUsers', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { routes } = req.body;
+  console.log("-------")
+  console.log(routes)
   try {
   const transformedRoutes = routes.map(route => {
     const { startTime, stops } = route;
@@ -57,8 +86,10 @@ router.post('/', async (req, res) => {
 
         // Check the status of each order associated with the stops
         for (const stop of route.stops) {
-            const order = await Order.findById(stop.orderId);
+            const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
+            const order = await Order.findById(orderObjectId);
             console.log("+++")
+            console.log(order)
             console.log(order.overallStatus)
             if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
                 allOrdersReadyForPickup = false;

@@ -176,6 +176,15 @@ useEffect(() => {
 
   const handleSubmitRoutePlan = async () => {
     setIsLoading(true);
+
+      // Check if every route has a driver assigned
+    {/*const allDriversAssigned = optimizedRoutes.every((route, index) => selectedUsers[index]);
+    if (!allDriversAssigned) {
+      alert('Not all routes have a driver assigned. Please assign a driver to each route.');
+      setIsLoading(false);
+      return;
+    }*/}
+
     try {
       const date = new Date(`${selectedDate}T06:00:00`);
       const estOffset = 5 * 60 * 60 * 1000;
@@ -190,9 +199,10 @@ useEffect(() => {
           masterOrderNumber: stop.masterOrderNumber,
           latitude: stop.latitude,
           longitude: stop.longitude,
+          orderId: stop.orderId
         })),
         startTime: startTimeIso,
-        driver: selectedUsers[index] || null
+        driver: selectedUsers[index]
       }));
 
       console.log("ROUTES....")
