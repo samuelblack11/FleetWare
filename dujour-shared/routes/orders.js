@@ -5,6 +5,7 @@ const AvailableItem = require('../models/Item');
 const nodemailer = require('nodemailer');
 const stripe = require('stripe')('your-stripe-secret-key'); // Make sure to replace 'your-stripe-secret-key' with your actual Stripe secret key
 const Farm = require('../models/Farm');
+const mongoose = require('mongoose');
 
 // New route to get all orders with nested item and farm details
 router.get('/detailed-orders', async (req, res) => {
@@ -99,8 +100,17 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { overallStatus } = req.body;
+    console.log(id)
+    console.log(overallStatus)
+    console.log("Type of orderId:", typeof id); // Print out the type of userId
 
-    const order = await Order.findById(id);
+    const orderObjectId = new mongoose.Types.ObjectId(id);
+    console.log("Converted userId to ObjectId:", orderObjectId);
+
+
+    const order = await Order.findById(orderObjectId);
+    console.log("----")
+    console.log(order)
     if (!order) {
       return res.status(404).send('Order not found');
     }

@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const deliveryRouteSchema = new Schema({
   clusterId: Number,
   driver: { type: Schema.Types.ObjectId, ref: 'User' },
-  status: { type: String, default: 'Scheduled' },
+  //status: { type: String, default: 'Scheduled' },
   createdAt: { type: Date, default: Date.now },
   assignedAt: Date,
   startTime: Date,
@@ -21,13 +21,13 @@ const deliveryRouteSchema = new Schema({
     customerEmail: String,
     masterOrderNumber: Number,
     status: { type: String, 
-            enum: ['Scheduled', 'Out for Delivery', 'Delivered'],
+            enum: ['Scheduled', 'Ready for Driver Pickup','Out for Delivery', 'Delivered'],
             default: 'Scheduled' },
   }],
   status: {
     type: String,
-    enum: ['Driver Assigned', 'En Route', 'Delivered'],
-    default: 'Driver Assigned'
+    enum: ['Scheduled' ,'Driver Assigned', 'Ready for Driver Pickup','Out for Delivery',  'Delivered'],
+    default: 'Scheduled' 
   }
 });
 

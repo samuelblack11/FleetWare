@@ -137,8 +137,9 @@ function optimizeRouteForCluster(clusterId, clusterAssignments, coordinates, ord
     customerEmail: order.customerEmail,
     masterOrderNumber: order.masterOrderNumber,
     address: order.deliveryAddress,
-    latitude: order.latitude,  // Include latitude in the response
-    longitude: order.longitude // Include longitude in the response
+    latitude: order.latitude, 
+    longitude: order.longitude,
+    orderId: order._id
   }));
 }
 

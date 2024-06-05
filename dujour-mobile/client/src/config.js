@@ -1,7 +1,7 @@
 // config.js
 const config = {
-    googleMapsApiKey: "AIzaSyAMcWzEeimVascjmM-HkkEs0ZpwBKJIipY",
-    mapID: "2f88e40b9a82695b",
+    googleMapsApiKey: "AIzaSyBCxmJs14HVavuDE0UjpDFS2ywTsccJUo8",
+    mapID: "706ac63f150c0d5c",
     libraries: ['marker']
 };
 

@@ -70,14 +70,21 @@ const RouteOptimization = () => {
   }, []);
 
 useEffect(() => {
-  const selectedUsersInit = {};
-  routeDetails.routes.forEach((route, index) => {
-    if (route.driver) {
-      selectedUsersInit[index] = route.driver; // Correctly reference the driver field
-    }
-  });
-  setSelectedUsers(selectedUsersInit);
-}, [routeDetails]);
+  if (routeDetails.routes.length > 0 && users.length > 0) {
+    const selectedUsersInit = routeDetails.routes.reduce((acc, route, index) => {
+      // Make sure driver ID from route is in the users list to ensure validity
+      const isValidUser = users.some(user => user._id === route.driver);
+      if (route.driver && isValidUser) {
+        acc[index] = route.driver;
+      }
+      return acc;
+    }, {});
+    setSelectedUsers(selectedUsersInit);
+  }
+}, [routeDetails, users]);
+
+
+
 
 
   useEffect(() => {
@@ -183,9 +190,9 @@ useEffect(() => {
           masterOrderNumber: stop.masterOrderNumber,
           latitude: stop.latitude,
           longitude: stop.longitude,
-          //user: selectedUsers[index] || null
         })),
-        startTime: startTimeIso
+        startTime: startTimeIso,
+        driver: selectedUsers[index] || null
       }));
 
       console.log("ROUTES....")
@@ -265,11 +272,6 @@ const handleConfirmDriverAssignments = async () => {
     alert('Failed to confirm user assignments.');
   }
 };
-
-
-
-
-
 
   return (
     <div className="route-optimization-container">

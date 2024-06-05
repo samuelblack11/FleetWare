@@ -21,7 +21,7 @@ const loader = new Loader({
   apiKey: config.googleMapsApiKey,
   version: "weekly",
   libraries: libraries,
-  mapIds: ['YOUR_MAP_ID'] // Replace with your actual Map ID
+  mapIds: [config.mapID] // Replace with your actual Map ID
 });
 
 const OverviewMap = ({ stops }) => {

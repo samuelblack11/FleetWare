@@ -1,6 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 /dujour-shared/config.js
 /dujour-shared/config.sh
+/dujour-mobile/client/src/config.js
+
 /dujour-shared/passwordEncryption.js
 /dujour-shared/routes/users.js
 /dujour-shared/routes/orders.js

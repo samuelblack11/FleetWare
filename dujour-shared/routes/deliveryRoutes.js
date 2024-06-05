@@ -9,16 +9,23 @@ const Order = require('../models/Order');
 router.put('/updateUsers', async (req, res) => {
   const { updatedRoutes } = req.body;
   try {
-    console.log("Trying to update user....");
-    console.log(updatedRoutes)
 
     for (const route of updatedRoutes) {
-      await DeliveryRoute.updateOne({ _id: route._id }, { driver: route.driver });
+      // Retrieve the current status of the route
+      const currentRoute = await DeliveryRoute.findById(route._id).select('status');
+
+      if (currentRoute && currentRoute.status !== 'Ready for Driver Pickup') {
+        // Update driver and status to 'Driver Assigned'
+        await DeliveryRoute.updateOne({ _id: route._id }, { driver: route.driver, status: 'Driver Assigned' });
+      } else {
+        // Update driver only
+        await DeliveryRoute.updateOne({ _id: route._id }, { driver: route.driver });
+      }
     }
     
-    res.status(200).json({ message: "User assignments updated successfully." });
+    res.status(200).json({ message: "Driver assignments updated successfully." });
   } catch (error) {
-    console.error('Failed to update user assignments:', error);
+    console.error('Failed to update driver assignments:', error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -34,7 +41,8 @@ router.post('/', async (req, res) => {
       customerEmail: stop.customerEmail,
       masterOrderNumber: stop.masterOrderNumber,
       latitude: stop.latitude,
-      longitude: stop.longitude
+      longitude: stop.longitude,
+      orderId: stop.orderId
     }));
 
     return {
@@ -44,12 +52,23 @@ router.post('/', async (req, res) => {
     };
   });
 
-    // Iterate over transformedRoutes to save each to the database
     for (const route of transformedRoutes) {
-      const deliveryRoute = new DeliveryRoute(route);
+        let allOrdersReadyForPickup = true;
+
+        // Check the status of each order associated with the stops
+        for (const stop of route.stops) {
+            const order = await Order.findById(stop.orderId);
+            console.log("+++")
+            console.log(order.overallStatus)
+            if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
+                allOrdersReadyForPickup = false;
+                break;
+            }
+        }
+      const deliveryRouteStatus = allOrdersReadyForPickup ? 'Ready for Driver Pickup' : 'Scheduled';
+      const deliveryRoute = new DeliveryRoute({ ...route, status: deliveryRouteStatus });
       await deliveryRoute.save();
     }
-
     res.send('Delivery routes data saved to MongoDB.');
   } catch (error) {
     console.error('Error processing routes:', error);
@@ -126,46 +145,60 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/specificRoute', async (req, res) => {
-    const { date, userId } = req.query; // Assuming userId is passed as a query parameter
+  const { date, userId } = req.query; // Assuming userId is passed as a query parameter
 
-    try {
-        // Lookup for the user by userId
-        console.log("Attempting to find user with ID:", userId);
-        const user = await User.findById(userId);
-        console.log("User found:", user ? user : "No user found with the specified ID.");
+  try {
+    // Lookup for the user by userId
+    console.log("Attempting to find user with ID:", userId);
+    console.log("Type of userId:", typeof userId); // Print out the type of userId
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    console.log("Converted userId to ObjectId:", userObjectId);
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found with the given ID" });
-        }
+    // Lookup for the user by userId
+    const user = await User.findById(userObjectId);
+    console.log("User found:", user ? user : "No user found with the specified ID.");
 
-        // Construct the query for deliveryRoute lookup
-        let query = { driver: user._id };
-
-        if (date) {
-            // Create a date object for the given date
-            const [year, month, day] = date.split('-').map(Number);
-            const targetDate = new Date(Date.UTC(year, month - 1, day));
-            
-            // Only consider the date part for the comparison
-            query.createdAt = { $gte: targetDate, $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000) };
-            console.log(`Query date range: ${targetDate.toISOString()} to ${new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString()}`);
-        }
-
-        // Lookup for existing deliveryRoutes
-        const existingDeliveryRoutes = await DeliveryRoute.find(query).populate('driver');
-        if (existingDeliveryRoutes.length > 0) {
-            res.json({ exists: true, routes: existingDeliveryRoutes });
-        } else {
-            console.log('No deliveryRoutes found for this user on the specified date.');
-            res.json({ exists: false, message: "No deliveryRoutes found for this user on the specified date." });
-        }
-    } catch (error) {
-        console.error('Error checking for existing deliveryRoute plans:', error);
-        res.status(500).send('Error finding deliveryRoute plans');
+    if (!user) {
+      return res.status(404).json({ message: "User not found with the given ID" });
     }
+
+    // Print out all delivery routes for debugging
+    const allDeliveryRoutes = await DeliveryRoute.find().populate('driver');
+    console.log("All Delivery Routes:", JSON.stringify(allDeliveryRoutes, null, 2));
+
+    // Construct the query for deliveryRoute lookup
+    let query = { driver: user._id };
+
+    // If a date is provided, include date filter in the query
+    if (date) {
+      // Create a date object for the given date
+      const [year, month, day] = date.split('-').map(Number);
+      const targetDate = new Date(Date.UTC(year, month - 1, day));
+      const nextDay = new Date(targetDate);
+      nextDay.setUTCDate(targetDate.getUTCDate() + 1);
+
+      // Add date range filter to the query using startTime
+      query.startTime = { $gte: targetDate, $lt: nextDay };
+      
+      console.log(`Query date range for startTime: ${targetDate.toISOString()} to ${nextDay.toISOString()}`);
+    }
+
+    // Lookup for existing deliveryRoutes with the constructed query
+    const existingDeliveryRoutes = await DeliveryRoute.find(query).populate('driver');
+    if (existingDeliveryRoutes.length > 0) {
+      res.json({ exists: true, routes: existingDeliveryRoutes });
+    } else {
+      console.log('No deliveryRoutes found for this user on the specified date.');
+      res.json({ exists: false, message: "No deliveryRoutes found for this user on the specified date." });
+    }
+  } catch (error) {
+    console.error('Error checking for existing deliveryRoute plans:', error);
+    res.status(500).send('Error finding deliveryRoute plans');
+  }
 });
 
-module.exports = router;
+
+
 
 
 router.put('/updateDeliveryStatus', async (req, res) => {
@@ -192,7 +225,7 @@ router.put('/updateDeliveryStatus', async (req, res) => {
     console.log("Delivery Route saved after stops' status update");
 
     // Update delivery route status based on the updated stops
-    if (deliveryRoute.stops.some(stop => stop.status === 'Scheduled')) {
+    if (deliveryRoute.stops.some(stop => stop.status === 'Scheduled' || stop.status === 'Ready for Driver Pickup')) {
       deliveryRoute.status = 'En Route';
     } else if (deliveryRoute.stops.every(stop => stop.status === 'Delivered')) {
       deliveryRoute.status = 'Delivered';
