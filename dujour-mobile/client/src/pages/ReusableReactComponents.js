@@ -33,7 +33,7 @@ export const useBounceBack = () => {
 
 export const GenericTable = ({ data = [], columns = [], handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
   useBounceBack();
-
+  const fullyPickedOrderNumbers = fullyPickedOrders.map(order => order.masterOrderNumber);
   return (
     <table>
       <thead>
@@ -49,7 +49,7 @@ export const GenericTable = ({ data = [], columns = [], handleEditClick, deleteC
             {columns.map((column, index) => {
               const accessor = column.accessor || `static-${index}`;
               const cellKey = `${row._id}-${accessor}`;
-              const isFullyPicked = fullyPickedOrders.includes(row.masterOrderNumber?.toString());
+              const isFullyPicked = fullyPickedOrderNumbers.includes(row.masterOrderNumber);
               const cellStyle = (accessor === 'masterOrderNumber' && isFullyPicked) ? { backgroundColor: 'lightgreen' } : {};
               return (
                 <td key={cellKey} style={cellStyle}>

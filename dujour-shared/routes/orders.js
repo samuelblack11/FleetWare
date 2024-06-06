@@ -126,6 +126,22 @@ router.put('/:id', async (req, res) => {
 });
 
 
+// Route to get multiple orders by IDs
+router.post('/by-IDs', async (req, res) => {
+  try {
+    const { orderIDs } = req.body; // Expect an array of orderIDs in the request body
+    const orders = await Order.find({ '_id': { $in: orderIDs } }) // Use the $in operator to find all orders with IDs in the orderIDs array
+                            .populate('items.item'); // Optionally populate the 'item' field in each order's items array
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders by IDs:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+
+
 router.delete('/:id', async (req, res) => {
   try {
     const deletedItem = await Order.findByIdAndDelete(req.params.id);
