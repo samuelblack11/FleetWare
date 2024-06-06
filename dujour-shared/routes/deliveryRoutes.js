@@ -59,53 +59,54 @@ router.put('/updateUsers', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { routes } = req.body;
-  console.log("-------")
-  console.log(routes)
+  console.log("-------");
+  console.log(routes);
+
   try {
-  const transformedRoutes = routes.map(route => {
-    const { startTime, stops } = route;
-    const transformedStops = stops.map(stop => ({
-      // Ensure this matches your frontend submission structure
-      address: stop.address,
-      customerEmail: stop.customerEmail,
-      masterOrderNumber: stop.masterOrderNumber,
-      latitude: stop.latitude,
-      longitude: stop.longitude,
-      orderId: stop.orderId
-    }));
+    let createdRoutesWithIds = []; // Array to hold created routes along with their MongoDB IDs
 
-    return {
-      // Other route details...
-      stops: transformedStops,
-      startTime: new Date(startTime),
-    };
-  });
+    for (const route of routes) {
+      const { startTime, stops } = route;
+      const transformedStops = stops.map(stop => ({
+        address: stop.address,
+        customerEmail: stop.customerEmail,
+        masterOrderNumber: stop.masterOrderNumber,
+        latitude: stop.latitude,
+        longitude: stop.longitude,
+        orderId: stop.orderId
+      }));
 
-    for (const route of transformedRoutes) {
-        let allOrdersReadyForPickup = true;
-
-        // Check the status of each order associated with the stops
-        for (const stop of route.stops) {
-            const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
-            const order = await Order.findById(orderObjectId);
-            console.log("+++")
-            console.log(order)
-            console.log(order.overallStatus)
-            if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
-                allOrdersReadyForPickup = false;
-                break;
-            }
+      let allOrdersReadyForPickup = true;
+      for (const stop of transformedStops) {
+        const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
+        const order = await Order.findById(orderObjectId);
+        console.log("+++");
+        console.log(order);
+        console.log(order.overallStatus);
+        if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
+          allOrdersReadyForPickup = false;
+          break;
         }
+      }
+
       const deliveryRouteStatus = allOrdersReadyForPickup ? 'Ready for Driver Pickup' : 'Scheduled';
-      const deliveryRoute = new DeliveryRoute({ ...route, status: deliveryRouteStatus });
-      await deliveryRoute.save();
+      const deliveryRoute = new DeliveryRoute({
+        stops: transformedStops,
+        startTime: new Date(startTime),
+        status: deliveryRouteStatus
+      });
+      
+      const savedRoute = await deliveryRoute.save();
+      createdRoutesWithIds.push({ routeId: savedRoute._id, ...savedRoute.toObject() }); // Store the newly created route ID and other data
     }
-    res.send('Delivery routes data saved to MongoDB.');
+
+    res.json({ message: 'Delivery routes data saved to MongoDB.', routes: createdRoutesWithIds });
   } catch (error) {
     console.error('Error processing routes:', error);
     res.status(500).send('Error processing route');
   }
 });
+
 
 // DELETE endpoint to remove all routes for a specific date
 router.delete('/', async (req, res) => {

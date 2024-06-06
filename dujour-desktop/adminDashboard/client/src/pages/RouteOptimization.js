@@ -52,6 +52,7 @@ const RouteOptimization = () => {
           console.log("@@@@@")
           console.log(routePlanDetails.data)
           setRouteDetails(routePlanDetails.data);
+          setSelectedUsersFromRoutes(routePlanDetails.data.routes);  // Set selected users based on fetched routes
           setOrders([]);
         } catch (error) {
           console.error("Error fetching route plan details:", error);
@@ -69,7 +70,18 @@ const RouteOptimization = () => {
     fetchUsers();
   }, []);
 
-useEffect(() => {
+  const setSelectedUsersFromRoutes = (routes) => {
+    const userAssignments = routes.reduce((acc, route, index) => {
+        if (route.driver) {
+            acc[index] = route.driver;
+        }
+        return acc;
+    }, {});
+    console.log("Initial driver assignments:", userAssignments);
+    setSelectedUsers(userAssignments);
+};
+
+{/*useEffect(() => {
   if (routeDetails.routes.length > 0 && users.length > 0) {
     const selectedUsersInit = routeDetails.routes.reduce((acc, route, index) => {
       // Make sure driver ID from route is in the users list to ensure validity
@@ -79,12 +91,11 @@ useEffect(() => {
       }
       return acc;
     }, {});
+    console.log("JJJJ")
+    console.log(selectedUsersInit)
     setSelectedUsers(selectedUsersInit);
   }
-}, [routeDetails, users]);
-
-
-
+}, [routeDetails, users]);*/}
 
 
   useEffect(() => {
@@ -112,7 +123,7 @@ useEffect(() => {
 
   const handleChange = (setter) => (e) => setter(e.target.value);
 
-  const handleSubmit = async (e) => {
+  const handleOptimizeRoutes = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -131,6 +142,18 @@ useEffect(() => {
     }
     setIsLoading(false);
   };
+
+  const updateRouteDetails = async () => {
+  try {
+    const response = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
+    setRouteDetails(response.data);
+  } catch (error) {
+    console.error("Failed to fetch updated route details:", error);
+  }
+};
+
+// Call this function after any operation that should update route details
+
 
   const handleDeleteRoutePlan = async () => {
     setIsLoading(true);
@@ -202,24 +225,25 @@ useEffect(() => {
           orderId: stop.orderId
         })),
         startTime: startTimeIso,
-        driver: selectedUsers[index]
+        //driver: selectedUsers[index]
       }));
 
-      console.log("ROUTES....")
-      console.log(routes)
-      await axios.post('/api/deliveryRoutes', { routes });
-      setRoutePlanExists(true);
-      setRouteDetails({ routes });
-      setOrders([]);
-      setIsLoading(false);
-      alert('Route plan submitted successfully.');
-      setOptimizedRoutes([]);
-    } catch (error) {
-      console.error('Error submitting route plan:', error);
-      setIsLoading(false);
-      alert('Failed to submit route plan.');
-    }
-  };
+      console.log(optimizedRoutes)
+
+      console.log("Submitting Routes: ", routes);
+    const response = await axios.post('/api/deliveryRoutes', { routes });
+    setRoutePlanExists(true);
+    setRouteDetails({ routes: response.data.routes });  // Ensure to update with the response data which includes route IDs
+    setOrders([]);
+    setIsLoading(false);
+    alert('Route plan submitted successfully.');
+    setOptimizedRoutes([]);
+  } catch (error) {
+    console.error('Error submitting route plan:', error);
+    setIsLoading(false);
+    alert('Failed to submit route plan.');
+  }
+};
 
   const handleClearRoutes = () => {
     setOptimizedRoutes([]);
@@ -227,7 +251,7 @@ useEffect(() => {
 
   const UserDropdown = ({ users, selectedUserId, onUserAssigned, routeIndex }) => (
     <select 
-      value={selectedUserId || ''} 
+      value={selectedUserId || ''}  // Adjusted to use _id from the user object
       onChange={(e) => onUserAssigned(routeIndex, e.target.value)}
     >
       <option value="">Select a Driver</option>
@@ -239,11 +263,12 @@ useEffect(() => {
 
   const handleUserSelection = (routeIndex, userId) => {
     console.log(`Route Index: ${routeIndex}, User ID: ${userId}`);
-    setSelectedUsers(prev => {
-      const updated = { ...prev, [routeIndex]: userId };
-      return updated;
-    });
-  };
+    setSelectedUsers(prev => ({
+        ...prev,
+        [routeIndex]: userId  // Ensuring a new object is created for the state
+    }));
+};
+
 
   const reformatDate = (selectedDate) => {
     const dateParts = selectedDate.split('-');
@@ -257,6 +282,9 @@ useEffect(() => {
 const handleConfirmDriverAssignments = async () => {
   setIsLoading(true);
   console.log(selectedUsers);
+  console.log("#@#@")
+  console.log(routeDetails)
+
 
   const updatedRoutes = routeDetails.routes.map((route, index) => {
     const user = users.find(user => user._id === selectedUsers[index]);
@@ -274,6 +302,7 @@ const handleConfirmDriverAssignments = async () => {
       date: selectedDate,
       updatedRoutes
     });
+    await updateRouteDetails();  // Call the function to refresh route details
     setIsLoading(false);
     alert('User assignments confirmed successfully.');
   } catch (error) {
@@ -287,7 +316,7 @@ const handleConfirmDriverAssignments = async () => {
     <div className="route-optimization-container">
       <h2>Route Optimization</h2>
       {isLoading && <LoadingSpinner />}
-      <form className="form-section" onSubmit={handleSubmit}>
+      <form className="form-section" onSubmit={handleOptimizeRoutes}>
         <div className="form-group">
           <label htmlFor="dateSelect">Select Delivery Date:</label>
           <input

@@ -13,7 +13,13 @@ const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
   const { cartItems: initialCartItems, totalCost: initialTotalCost } = state || { cartItems: [], totalCost: 0 };
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const today = new Date();
+  const userTimezoneOffset = today.getTimezoneOffset() * 60000; // User's timezone offset in milliseconds
+  const estOffset = -300; // EST is UTC-5 hours, which is -300 minutes
+  const estTime = new Date(today.getTime() + userTimezoneOffset + estOffset * 60000);
+  estTime.setHours(10, 0, 0, 0); // Set time to 10:00:00.000
+  const formattedDate = `${estTime.getFullYear()}-${(estTime.getMonth() + 1).toString().padStart(2, '0')}-${estTime.getDate().toString().padStart(2, '0')}`;
   const handleBackToBuildOrder = () => {
   	navigate('/build-order', { state: { cartItems, totalCost } });
   };
@@ -21,7 +27,7 @@ const PlaceOrder = () => {
   const initialOrderState = {
     customerEmail: user?.email || '',
     deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
-    deliveryDate: '2024-08-15',
+    deliveryDate: formattedDate,
     creditCardNumber: '0000000000000000',
     creditCardExpiration: '1028',
     creditCardCVV: '222',

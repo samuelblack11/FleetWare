@@ -46,6 +46,8 @@ useEffect(() => {
 
         if (response.data.exists) {
           setPickPlanDetails(response.data.pickPlans[0]); // Assuming pickPlans is an array with one element
+          const orders = await fetchOrderDetails(pickPlan.items);
+
           updateFullyPickedOrders(response.data.pickPlans[0].items);
           updateCompletedOrders(response.data.pickPlans[0].items);
         } else {
@@ -62,6 +64,8 @@ useEffect(() => {
     const handler = setTimeout(fetchData, 500); // Delayed fetch to ensure user info is loaded
     return () => clearTimeout(handler);
   }, [user, formattedDate]);
+
+  
 
   const handleStatusUpdate = async (item) => {
     try {
