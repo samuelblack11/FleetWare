@@ -35,6 +35,8 @@
   gap: 10px;
 }
 
+
+
 .back-button, .deliver-button {
   background-color: #fff;
   border: none;
@@ -279,6 +281,12 @@ button, .popup-inner .popup-ok-btn, .popup-inner .popup-cancel-btn, .add-button 
   border: none;
   transition: var(--default-transition);
   margin: var(--btn-margin);
+}
+
+/* Style for disabled add-button */
+.add-button:disabled {
+    cursor: not-allowed; /* Cursor indicates the button is not clickable */
+    opacity: 0.6; /* Slightly transparent to look "faded out" */
 }
 
 button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:hover, .add-button:hover {

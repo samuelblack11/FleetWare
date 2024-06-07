@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { GoogleMap, LoadScript, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, DirectionsRenderer } from '@react-google-maps/api';
 const config = require('../config');
 
 const containerStyle = {
   width: '100%',
-  height: '100vh',
-  position: 'relative'
+  height: '100vh'
 };
 
 const center = {
@@ -13,43 +12,35 @@ const center = {
   lng: -77.043430
 };
 
-const InteractiveMap = ({ stop, stops, onBack, onDeliver }) => {
+const InteractiveMap = ({ origin, destination, onBack, onDeliver }) => {
   const [directions, setDirections] = useState(null);
+  console.log(`Origin: ${origin}`);
+  console.log(`Destination: ${destination}`);
+
 
   useEffect(() => {
-    if (stops && stops.length > 0) {
-      const origin = stops[0];
-      const destination = stop;
-      const waypoints = stops.slice(1, -1).map(stop => ({ location: { lat: stop.latitude, lng: stop.longitude } }));
-
+    if (origin && destination) {
       const directionsService = new window.google.maps.DirectionsService();
-      directionsService.route(
-        {
-          origin: { lat: origin.latitude, lng: origin.longitude },
-          destination: { lat: destination.latitude, lng: destination.longitude },
-          waypoints: waypoints,
-          travelMode: window.google.maps.TravelMode.DRIVING
-        },
-        (result, status) => {
-          if (status === window.google.maps.DirectionsStatus.OK) {
-            setDirections(result);
-          } else {
-            console.error(`Error fetching directions ${result}`);
-          }
+      directionsService.route({
+        origin: origin,  // Use origin passed as a prop
+        destination: destination,  // Use destination passed as a prop
+        travelMode: window.google.maps.TravelMode.DRIVING
+      }, (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirections(result);
+        } else {
+          console.error(`Error fetching directions ${result}`);
         }
-      );
+      });
     }
-  }, [stop, stops]);
+  }, [origin, destination]); // React to changes in origin and destination
 
   return (
-    <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
-      <div style={containerStyle}>
+      <div style={{ position: 'absolute', width: '100%', height: '100%' }}> 
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={center}
           zoom={10}
-          onLoad={(map) => console.log('Map loaded:', map)}
-          onUnmount={(map) => console.log('Map unmounted:', map)}
         >
           {directions && (
             <DirectionsRenderer
@@ -57,12 +48,11 @@ const InteractiveMap = ({ stop, stops, onBack, onDeliver }) => {
             />
           )}
         </GoogleMap>
-        <div className="overlay-buttons">
-          <button className="back-button" onClick={onBack}>Back</button>
-          <button className="deliver-button" onClick={onDeliver}>Deliver Package</button>
+        <div className="overlay-buttons" style={{ position: 'absolute', top: '10px', left: '10px' }}>
+          <button className="add-button" onClick={onBack} style={{ marginTop: '70px', marginRight: '10px' }}>Back</button>
+          <button className="add-button" onClick={onDeliver} style={{ marginTop: '70px' }}>Deliver Package</button>
         </div>
       </div>
-    </LoadScript>
   );
 };
 

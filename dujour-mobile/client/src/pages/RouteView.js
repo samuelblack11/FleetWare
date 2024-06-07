@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import OverviewMap from './OverviewMap';
 import InteractiveMap from './InteractiveMap';
 import { GenericTable } from './ReusableReactComponents';
+import { LoadScript } from '@react-google-maps/api';
+const config = require('../config');
 
 function RouteView() {
   const authContext = useContext(AuthContext);
@@ -17,10 +19,15 @@ function RouteView() {
   const [routePlanExists, setRoutePlanExists] = useState(false);
   const [deliveredOrders, setDeliveredOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
-  const [showMap, setShowMap] = useState(false);
+  const [showInteractiveMap, setShowInteractiveMap] = useState(false);
   const [currentStop, setCurrentStop] = useState(null);
   const [stopsData, setStopsData] = useState([]);
   const [combinedStops, setCombinedStops] = useState([]);
+  const [allOrdersReadyForNavigation, setAllOrdersReadyForNavigation] = useState(false);
+  const directionsRendererRef = useRef(null);
+  // State definitions
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [selectedDestination, setSelectedDestination] = useState(null);
 
   const handleBounceBack = () => {
     const container = document.querySelector('.table-container');
@@ -49,16 +56,30 @@ function RouteView() {
   }, []);
 
   useEffect(() => {
+  getCurrentLocation().then(location => {
+    setCurrentLocation(location);
+  }).catch(error => {
+    console.error('Error getting current location:', error);
+  });
+}, []);  // Empty dependency array to run only once after the component mounts
+
+
+  useEffect(() => {
+  // Check if all orders are 'Ready for Driver Pickup'
+  const areAllOrdersReady = combinedStops.every(stop => stop.orderStatus === 'Ready for Driver Pickup' || 'Out for Delivery');
+  setAllOrdersReadyForNavigation(areAllOrdersReady);
+  }, [combinedStops]); // Dependency on combinedStops to re-evaluate when stops data changes
+
+  useEffect(() => {
     const fetchData = async () => {
       if (!user || !user._id) {
         return;
-      }
-
-      console.log("Fetching data with formattedDate:", formattedDate, "and driver email:", user.email);
+  }
+      //console.log("Fetching data with formattedDate:", formattedDate, "and driver email:", user.email);
       
       try {
         const response = await axios.get(`/api/deliveryRoutes/specificRoute?date=${formattedDate}&userId=${user._id}`);
-        console.log("API response:", response.data);
+        //console.log("API response:", response.data);
         setRoutePlanExists(response.data.exists);
 
         if (response.data.exists) {
@@ -105,7 +126,7 @@ function RouteView() {
     );
 
     setDeliveredOrders(fullyDelivered);
-    console.log("Fully Delivered Orders updated:", fullyDelivered);
+    //console.log("Fully Delivered Orders updated:", fullyDelivered);
   };
 
   const handleStatusUpdate = async (stop) => {
@@ -132,9 +153,28 @@ function RouteView() {
       updateDeliveredOrders(response.data.deliveryRoute.stops);
       updateCompletedOrders(response.data.deliveryRoute.stops);
 
-      if (stop.status !== 'Out for Delivery') {
-        // Open navigation to the address of the clicked stop
-        setShowMap(true);
+
+      let stopList = [];
+      stopList.push(stop);
+      const orderStatusForStop = await getOrderStatusesFromStops(stopList);
+
+
+      // If the stop is ready for navigation, set up the destination and show the map
+      if (orderStatusForStop[0] === 'Ready for Driver Pickup' || orderStatusForStop[0] === 'Out for Delivery') {
+        // Assuming you have latitude and longitude in your stop object
+        const destination = {
+          lat: stop.latitude, 
+          lng: stop.longitude
+        };
+
+        // Set the selected destination for navigation
+        setSelectedDestination(destination);
+        console.log("----")
+        console.log(destination)
+        // Show the interactive map for navigation
+        setShowInteractiveMap(true);
+
+        // Set the current stop for any further actions needed like 'Deliver Package'
         setCurrentStop(stop);
       }
     } catch (error) {
@@ -142,8 +182,33 @@ function RouteView() {
     }
   };
 
+
+  async function getOrderStatusesFromStops(stops) {
+  const orderIds = stops.map(stop => stop.orderId);
+
+  // Perform an HTTP POST request to the new route with the order IDs
+  try {
+    const response = await axios.post('/api/orders/order-statuses', {
+      orderIDs: orderIds  // Send orderIds as part of the request body
+    });
+    const orderStatusMap = response.data.reduce((map, status) => {
+      map[status.orderId] = status.status;  // Map orderId to status
+      return map;
+    }, {});
+
+    // Map each stop to its corresponding order status
+    const orderStatuses = stops.map(stop => orderStatusMap[stop.orderId] || 'Status Not Found');
+    //console.log(orderStatuses)
+    return orderStatuses;
+  } catch (error) {
+    console.error('Failed to fetch order statuses:', error);
+    throw error;  // Or handle this more gracefully if needed
+  }
+}
+
+
   const handleBack = () => {
-    setShowMap(false);
+    setShowInteractiveMap(false);
     setCurrentStop(null);
   };
 
@@ -165,7 +230,7 @@ function RouteView() {
       setRouteDetails({ routes: [response.data.deliveryRoute] });
       updateDeliveredOrders(response.data.deliveryRoute.stops);
       updateCompletedOrders(response.data.deliveryRoute.stops);
-      setShowMap(false);
+      setShowInteractiveMap(false);
     } catch (error) {
       console.error('Error delivering package:', error);
     }
@@ -202,33 +267,6 @@ function RouteView() {
     return `${month}/${day}/${year}`;
   }
 
-
-
-
-async function getOrderStatusesFromStops(stops) {
-  const orderIds = stops.map(stop => stop.orderId);
-
-  // Perform an HTTP POST request to the new route with the order IDs
-  try {
-    const response = await axios.post('/api/orders/order-statuses', {
-      orderIDs: orderIds  // Send orderIds as part of the request body
-    });
-    const orderStatusMap = response.data.reduce((map, status) => {
-      map[status.orderId] = status.status;  // Map orderId to status
-      return map;
-    }, {});
-
-    // Map each stop to its corresponding order status
-    const orderStatuses = stops.map(stop => orderStatusMap[stop.orderId] || 'Status Not Found');
-    console.log(orderStatuses)
-    return orderStatuses;
-  } catch (error) {
-    console.error('Failed to fetch order statuses:', error);
-    throw error;  // Or handle this more gracefully if needed
-  }
-}
-
-
   async function combineStopsWithStatuses(stops) {
   // Get the order statuses for the given stops
   const orderStatuses = await getOrderStatusesFromStops(stops);
@@ -238,7 +276,7 @@ async function getOrderStatusesFromStops(stops) {
     ...stop,
     orderStatus: orderStatuses[index] // Add the status to each stop
   }));
-  console.log(combinedStops)
+ // console.log(combinedStops)
 
   return combinedStops;
 }
@@ -266,7 +304,8 @@ async function getOrderStatusesFromStops(stops) {
       Header: 'Actions',
       Cell: ({ row }) => (
         <div data-label="Actions">
-          <button className="add-button" onClick={() => handleStatusUpdate(row)}>
+          <button className="add-button" onClick={() => handleStatusUpdate(row)}
+                disabled={!allOrdersReadyForNavigation}>
             {row.status === 'Out for Delivery' ? 'Revert Status' : 'Navigate'}
           </button>
         </div>
@@ -274,21 +313,77 @@ async function getOrderStatusesFromStops(stops) {
     }
   ];
 
-  return (
-    <div>
-      {showMap ? (
-        <InteractiveMap 
-          stop={currentStop}
-          stops={routeDetails.routes[0]?.stops || []}
-          onBack={handleBack}
-          onDeliver={handleDeliverPackage}
-        />
+
+function getCurrentLocation() {
+    return new Promise((resolve, reject) => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    resolve({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                },
+                err => {
+                    reject(err);
+                }
+            );
+        } else {
+            reject(new Error('Geolocation is not supported by this browser.'));
+        }
+    });
+}
+
+const handleNavigate = (destinationAddress) => {
+  setSelectedDestination({ lat: destinationAddress.latitude, lng: destinationAddress.longitude });
+  setShowInteractiveMap(true);  // Assuming you want to show the map after setting destination
+};
+
+
+function updateMapDirections(origin, destination) {
+    const directionsService = new window.google.maps.DirectionsService();
+    const request = {
+        origin: origin,  // current location
+        destination: destination,  // stop's location
+        travelMode: window.google.maps.TravelMode.DRIVING,
+    };
+    directionsService.route(request, (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+            // Assuming you have a reference to a DirectionsRenderer component
+            directionsRendererRef.current.setDirections(result);
+        } else {
+            console.error("Error fetching directions", result);
+        }
+    });
+}
+
+
+return (
+  <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
+    <div style={{ position: 'relative' }}> {/* Ensure this div is relatively positioned */}
+      {showInteractiveMap ? (
+        // InteractiveMap displays in an overlay fashion, covering the entire component area
+        <div style={{
+          position: 'absolute', // Makes the map overlay
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1000 // Ensures it covers other content
+        }}>
+          <InteractiveMap 
+            origin={currentLocation}  // Managed state at a higher level
+            destination={selectedDestination}
+            onBack={handleBack}
+            onDeliver={handleDeliverPackage}
+          />
+        </div>
       ) : (
         <>
           <h2>Route Plan for {reformatDate(formattedDate)}</h2>
           {routeDetails.routes.length > 0 ? (
             <>
-              <OverviewMap stops={routeDetails.routes[0].stops} />
+              <OverviewMap stops={routeDetails.routes[0]?.stops || []} />
               <div className="table-container">
                 <GenericTable data={combinedStops} columns={columns} fullyPickedOrders={deliveredOrders} />
               </div>
@@ -299,7 +394,11 @@ async function getOrderStatusesFromStops(stops) {
         </>
       )}
     </div>
-  );
+  </LoadScript>
+);
+
+
+
 }
 
 export default RouteView;
