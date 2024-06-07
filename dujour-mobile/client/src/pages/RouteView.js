@@ -3,7 +3,6 @@ import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import OverviewMap from './OverviewMap';
-import InteractiveMap from './InteractiveMap';
 import { GenericTable } from './ReusableReactComponents';
 import { LoadScript } from '@react-google-maps/api';
 const config = require('../config');
@@ -19,7 +18,6 @@ function RouteView() {
   const [routePlanExists, setRoutePlanExists] = useState(false);
   const [deliveredOrders, setDeliveredOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
-  const [showInteractiveMap, setShowInteractiveMap] = useState(false);
   const [currentStop, setCurrentStop] = useState(null);
   const [stopsData, setStopsData] = useState([]);
   const [combinedStops, setCombinedStops] = useState([]);
@@ -129,58 +127,52 @@ function RouteView() {
     //console.log("Fully Delivered Orders updated:", fullyDelivered);
   };
 
-  const handleStatusUpdate = async (stop) => {
-    try {
-      let updatedStops;
-      if (stop.status === 'Out for Delivery') {
-        updatedStops = routeDetails.routes[0].stops.map(s => 
-          s._id === stop._id ? { ...s, status: 'Scheduled' } : s
-        );
-      } else {
-        updatedStops = routeDetails.routes[0].stops.map(s => ({
-          ...s,
-          status: 'Out for Delivery'
-        }));
-      }
-
-      const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
-        deliveryRouteId: routeDetails.routes[0]._id,
-        stops: updatedStops
-      });
-
-      console.log('Status update response:', response.data);
-      setRouteDetails({ routes: [response.data.deliveryRoute] });
-      updateDeliveredOrders(response.data.deliveryRoute.stops);
-      updateCompletedOrders(response.data.deliveryRoute.stops);
-
-
-      let stopList = [];
-      stopList.push(stop);
-      const orderStatusForStop = await getOrderStatusesFromStops(stopList);
-
-
-      // If the stop is ready for navigation, set up the destination and show the map
-      if (orderStatusForStop[0] === 'Ready for Driver Pickup' || orderStatusForStop[0] === 'Out for Delivery') {
-        // Assuming you have latitude and longitude in your stop object
-        const destination = {
-          lat: stop.latitude, 
-          lng: stop.longitude
-        };
-
-        // Set the selected destination for navigation
-        setSelectedDestination(destination);
-        console.log("----")
-        console.log(destination)
-        // Show the interactive map for navigation
-        setShowInteractiveMap(true);
-
-        // Set the current stop for any further actions needed like 'Deliver Package'
-        setCurrentStop(stop);
-      }
-    } catch (error) {
-      console.error('Error updating delivery status:', error);
+const handleStatusUpdate = async (stop) => {
+  try {
+    let updatedStops;
+    if (stop.status === 'Out for Delivery') {
+      updatedStops = routeDetails.routes[0].stops.map(s => 
+        s._id === stop._id ? { ...s, status: 'Scheduled' } : s
+      );
+    } else {
+      updatedStops = routeDetails.routes[0].stops.map(s => ({
+        ...s,
+        status: 'Out for Delivery'
+      }));
     }
-  };
+
+    const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+      deliveryRouteId: routeDetails.routes[0]._id,
+      stops: updatedStops
+    });
+
+    console.log('Status update response:', response.data);
+    setRouteDetails({ routes: [response.data.deliveryRoute] });
+    updateDeliveredOrders(response.data.deliveryRoute.stops);
+    updateCompletedOrders(response.data.deliveryRoute.stops);
+
+    let stopList = [stop];
+    const orderStatusForStop = await getOrderStatusesFromStops(stopList);
+
+    // If the stop is ready for navigation, open Google Maps with directions
+    if (orderStatusForStop[0] === 'Ready for Driver Pickup' || orderStatusForStop[0] === 'Out for Delivery') {
+      // Open Google Maps for directions
+      const destination = {
+        lat: stop.latitude, 
+        lng: stop.longitude
+      };
+      openGoogleMaps(destination.lat, destination.lng);
+    }
+  } catch (error) {
+    console.error('Error updating delivery status:', error);
+  }
+};
+
+function openGoogleMaps(lat, lng) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  window.open(url, '_blank'); // Open in a new tab
+}
+
 
 
   async function getOrderStatusesFromStops(stops) {
@@ -208,7 +200,6 @@ function RouteView() {
 
 
   const handleBack = () => {
-    setShowInteractiveMap(false);
     setCurrentStop(null);
   };
 
@@ -230,7 +221,6 @@ function RouteView() {
       setRouteDetails({ routes: [response.data.deliveryRoute] });
       updateDeliveredOrders(response.data.deliveryRoute.stops);
       updateCompletedOrders(response.data.deliveryRoute.stops);
-      setShowInteractiveMap(false);
     } catch (error) {
       console.error('Error delivering package:', error);
     }
@@ -336,7 +326,6 @@ function getCurrentLocation() {
 
 const handleNavigate = (destinationAddress) => {
   setSelectedDestination({ lat: destinationAddress.latitude, lng: destinationAddress.longitude });
-  setShowInteractiveMap(true);  // Assuming you want to show the map after setting destination
 };
 
 
@@ -361,24 +350,7 @@ function updateMapDirections(origin, destination) {
 return (
   <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
     <div style={{ position: 'relative' }}> {/* Ensure this div is relatively positioned */}
-      {showInteractiveMap ? (
-        // InteractiveMap displays in an overlay fashion, covering the entire component area
-        <div style={{
-          position: 'absolute', // Makes the map overlay
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1000 // Ensures it covers other content
-        }}>
-          <InteractiveMap 
-            origin={currentLocation}  // Managed state at a higher level
-            destination={selectedDestination}
-            onBack={handleBack}
-            onDeliver={handleDeliverPackage}
-          />
-        </div>
-      ) : (
+      {
         <>
           <h2>Route Plan for {reformatDate(formattedDate)}</h2>
           {routeDetails.routes.length > 0 ? (
@@ -392,7 +364,7 @@ return (
             <p>No delivery route available for this date.</p>
           )}
         </>
-      )}
+      }
     </div>
   </LoadScript>
 );
