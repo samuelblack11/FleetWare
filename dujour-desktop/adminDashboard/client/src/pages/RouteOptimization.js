@@ -23,83 +23,69 @@ const RouteOptimization = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [users, setUsers] = useState([]);
-  const [routeDetails, setRouteDetails] = useState({ routes: [] });
+  const [routePlan, setRoutePlan] = useState({ routes: [] });
   const [selectedUsers, setSelectedUsers] = useState({});
   const [routingMethod, setRoutingMethod] = useState('kmeans');
+  const [showRoutePlan, setShowRoutePlan] = useState(false);
+  const [planSaved, setPlanSaved] = useState(false);
+
   const whLocation = {
     latitude: 38.804840,
     longitude: -77.043430,
     address: " 301 King St, Alexandria, VA 22314"
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+useEffect(() => {
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
       const exists = await checkForExistingRoutePlan(selectedDate);
       setRoutePlanExists(exists);
+      if (exists) {
+        const { data: routePlan } = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
+        console.log("**")
+        console.log(routePlan)
+        setRoutePlan(routePlan);
 
-      if (!exists) {
-        try {
-          const { data } = await axios.get(`/api/orders?date=${selectedDate}`);
-          setOrders(data);
-          setSelectedOrders([]);
-        } catch (error) {
-          console.error("Error fetching orders:", error);
-        }
+      // Initialize users for each route, use "Set Driver" as a placeholder if no driver is assigned
+      const usersInit = routePlan.routes.reduce((acc, route, index) => {
+      console.log(route)
+      // Check if the route has a driver and the driver has an _id, otherwise use a placeholder
+      if (route.driver && route.driver._id) {
+        acc[index] = route.driver._id;
       } else {
-        try {
-          const routePlanDetails = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
-          console.log("@@@@@")
-          console.log(routePlanDetails.data)
-          setRouteDetails(routePlanDetails.data);
-          setSelectedUsersFromRoutes(routePlanDetails.data.routes);  // Set selected users based on fetched routes
-          setOrders([]);
-        } catch (error) {
-          console.error("Error fetching route plan details:", error);
-        }
+        acc[index] = "Select a Driver"; // Using a placeholder string
       }
-      setIsLoading(false);
-    };
-
-    if (selectedDate) {
-      fetchData();
+      return acc;
+    }, {});
+      console.log("&&&")
+      console.log(usersInit)
+      setSelectedUsers(usersInit);
+      setShowRoutePlan(true);
+      setPlanSaved(true);
+      } 
+      else {
+        const { data: ordersData } = await axios.get(`/api/orders?date=${selectedDate}`);
+        setOrders(ordersData);
+        setShowRoutePlan(false);
+        setRoutePlan([]);
+        setSelectedUsers({});
+        setPlanSaved(false);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError('Failed to fetch data.');
     }
-  }, [selectedDate]);
+    setIsLoading(false);
+  };
+
+  if (selectedDate) fetchData();
+}, [selectedDate]);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const setSelectedUsersFromRoutes = (routes) => {
-    const userAssignments = routes.reduce((acc, route, index) => {
-        if (route.driver) {
-            acc[index] = route.driver;
-        }
-        return acc;
-    }, {});
-    console.log("Initial driver assignments:", userAssignments);
-    setSelectedUsers(userAssignments);
-};
-
-{/*useEffect(() => {
-  if (routeDetails.routes.length > 0 && users.length > 0) {
-    const selectedUsersInit = routeDetails.routes.reduce((acc, route, index) => {
-      // Make sure driver ID from route is in the users list to ensure validity
-      const isValidUser = users.some(user => user._id === route.driver);
-      if (route.driver && isValidUser) {
-        acc[index] = route.driver;
-      }
-      return acc;
-    }, {});
-    console.log("JJJJ")
-    console.log(selectedUsersInit)
-    setSelectedUsers(selectedUsersInit);
-  }
-}, [routeDetails, users]);*/}
-
-
-  useEffect(() => {
-  }, [selectedUsers]);
 
   const fetchUsers = async () => {
     try {
@@ -111,17 +97,25 @@ const RouteOptimization = () => {
     }
   };
 
+  const handleChange = (setter) => (e) => setter(e.target.value);
+
+  const handleUserSelection = (routeIndex, userId) => {
+    setSelectedUsers(prev => ({
+      ...prev,
+      [routeIndex]: userId  // Ensuring a new object is created for the state
+    }));
+  };
+
   const checkForExistingRoutePlan = async (selectedDate) => {
     try {
       const response = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
+      console.log(response)
       return response.data.exists;
     } catch (error) {
       console.error("Error checking for existing route plan:", error);
       setError('Failed to check for existing route plans.');
     }
   };
-
-  const handleChange = (setter) => (e) => setter(e.target.value);
 
   const handleOptimizeRoutes = async (e) => {
     e.preventDefault();
@@ -146,28 +140,28 @@ const RouteOptimization = () => {
   const updateRouteDetails = async () => {
   try {
     const response = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
-    setRouteDetails(response.data);
+    setRoutePlan(response.data);
   } catch (error) {
     console.error("Failed to fetch updated route details:", error);
   }
 };
 
-// Call this function after any operation that should update route details
-
-
   const handleDeleteRoutePlan = async () => {
     setIsLoading(true);
     if (!selectedDate) {
       setError('Please select a date to delete the route plan.');
+      setIsLoading(false); // Add this line to stop the loading spinner if there's no selected date
       return;
     }
     try {
       await axios.delete(`/api/deliveryRoutes?date=${selectedDate}`);
       alert('Route plan deleted successfully.');
-      setSelectedDate('')
-      setRoutePlanExists(false);
-      setRouteDetails({ routes: [] });
+      setShowRoutePlan(false);
+      setRoutePlan({ routes: [] });
+      setSelectedUsers({});
       setError('');
+      setPlanSaved(false);
+      setRoutePlanExists(false);
     } catch (error) {
       console.error('Error deleting route plan:', error);
       setError('Failed to delete route plan.');
@@ -199,15 +193,6 @@ const RouteOptimization = () => {
 
   const handleSubmitRoutePlan = async () => {
     setIsLoading(true);
-
-      // Check if every route has a driver assigned
-    {/*const allDriversAssigned = optimizedRoutes.every((route, index) => selectedUsers[index]);
-    if (!allDriversAssigned) {
-      alert('Not all routes have a driver assigned. Please assign a driver to each route.');
-      setIsLoading(false);
-      return;
-    }*/}
-
     try {
       const date = new Date(`${selectedDate}T06:00:00`);
       const estOffset = 5 * 60 * 60 * 1000;
@@ -233,7 +218,7 @@ const RouteOptimization = () => {
       console.log("Submitting Routes: ", routes);
     const response = await axios.post('/api/deliveryRoutes', { routes });
     setRoutePlanExists(true);
-    setRouteDetails({ routes: response.data.routes });  // Ensure to update with the response data which includes route IDs
+    setRoutePlan({ routes: response.data.routes });  // Ensure to update with the response data which includes route IDs
     setOrders([]);
     setIsLoading(false);
     alert('Route plan submitted successfully.');
@@ -251,24 +236,15 @@ const RouteOptimization = () => {
 
   const UserDropdown = ({ users, selectedUserId, onUserAssigned, routeIndex }) => (
     <select 
-      value={selectedUserId || ''}  // Adjusted to use _id from the user object
+     value={selectedUserId || ''}  // Adjusted to use _id from the user object
       onChange={(e) => onUserAssigned(routeIndex, e.target.value)}
     >
-      <option value="">Select a Driver</option>
+     <option value="">Select a Driver</option>
       {users.map((user) => (
         <option key={user._id} value={user._id}>{user.name}</option>
       ))}
     </select>
   );
-
-  const handleUserSelection = (routeIndex, userId) => {
-    console.log(`Route Index: ${routeIndex}, User ID: ${userId}`);
-    setSelectedUsers(prev => ({
-        ...prev,
-        [routeIndex]: userId  // Ensuring a new object is created for the state
-    }));
-};
-
 
   const reformatDate = (selectedDate) => {
     const dateParts = selectedDate.split('-');
@@ -281,12 +257,7 @@ const RouteOptimization = () => {
 
 const handleConfirmDriverAssignments = async () => {
   setIsLoading(true);
-  console.log(selectedUsers);
-  console.log("#@#@")
-  console.log(routeDetails)
-
-
-  const updatedRoutes = routeDetails.routes.map((route, index) => {
+  const updatedRoutes = routePlan.routes.map((route, index) => {
     const user = users.find(user => user._id === selectedUsers[index]);
     return {
       ...route,
@@ -311,6 +282,7 @@ const handleConfirmDriverAssignments = async () => {
     alert('Failed to confirm user assignments.');
   }
 };
+
 
   return (
     <div className="route-optimization-container">
@@ -369,17 +341,18 @@ const handleConfirmDriverAssignments = async () => {
           <button className="submit-btn" onClick={handleClearRoutes}>Clear</button>
         </>
       )}
-      {routePlanExists && Array.isArray(routeDetails.routes) && routeDetails.routes.length > 0 && (
+      {routePlanExists && Array.isArray(routePlan.routes) && routePlan.routes.length > 0 && (
         <>
           <h2>Route Plan for {reformatDate(selectedDate)}</h2>
-          <MapComponent whLocation={whLocation} routes={routeDetails.routes} />
+          <MapComponent whLocation={whLocation} routes={routePlan.routes} />
           <button className="submit-btn" onClick={handleConfirmDriverAssignments}>Confirm Driver Assignments</button>
           <button className="submit-btn" onClick={handleDeleteRoutePlan}>Delete Route Plan</button>
-          {routeDetails.routes.map((route, routeIndex) => (
+          {routePlan.routes.map((route, routeIndex) => (
             <div key={routeIndex}>
               <h3>Route {routeIndex + 1}</h3>
               <UserDropdown
                 users={users}
+                //selectedUserId={route.driver._id}
                 selectedUserId={selectedUsers[routeIndex]}
                 onUserAssigned={handleUserSelection}
                 routeIndex={routeIndex}
