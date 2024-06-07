@@ -27,9 +27,9 @@ router.put('/updateUsers', async (req, res) => {
       for (const stop of route.stops) {
           const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
           const order = await Order.findById(orderObjectId);
-          console.log("+++")
-          console.log(order)
-          console.log(order.overallStatus)
+          //console.log("+++")
+          //console.log(order)
+          //console.log(order.overallStatus)
           if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
               allOrdersReadyForPickup = false;
               break;
@@ -59,8 +59,8 @@ router.put('/updateUsers', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { routes } = req.body;
-  console.log("-------");
-  console.log(routes);
+  //console.log("-------");
+  //console.log(routes);
 
   try {
     let createdRoutesWithIds = []; // Array to hold created routes along with their MongoDB IDs
@@ -80,9 +80,9 @@ router.post('/', async (req, res) => {
       for (const stop of transformedStops) {
         const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
         const order = await Order.findById(orderObjectId);
-        console.log("+++");
-        console.log(order);
-        console.log(order.overallStatus);
+        //console.log("+++");
+        //console.log(order);
+        //console.log(order.overallStatus);
         if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
           allOrdersReadyForPickup = false;
           break;
@@ -158,9 +158,9 @@ router.get('/', async (req, res) => {
 
         // Loop through each route and print the datatype of startTime
         existingRoutes.forEach(route => {
-            console.log('Route ID:', route._id);
-            console.log('startTime:', route.startTime);
-            console.log('Type of startTime:', typeof route.startTime);
+            //console.log('Route ID:', route._id);
+            //console.log('startTime:', route.startTime);
+            //console.log('Type of startTime:', typeof route.startTime);
         });
 
 
@@ -181,14 +181,14 @@ router.get('/specificRoute', async (req, res) => {
 
   try {
     // Lookup for the user by userId
-    console.log("Attempting to find user with ID:", userId);
-    console.log("Type of userId:", typeof userId); // Print out the type of userId
+    //console.log("Attempting to find user with ID:", userId);
+    //console.log("Type of userId:", typeof userId); // Print out the type of userId
     const userObjectId = new mongoose.Types.ObjectId(userId);
-    console.log("Converted userId to ObjectId:", userObjectId);
+    //console.log("Converted userId to ObjectId:", userObjectId);
 
     // Lookup for the user by userId
     const user = await User.findById(userObjectId);
-    console.log("User found:", user ? user : "No user found with the specified ID.");
+    //console.log("User found:", user ? user : "No user found with the specified ID.");
 
     if (!user) {
       return res.status(404).json({ message: "User not found with the given ID" });
@@ -196,7 +196,7 @@ router.get('/specificRoute', async (req, res) => {
 
     // Print out all delivery routes for debugging
     const allDeliveryRoutes = await DeliveryRoute.find().populate('driver');
-    console.log("All Delivery Routes:", JSON.stringify(allDeliveryRoutes, null, 2));
+    //console.log("All Delivery Routes:", JSON.stringify(allDeliveryRoutes, null, 2));
 
     // Construct the query for deliveryRoute lookup
     let query = { driver: user._id };
@@ -212,7 +212,7 @@ router.get('/specificRoute', async (req, res) => {
       // Add date range filter to the query using startTime
       query.startTime = { $gte: targetDate, $lt: nextDay };
       
-      console.log(`Query date range for startTime: ${targetDate.toISOString()} to ${nextDay.toISOString()}`);
+      //console.log(`Query date range for startTime: ${targetDate.toISOString()} to ${nextDay.toISOString()}`);
     }
 
     // Lookup for existing deliveryRoutes with the constructed query
@@ -220,7 +220,7 @@ router.get('/specificRoute', async (req, res) => {
     if (existingDeliveryRoutes.length > 0) {
       res.json({ exists: true, routes: existingDeliveryRoutes });
     } else {
-      console.log('No deliveryRoutes found for this user on the specified date.');
+      //console.log('No deliveryRoutes found for this user on the specified date.');
       res.json({ exists: false, message: "No deliveryRoutes found for this user on the specified date." });
     }
   } catch (error) {
@@ -237,11 +237,11 @@ router.put('/updateDeliveryStatus', async (req, res) => {
   const { deliveryRouteId, stops } = req.body;
 
   try {
-    console.log(`Updating delivery route ID: ${deliveryRouteId}`);
+    //console.log(`Updating delivery route ID: ${deliveryRouteId}`);
 
     const deliveryRoute = await DeliveryRoute.findById(deliveryRouteId);
     if (!deliveryRoute) {
-      console.log("Delivery Route not found");
+      //console.log("Delivery Route not found");
       return res.status(404).json({ message: "Delivery Route not found" });
     }
 
@@ -250,11 +250,11 @@ router.put('/updateDeliveryStatus', async (req, res) => {
       ...stop,
       status: 'Out for Delivery'
     }));
-    console.log("All stops status updated to 'Out for Delivery'");
+    //console.log("All stops status updated to 'Out for Delivery'");
 
     // Save the delivery route after updating the stops' status
     await deliveryRoute.save();
-    console.log("Delivery Route saved after stops' status update");
+    //console.log("Delivery Route saved after stops' status update");
 
     // Update delivery route status based on the updated stops
     if (deliveryRoute.stops.some(stop => stop.status === 'Scheduled' || stop.status === 'Ready for Driver Pickup')) {
@@ -262,11 +262,11 @@ router.put('/updateDeliveryStatus', async (req, res) => {
     } else if (deliveryRoute.stops.every(stop => stop.status === 'Delivered')) {
       deliveryRoute.status = 'Delivered';
     }
-    console.log(`Updated Delivery Route status to: ${deliveryRoute.status}`);
+    //console.log(`Updated Delivery Route status to: ${deliveryRoute.status}`);
 
     // Save the delivery route after updating the delivery route status
     await deliveryRoute.save();
-    console.log("Delivery Route saved after status update");
+    //console.log("Delivery Route saved after status update");
 
     // Find the orders associated with these stops
     const masterOrderNumbers = deliveryRoute.stops.map(stop => stop.masterOrderNumber);
@@ -281,7 +281,7 @@ router.put('/updateDeliveryStatus', async (req, res) => {
         order.overallStatus = 'Order Delivered';
       }
       await order.save();
-      console.log(`Updated Order ${order.masterOrderNumber} overall status to: ${order.overallStatus}`);
+      //console.log(`Updated Order ${order.masterOrderNumber} overall status to: ${order.overallStatus}`);
     }
 
     res.status(200).json({ message: "Stop status updated successfully", deliveryRoute });

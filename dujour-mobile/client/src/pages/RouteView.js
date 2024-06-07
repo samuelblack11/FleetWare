@@ -19,6 +19,8 @@ function RouteView() {
   const [completedOrders, setCompletedOrders] = useState([]);
   const [showMap, setShowMap] = useState(false);
   const [currentStop, setCurrentStop] = useState(null);
+  const [stopsData, setStopsData] = useState([]);
+  const [combinedStops, setCombinedStops] = useState([]);
 
   const handleBounceBack = () => {
     const container = document.querySelector('.table-container');
@@ -78,6 +80,18 @@ function RouteView() {
   }, [user, formattedDate]);
 
   useEffect(() => {}, [routeDetails]);
+
+  useEffect(() => {
+    // Assuming routeDetails is already populated
+    if (routeDetails && routeDetails.routes.length > 0) {
+      const stops = routeDetails.routes[0].stops;
+      combineStopsWithStatuses(stops)
+        .then(setCombinedStops)
+        .catch(error => console.error('Failed to combine stops with statuses:', error));
+    }
+  }, [routeDetails]);
+
+
 
   const updateDeliveredOrders = (stops) => {
     const deliveredOrders = stops.reduce((acc, stop) => {
@@ -188,6 +202,48 @@ function RouteView() {
     return `${month}/${day}/${year}`;
   }
 
+
+
+
+async function getOrderStatusesFromStops(stops) {
+  const orderIds = stops.map(stop => stop.orderId);
+
+  // Perform an HTTP POST request to the new route with the order IDs
+  try {
+    const response = await axios.post('/api/orders/order-statuses', {
+      orderIDs: orderIds  // Send orderIds as part of the request body
+    });
+    const orderStatusMap = response.data.reduce((map, status) => {
+      map[status.orderId] = status.status;  // Map orderId to status
+      return map;
+    }, {});
+
+    // Map each stop to its corresponding order status
+    const orderStatuses = stops.map(stop => orderStatusMap[stop.orderId] || 'Status Not Found');
+    console.log(orderStatuses)
+    return orderStatuses;
+  } catch (error) {
+    console.error('Failed to fetch order statuses:', error);
+    throw error;  // Or handle this more gracefully if needed
+  }
+}
+
+
+  async function combineStopsWithStatuses(stops) {
+  // Get the order statuses for the given stops
+  const orderStatuses = await getOrderStatusesFromStops(stops);
+
+  // Combine the stops with their corresponding order statuses
+  const combinedStops = stops.map((stop, index) => ({
+    ...stop,
+    orderStatus: orderStatuses[index] // Add the status to each stop
+  }));
+  console.log(combinedStops)
+
+  return combinedStops;
+}
+
+
   const columns = [
     { 
       Header: 'Order #', 
@@ -201,9 +257,9 @@ function RouteView() {
     },
     {
       Header: 'Status',
-      accessor: 'status',
+      accessor: 'orderStatus',
       Cell: ({ row }) => (
-        <span data-label="Status">{row.status}</span>
+        <span data-label="Status">{row.orderStatus}</span>
       )
     },
     {
@@ -234,7 +290,7 @@ function RouteView() {
             <>
               <OverviewMap stops={routeDetails.routes[0].stops} />
               <div className="table-container">
-                <GenericTable data={routeDetails.routes[0].stops} columns={columns} fullyPickedOrders={deliveredOrders} />
+                <GenericTable data={combinedStops} columns={columns} fullyPickedOrders={deliveredOrders} />
               </div>
             </>
           ) : (

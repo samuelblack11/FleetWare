@@ -18,11 +18,9 @@ const deliveryRouteSchema = new Schema({
     deliveryDate: Date,
     dropOffTime: Date,
     orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
+    orderStatus: String,
     customerEmail: String,
     masterOrderNumber: Number,
-    status: { type: String, 
-            enum: ['Scheduled', 'Ready for Driver Pickup','Out for Delivery', 'Delivered'],
-            default: 'Scheduled' },
   }],
   status: {
     type: String,

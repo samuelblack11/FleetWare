@@ -96,6 +96,23 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Route to get the statuses of multiple orders by their IDs
+router.post('/order-statuses', async (req, res) => {
+  try {
+    const { orderIDs } = req.body; // Expect an array of orderIDs in the request body
+    const orders = await Order.find({ '_id': { $in: orderIDs } }, 'overallStatus'); // Fetch only the 'overallStatus' field
+    // Create an array of statuses
+    const statuses = orders.map(order => ({ 
+      orderId: order._id.toString(), 
+      status: order.overallStatus 
+    }));
+    res.json(statuses);
+  } catch (error) {
+    console.error('Error fetching order statuses:', error);
+    res.status(500).send('Server error');
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
