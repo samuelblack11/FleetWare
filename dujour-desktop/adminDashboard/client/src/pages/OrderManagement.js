@@ -3,6 +3,11 @@ import axios from 'axios';
 import { GenericTable, GenericPopup, DetailedOrderPopup} from './ReusableReactComponents';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
+import logo from '../assets/logo128.png';
+
 
 const OrderForm = ({ order, onSave, onClose, isEditable }) => {
   const initialState = order || {
@@ -14,8 +19,6 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
   };
 
   const [orderData, setOrderData] = useState(initialState);
-
-
 
   const handleChange = (e, index) => {
     if (index !== undefined) {
@@ -49,6 +52,10 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
 
   return (
     <form onSubmit={handleSubmit}>
+      <div>
+        <label>Customer Name:</label>
+        <input type="text" name="customerName" value={orderData.customerName} onChange={handleChange} readOnly={!isEditable} />
+      </div>
       <div>
         <label>Customer Email:</label>
         <input type="text" name="customerEmail" value={orderData.customerEmail} onChange={handleChange} readOnly={!isEditable} />
@@ -106,13 +113,8 @@ const OrderManagement = ({ mode }) => {
 
     const fetchMyOrders = async () => {
       try {
-        console.log(user.email)
-        console.log("-----")
         const allOrdersResponse = await axios.get('/api/orders');
-        console.log(allOrdersResponse)
         const myOrders = allOrdersResponse.data.filter(order => order.customerEmail === user.email);
-        console.log("+++++")
-        console.log(myOrders)
         setOrders(myOrders);
       } catch (error) {
         console.error('Error fetching orders:', error);
@@ -190,6 +192,7 @@ const statusOptions = [
 ];
 
   const columns = [
+  { Header: 'Customer Name', accessor: 'customerName' },
   { Header: 'Customer Email', accessor: 'customerEmail' },
     {
     Header: 'Order Status',
@@ -238,10 +241,6 @@ const statusOptions = [
       <>
         <button onClick={() => {
           setCurrentOrder(row);
-          console.log("&&&");
-          console.log(row);
-          console.log("<<<")
-          console.log(currentOrder)
           setShowOrderPopup(true);
         }} className="edit-btn">{isDraft && mode === 'myOrders' ? 'View/Update' : 'View'}</button>
       {mode !== 'myOrders' && <button onClick={() => {
@@ -250,9 +249,65 @@ const statusOptions = [
       </>
     );
   }
-}
-
+},
+  {
+    Header: 'Print',
+    id: 'print',
+    accessor: 'print',
+    Cell: ({ row }) => (
+      <>
+        <button className="add-button" onClick={() => generateAndOpenPDF(row)}>Print Label</button>
+      </>
+    )
+  }
   ];
+
+const generateAndOpenPDF = async (order) => {
+  const doc = new jsPDF();
+  const barcodeData = `Dujour-${order.masterOrderNumber}-${order.customerEmail}`;
+
+  // Convert logo and QR code to data URLs
+  const qrCodeDataURL = await QRCode.toDataURL(barcodeData);
+  const logoImage = new Image();
+  logoImage.src = logo;  // Assuming 'logo' is imported at the top of your file
+  await new Promise(resolve => logoImage.onload = resolve);
+
+  // Define the HTML content with better styling
+  const labelContent = `
+    <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; width: 210mm;">
+      <img src="${logoImage.src}" alt="Logo" style="width: 100px;"/>
+      <h2>Dujour Delivery</h2>
+      <p><strong></strong> ${order.customerName}</p>
+      <p><strong></strong> ${order.deliveryAddress}</p>
+      <p><strong>Delivery Date:</strong> ${new Date(order.deliveryDate).toLocaleDateString()}</p>
+      <img src="${qrCodeDataURL}" style="width: 100px; margin-top: 10px;"/>
+    </div>
+  `;
+
+  // Render the label content to a temporary div element
+  const tempDiv = document.createElement("div");
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.innerHTML = labelContent;
+  document.body.appendChild(tempDiv);
+
+  // Use html2canvas to capture the content with a higher scale for better quality
+  const canvas = await html2canvas(tempDiv, {
+    scale: 3, // Increase scale to improve quality
+    logging: true,
+    useCORS: true,
+    width: tempDiv.offsetWidth,
+    height: tempDiv.offsetHeight
+  });
+  document.body.removeChild(tempDiv);
+
+  // Add the rendered content to the PDF, adjust sizes accordingly
+  const imgData = canvas.toDataURL('image/png');
+  doc.addImage(imgData, 'PNG', 10, 10, 180, 160); // Adjust size to fit the content properly
+  window.open(doc.output('bloburl'), '_blank');
+};
+
+
 
   return (
     <div>

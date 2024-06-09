@@ -25,6 +25,7 @@ const PlaceOrder = () => {
   };
 
   const initialOrderState = {
+    customerName: user?.name || '',
     customerEmail: user?.email || '',
     deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
     deliveryDate: formattedDate,
@@ -175,7 +176,11 @@ const handleItemQuantityChange = (index, newQuantity) => {
       <h3>Customer Information</h3>
       <table className="customer-info-table">
         <tbody>
-          {user.role === 'admin' && (
+            <tr>
+              <td><label htmlFor="customerName">Customer Name:</label></td>
+              <td><input type="text" name="customerName" id="customerName" value={orderData.customerName} onChange={handleChange} required /></td>
+            </tr>
+            {user.role === 'admin' && (
             <tr>
               <td><label htmlFor="customerEmail">Customer Email:</label></td>
               <td><input type="email" name="customerEmail" id="customerEmail" value={orderData.customerEmail} onChange={handleChange} required /></td>
