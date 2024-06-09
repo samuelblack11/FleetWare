@@ -1,62 +1,37 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Webcam from 'react-webcam';
-import { BrowserBarcodeReader } from '@zxing/library';
-
-const videoConstraints = {
-  width: 1280,
-  height: 720,
-  facingMode: "environment"
-};
+import { BrowserQRCodeReader } from '@zxing/library';
 
 const BarcodeScannerComponent = ({ onScan }) => {
-  const webcamRef = useRef(null);
+    const webcamRef = useRef(null);
+    const codeReader = new BrowserQRCodeReader();
 
-  useEffect(() => {
-    const codeReader = new BrowserBarcodeReader();
-    let selectedDeviceId;
+    useEffect(() => {
+        let selectedDeviceId;
 
-    const scan = async () => {
-      if (webcamRef.current) {
-        try {
-          const videoDevices = await codeReader.listVideoInputDevices();
-          selectedDeviceId = videoDevices[0].deviceId;  // This selects the first available video device
-          
-          // Decode continuously from the selected device
-          codeReader.decodeFromVideoDevice(selectedDeviceId, webcamRef.current.video, (result, err) => {
-            if (result) {
-              onScan(result.text);
-              codeReader.reset();  // Optionally reset reader after successful scan
+        const startScanning = async () => {
+            const videoDevices = await codeReader.listVideoInputDevices();
+            selectedDeviceId = videoDevices[0].deviceId;
+            codeReader.decodeFromVideoDevice(selectedDeviceId, webcamRef.current.video, (result, err) => {
+                if (result) {
+                    onScan(result.text);
+                }
+            });
+        };
+
+        startScanning();
+
+        // Cleanup function to stop the camera when the component is unmounted or scanner is closed
+        return () => {
+            codeReader.reset();
+            if (webcamRef.current && webcamRef.current.stream) {
+                const tracks = webcamRef.current.stream.getTracks();
+                tracks.forEach(track => track.stop());
             }
-            if (err && err.name === 'NotFoundException') {
-              // This error is expected when no barcodes are detected in the frame
-              console.log('Scanning...');
-            } else if (err) {
-              console.error(err);
-            }
-          });
-        } catch (error) {
-          console.error('Error setting up barcode scanner:', error);
-        }
-      }
-    };
+        };
+    }, []); // Empty dependency array ensures this effect runs only once after mounting
 
-    scan();
-
-    return () => {
-      codeReader.reset();  // Clean up the code reader when the component is unmounted
-    };
-  }, []);
-
-  return (
-    <Webcam
-      audio={false}
-      height={720}
-      ref={webcamRef}
-      screenshotFormat="image/jpeg"
-      width={1280}
-      videoConstraints={videoConstraints}
-    />
-  );
+    return <Webcam ref={webcamRef} />;
 };
 
 export default BarcodeScannerComponent;

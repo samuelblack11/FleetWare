@@ -29,6 +29,7 @@ function RouteView() {
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const isGoogleApiLoaded = window.google && window.google.maps;
 
   const handleDeliverClick = (order) => {
     setCurrentOrder(order);
@@ -46,6 +47,10 @@ function RouteView() {
       alert('Barcode does not match.');
     }
   };
+
+  const handleCloseScanner = () => {
+        setShowScanner(false); // Function to close the scanner
+    };
 
   const handleBounceBack = () => {
     const container = document.querySelector('.table-container');
@@ -380,37 +385,63 @@ function updateMapDirections(origin, destination) {
     });
 }
 
+ return (
+    <>
+      {!isGoogleApiLoaded ? (
+        <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
+          <Content />
+        </LoadScript>
+      ) : (
+        <Content />
+      )}
+    </>
+  );
 
-return (
-  <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
-    <div style={{ position: 'relative' }}> {/* Ensure this div is relatively positioned */}
-      {
-        <>
-          <h2>Route Plan for {reformatDate(formattedDate)}</h2>
-          {routeDetails.routes.length > 0 ? (
-            <>
-              <OverviewMap stops={routeDetails.routes[0]?.stops || []} />
-              <div className="table-container">
-                <GenericTable data={combinedStops} columns={columns} fullyPickedOrders={deliveredOrders} />
-              </div>
-            </>
-          ) : (
-            <p>No delivery route available for this date.</p>
-          )}
-        </>
-      }
-      {showScanner && 
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.5)' }}>
-          <BarcodeScannerComponent onScan={handleBarcodeScanned} />
-        </div>
-      }
-    </div>
-  </LoadScript>
-);
-
-
-
+  function Content() {
+    return (
+      <div style={{ position: 'relative' }}> {/* Ensure this div is relatively positioned */}
+        <h2>Route Plan for {reformatDate(formattedDate)}</h2>
+        {routeDetails.routes.length > 0 ? (
+          <>
+            <OverviewMap stops={routeDetails.routes[0]?.stops || []} />
+            <div className="table-container">
+              <GenericTable data={combinedStops} columns={columns} fullyPickedOrders={deliveredOrders} />
+            </div>
+          </>
+        ) : (
+          <p>No delivery route available for this date.</p>
+        )}
+        {showScanner && 
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.5)' }}>
+            <BarcodeScannerComponent onScan={handleBarcodeScanned} />
+            <button onClick={handleCloseScanner} style={{
+              position: 'absolute',
+              top: 20,
+              left: 20,
+              padding: '10px 20px',
+              fontSize: '16px',
+              color: '#fff',
+              backgroundColor: '#f00',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+                    }}>
+              Close Scanner
+            </button>
+          </div>
+        }
+      </div>
+    );
+  }
 }
+
+
+
+
+
+
+
+
 
 export default RouteView;
 
