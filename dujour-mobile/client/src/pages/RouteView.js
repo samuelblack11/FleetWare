@@ -32,19 +32,21 @@ function RouteView() {
   const isGoogleApiLoaded = window.google && window.google.maps;
 
   const handleDeliverClick = (order) => {
+    console.log("99999")
+    console.log(order)
     setCurrentOrder(order);
     setShowScanner(true);
   };
 
   const handleBarcodeScanned = (barcode) => {
     setShowScanner(false);
-    if (barcode === `${currentOrder.masterOrderNumber}-${currentOrder.email}`) {
+    if (barcode === `${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}`) {
       // Confirm delivery
       if (window.confirm('Do you want to complete the delivery?')) {
         handleDeliverPackage(currentOrder);
       }
     } else {
-      alert('Barcode does not match.');
+      alert(`Expecting Barcode: ${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}. Got: ${barcode}`);
     }
   };
 
@@ -198,7 +200,9 @@ function openGoogleMaps(lat, lng) {
   window.open(url, '_blank'); // Open in a new tab
 }
 
-
+  const handleBack = () => {
+    setCurrentStop(null);
+  };
 
   async function getOrderStatusesFromStops(stops) {
   const orderIds = stops.map(stop => stop.orderId);
@@ -223,14 +227,10 @@ function openGoogleMaps(lat, lng) {
   }
 }
 
-
-  const handleBack = () => {
-    setCurrentStop(null);
-  };
-
   const handleDeliverPackage = async (order) => {
   try {
-    console.log(`Delivering package for order ${order.masterOrderNumber}`);
+    console.log(`Delivering package for order ${order.orderId}`);
+
     
     // Find the stop in the route details that matches the current order
     const updatedStops = routeDetails.routes[0].stops.map(stop => {
@@ -239,18 +239,21 @@ function openGoogleMaps(lat, lng) {
       }
       return stop;
     });
+    console.log(updatedStops)
 
     // Send the updated stops to the backend to update the delivery route
-    const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+    {/*const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
       deliveryRouteId: routeDetails.routes[0]._id,
       stops: updatedStops
-    });
+    })*/}
+
+    const response = await axios.put(`/api/orders/deliverPackage/${order.orderId}`)
 
     // Log the successful update and update state accordingly
     console.log('Delivery status update response:', response.data);
-    setRouteDetails({ routes: [response.data.deliveryRoute] });
-    updateDeliveredOrders(response.data.deliveryRoute.stops);
-    updateCompletedOrders(response.data.deliveryRoute.stops);
+    //setRouteDetails({ routes: [response.data.deliveryRoute] });
+    //updateDeliveredOrders(response.data.deliveryRoute.stops);
+    //updateCompletedOrders(response.data.deliveryRoute.stops);
 
     // Display a confirmation alert
     alert('Delivery completed successfully!');
@@ -329,10 +332,7 @@ function openGoogleMaps(lat, lng) {
       Header: 'Actions',
       Cell: ({ row }) => (
         <div data-label="Actions">
-          <button className="add-button" onClick={() => handleStatusUpdate(row)}
-            disabled={row.orderStatus !== 'Out for Delivery'}>
-            Navigate
-          </button>
+          <button className="add-button" onClick={() => handleStatusUpdate(row)}>Navigate</button>
           <button className="add-button" onClick={() => handleDeliverClick(row)}
             disabled={row.orderStatus !== 'Out for Delivery'}>
             Deliver

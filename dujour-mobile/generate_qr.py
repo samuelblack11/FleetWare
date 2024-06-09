@@ -1,7 +1,7 @@
 import qrcode
 
 # Data to be encoded
-data = "4-sam@salooapp.com"
+data = "3-sam@salooapp.com"
 
 # Create QR code instance
 qr = qrcode.QRCode(
@@ -19,4 +19,4 @@ qr.make(fit=True)
 img = qr.make_image(fill_color="black", back_color="white")
 
 # Save the image
-img.save("qr_code.png")
+img.save(f"qr_code-{data}.png")
