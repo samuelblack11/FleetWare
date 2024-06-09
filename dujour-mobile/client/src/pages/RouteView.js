@@ -109,7 +109,6 @@ function RouteView() {
 
         if (response.data.exists) {
           setRouteDetails({ routes: response.data.routes });
-          updateDeliveredOrders(response.data.routes[0].stops);
         } else {
           setRouteDetails({ routes: [] });
         }
@@ -137,23 +136,6 @@ function RouteView() {
     }
   }, [routeDetails]);
 
-
-
-  const updateDeliveredOrders = (stops) => {
-    const deliveredOrders = stops.reduce((acc, stop) => {
-      acc[stop.masterOrderNumber] = acc[stop.masterOrderNumber] || [];
-      acc[stop.masterOrderNumber].push(stop.status === 'Delivered');
-      return acc;
-    }, {});
-
-    const fullyDelivered = Object.keys(deliveredOrders).filter(orderNumber => 
-      deliveredOrders[orderNumber].every(status => status)
-    );
-
-    setDeliveredOrders(fullyDelivered);
-    //console.log("Fully Delivered Orders updated:", fullyDelivered);
-  };
-
 const handleStatusUpdate = async (stop) => {
   try {
     let updatedStops;
@@ -175,8 +157,6 @@ const handleStatusUpdate = async (stop) => {
 
     console.log('Status update response:', response.data);
     setRouteDetails({ routes: [response.data.deliveryRoute] });
-    updateDeliveredOrders(response.data.deliveryRoute.stops);
-    updateCompletedOrders(response.data.deliveryRoute.stops);
 
     let stopList = [stop];
     const orderStatusForStop = await getOrderStatusesFromStops(stopList);
@@ -231,61 +211,39 @@ function openGoogleMaps(lat, lng) {
   try {
     console.log(`Delivering package for order ${order.orderId}`);
 
-    
-    // Find the stop in the route details that matches the current order
-    const updatedStops = routeDetails.routes[0].stops.map(stop => {
-      if (stop._id === order._id) {
-        return { ...stop, status: 'Delivered' }; // Update the status to 'Delivered'
-      }
-      return stop;
-    });
-    console.log(updatedStops)
-
-    // Send the updated stops to the backend to update the delivery route
-    {/*const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
-      deliveryRouteId: routeDetails.routes[0]._id,
-      stops: updatedStops
-    })*/}
-
     const response = await axios.put(`/api/orders/deliverPackage/${order.orderId}`)
 
     // Log the successful update and update state accordingly
     console.log('Delivery status update response:', response.data);
     //setRouteDetails({ routes: [response.data.deliveryRoute] });
-    //updateDeliveredOrders(response.data.deliveryRoute.stops);
-    //updateCompletedOrders(response.data.deliveryRoute.stops);
+    if (response.status === 200) {
+      alert('Delivery completed successfully!');
 
+      // Assuming the API returns the updated order object,
+      // and it includes a status property you can check
+      const updatedOrder = response.data.order;
+      if (updatedOrder.overallStatus === 'Delivered') {
+        setDeliveredOrders(prevOrders => [...prevOrders, updatedOrder]);
+    }
+  }
     // Display a confirmation alert
-    alert('Delivery completed successfully!');
+    fetchRouteDetails();
   } catch (error) {
     console.error('Error delivering package:', error);
     alert('Failed to update the delivery status. Please try again.');
   }
 };
 
-
-  const updateCompletedOrders = (stops) => {
-    const deliveredOrders = stops.reduce((acc, stop) => {
-      if (!acc[stop.masterOrderNumber]) {
-        acc[stop.masterOrderNumber] = {
-          orderID: stop.orderId,
-          statuses: []
-        };
-      }
-      acc[stop.masterOrderNumber].statuses.push(stop.status === 'Delivered');
-      return acc;
-    }, {});
-
-    const completed = Object.keys(deliveredOrders).filter(masterOrderNumber => 
-      deliveredOrders[masterOrderNumber].statuses.every(status => status)
-    ).map(masterOrderNumber => ({
-      masterOrderNumber,
-      orderID: deliveredOrders[masterOrderNumber].orderID,
-      status: 'Order Delivered'
-    }));
-
-    setCompletedOrders(completed);
-  };
+// Function to fetch route details
+const fetchRouteDetails = async () => {
+  try {
+    const response = await axios.get(`/api/deliveryRoutes/specificRoute?date=${formattedDate}&userId=${user._id}`);
+    setRouteDetails({ routes: response.data.routes });
+    console.log("Data refetched successfully.");
+  } catch (error) {
+    console.error("Error fetching updated route details:", error);
+  }
+}
 
   function reformatDate(selectedDate) {
     const dateParts = selectedDate.split('-');
@@ -332,7 +290,10 @@ function openGoogleMaps(lat, lng) {
       Header: 'Actions',
       Cell: ({ row }) => (
         <div data-label="Actions">
-          <button className="add-button" onClick={() => handleStatusUpdate(row)}>Navigate</button>
+          <button className="add-button" onClick={() => handleStatusUpdate(row)}
+
+          disabled={row.orderStatus === 'Delivered'}>
+          Navigate</button>
           <button className="add-button" onClick={() => handleDeliverClick(row)}
             disabled={row.orderStatus !== 'Out for Delivery'}>
             Deliver
@@ -359,28 +320,6 @@ function getCurrentLocation() {
             );
         } else {
             reject(new Error('Geolocation is not supported by this browser.'));
-        }
-    });
-}
-
-const handleNavigate = (destinationAddress) => {
-  setSelectedDestination({ lat: destinationAddress.latitude, lng: destinationAddress.longitude });
-};
-
-
-function updateMapDirections(origin, destination) {
-    const directionsService = new window.google.maps.DirectionsService();
-    const request = {
-        origin: origin,  // current location
-        destination: destination,  // stop's location
-        travelMode: window.google.maps.TravelMode.DRIVING,
-    };
-    directionsService.route(request, (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-            // Assuming you have a reference to a DirectionsRenderer component
-            directionsRendererRef.current.setDirections(result);
-        } else {
-            console.error("Error fetching directions", result);
         }
     });
 }
@@ -425,7 +364,7 @@ function updateMapDirections(origin, destination) {
               border: 'none',
               borderRadius: '5px',
               cursor: 'pointer'
-                    }}>
+              }}>
               Close Scanner
             </button>
           </div>
@@ -435,13 +374,4 @@ function updateMapDirections(origin, destination) {
   }
 }
 
-
-
-
-
-
-
-
-
 export default RouteView;
-

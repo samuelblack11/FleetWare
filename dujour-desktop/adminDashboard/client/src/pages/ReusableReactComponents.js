@@ -3,6 +3,7 @@ import React from 'react';
 import logo from '../assets/logo128.png';
 
 export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
+  //console.log("Rendering GenericTable with data:", data[0]);
   return (
     <table>
       <thead>
@@ -96,6 +97,23 @@ export const GenericPopup = ({ show, children, onClose }) => {
       <div className="popup-inner">
         {children}
         <button className="delete-btn" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+};
+
+// Simple Modal Component using similar structure to GenericPopup
+export const FarmInfoModal = ({ show, farm, onClose }) => {
+  if (!show || !farm) {
+    return null; // Render nothing if not shown or no farm data is provided
+  }
+
+  return (
+    <div className="popup">
+      <div className="popup-inner">
+        <h2>{farm.name}</h2>
+        <p>{farm.description}</p>
+        <button className="delete-btn" onClick={onClose}>Close</button>
       </div>
     </div>
   );

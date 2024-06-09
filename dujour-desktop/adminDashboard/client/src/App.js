@@ -9,6 +9,7 @@ import DriverManagement from './pages/DriverManagement';
 import Login from './pages/Login';
 import BuildOrder from './pages/BuildOrder';
 import PlaceOrder from './pages/PlaceOrder';
+import OrderSummary from './pages/OrderSummary';
 import OrderPicking from './pages/OrderPicking';
 import OperationalOverview from './pages/OperationalOverview';
 
@@ -19,7 +20,7 @@ function useAuth() {
   return useContext(AuthContext);
 }
 
-  function MenuBar() {
+function MenuBar() {
   return (
     <div className="menu-bar">
       <SettingsButton />
@@ -34,7 +35,6 @@ function ButtonGrid() {
     <div className="container">
       <div className="button-grid">
         <Link to="/build-order"><button className="dashboard-button">Build Order</button></Link>
-        {/*<Link to="/my-orders"><button className="dashboard-button">My Orders</button></Link>*/}
         {user.role === 'admin' && (
           <>
             <Link to="/menu-management"><button className="dashboard-button">Menu Management</button></Link>
@@ -42,14 +42,8 @@ function ButtonGrid() {
             <Link to="/order-picking"><button className="dashboard-button">Order Picking</button></Link>
             <Link to="/route-optimization"><button className="dashboard-button">Route Optimization & Driver Assignment</button></Link>
             <Link to="/operational-overview"><button className="dashboard-button">Operational Overview</button></Link>
-            {/* <Link to="/driver-management"><button className="dashboard-button">Driver Management</button></Link>*/}
-            {/* <Link to="/order-sortation"><button className="dashboard-button">Order Sortation</button></Link>*/}
-            {/* <Link to="/operations-overview"><button className="dashboard-button">Operations Overview</button></Link>*/}
-            {/* <Link to="/analytics-reporting"><button className="dashboard-button">Analytics & Reporting</button></Link>*/}
-            {/* <Link to="/supplier-scheduling"><button className="dashboard-button">Supplier Scheduling</button></Link>*/}
           </>
         )}
-        {/*<Link to="/settings-support"><button className="dashboard-button">Settings & Support</button></Link>*/}
       </div>
     </div>
   );
@@ -168,6 +162,7 @@ function App() {
                 )}
                 <Route path="/build-order" element={<BuildOrder />} />
                 <Route path="/place-order" element={<PlaceOrder />} />
+                <Route path="/order-summary" element={<OrderSummary />} />
               </>
             ) : (
               <>

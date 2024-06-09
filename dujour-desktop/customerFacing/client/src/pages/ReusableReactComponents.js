@@ -97,6 +97,24 @@ export const GenericPopup = ({ show, children, onClose }) => {
   );
 };
 
+// Simple Modal Component using similar structure to GenericPopup
+export const FarmInfoModal = ({ show, farm, onClose }) => {
+  if (!show || !farm) {
+    return null; // Render nothing if not shown or no farm data is provided
+  }
+
+  return (
+    <div className="popup">
+      <div className="popup-inner">
+        <h2>{farm.name}</h2>
+        <p>{farm.description}</p>
+        <button className="delete-btn" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+};
+
+
 export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, isPopup, buttonTitle }) => {
   if (!show) {
     return null;

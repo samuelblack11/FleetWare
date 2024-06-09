@@ -201,12 +201,19 @@ function PickView() {
     {
       Header: 'Actions',
       Cell: ({ row }) => (
-        <button className="add-button" onClick={() => handleOrderStatusToggle(row)}>
+        <button className="add-button" onClick={() => handleOrderStatusToggle(row)}
+          disabled={row.status === 'Delivered' || row.status === 'Out for Deliver'}>
           {row.status === 'Order Pick Complete' ? 'Pack & Seal Order' : 'Revert Status'}
         </button>
       )
     }
   ];
+
+
+
+
+
+
 
   return (
     <div className="pick-view-container">

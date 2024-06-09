@@ -4,7 +4,7 @@ import './AllPages.css';
 import { AuthContext } from '../App.js';
 import { fetchUserByEmail, submitFinalOrder, incrementUserOrderNumber } from './helperFiles/placeOrder';
 import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateCreditCardNumber, validateCreditCardExpiration, validateCVV, validateItemQuantities } from './helperFiles/orderValidation';
-import { GenericPopup } from './ReusableReactComponents'; // Import your GenericPopup component
+import { GenericPopup, FarmInfoModal } from './ReusableReactComponents'; // Import your GenericPopup component
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -32,6 +32,22 @@ const BuildOrder = () => {
   const [cartDropdownVisible, setCartDropdownVisible] = useState(false);
   const [filterField, setFilterField] = useState('');
   const [filterValue, setFilterValue] = useState('');
+  const [showFarmInfo, setShowFarmInfo] = useState(false);
+  const [selectedFarm, setSelectedFarm] = useState(null); 
+
+  // When you need to show the modal
+  const handleShowFarmInfo = (farm) => {
+    setSelectedFarm(farm);
+    setShowFarmInfo(true);
+  };
+
+
+  // When you need to close the modal
+  const handleCloseFarmInfo = () => {
+    setShowFarmInfo(false);
+    setSelectedFarm(null);
+  };
+
   const navigate = useNavigate();
   const handleConfirmOrder = () => {
     navigate('/place-order', { state: { cartItems, totalCost } });
@@ -312,7 +328,18 @@ return (
           {filteredItems.map((item, index) => (
             <tr key={index}>
               <td>{item.itemName}</td>
-              <td>{item.farm.name}</td>
+              <td>
+                <div className="info-container">
+                  {item.farm.name}
+                  <button
+                    className="info-button"
+                    onClick={() => handleShowFarmInfo(item.farm)}
+                    aria-label="Farm information" // Good for accessibility
+                  >
+                    i
+                  </button>
+                </div>
+              </td>
               <td>${item.unitCost.toFixed(2)}</td>
               <td>
                 <input
@@ -341,6 +368,7 @@ return (
         </div>
       )}
     </GenericPopup>
+    <FarmInfoModal show={showFarmInfo} farm={selectedFarm} onClose={handleCloseFarmInfo} />
   </div>
 );
 };

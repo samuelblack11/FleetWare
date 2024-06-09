@@ -17,6 +17,54 @@ const OperationalOverview = () => {
     }
   }, [selectedDate]);
 
+  useEffect(() => {
+    console.log("Updated pickPlansWithStatusCounts:", overviewData?.pickPlansWithStatusCounts);
+      console.log("Updated routesWithStatusCounts:", overviewData?.routesWithStatusCounts);
+  }, [overviewData]);
+
+
+  const aggregateStatusCounts = (items) => {
+  const statusCounts = {};
+  items.forEach(item => {
+    if (statusCounts[item.status]) {
+      statusCounts[item.status]++;
+    } else {
+      statusCounts[item.status] = 1;
+    }
+  });
+  return statusCounts;
+  };
+
+
+const aggregateRouteStatusCounts = (stops, orders) => {
+  const orderIds = [];
+  const statusCounts = {};
+
+  // Collect orderIds from stops
+  stops.forEach(stop => {
+    orderIds.push(stop.orderId);
+  });
+
+  // Count statuses based on the orderIds
+  orders.forEach(order => {
+    if (orderIds.includes(order._id)) {
+      const status = order.overallStatus;
+      if (statusCounts[status]) {
+        statusCounts[status] += 1;
+      } else {
+        statusCounts[status] = 1;
+      }
+    }
+  });
+  console.log("======")
+  console.log(statusCounts)
+  return statusCounts;
+};
+
+
+
+
+
   const fetchOverviewData = async (date) => {
     setIsLoading(true);
     try {
@@ -28,6 +76,23 @@ const OperationalOverview = () => {
       const pickPlans = pickPlansResponse.data;
       const routes = routesResponse.data.routes || [];
 
+      // Adding status counts to each pick plan
+      const pickPlansWithStatusCounts = pickPlans.map(pickPlan => ({
+        ...pickPlan,
+        statusCounts: aggregateStatusCounts(pickPlan.items)
+      }));
+
+
+      // Adding status counts to each pick plan
+      const routesWithStatusCounts = routes.map(route => ({
+        ...route,
+        statusCounts: aggregateRouteStatusCounts(route.stops, orders)
+      }));
+
+      console.log("::::::")
+      console.log(routesWithStatusCounts)
+      console.log(orders)
+
       const numberOfOrders = orders.length;
       const vendorIds = new Set();
       const itemQuantities = {};
@@ -36,16 +101,23 @@ const OperationalOverview = () => {
       orders.forEach(order => {
         order.items.forEach(item => {
           vendorIds.add(item.vendorLocationNumber);
-          itemQuantities[item.itemName] = (itemQuantities[item.itemName] || 0) + item.quantity;
+          if (!itemQuantities[item.itemName]) {
+            itemQuantities[item.itemName] = { quantity: 0, farmName: item.farmName };
+          }
+          itemQuantities[item.itemName].quantity += item.quantity;
           totalRevenue += item.quantity * item.itemUnitCost; // Assuming unitCost is available
         });
       });
 
       const numberOfVendors = vendorIds.size;
       const topItems = Object.entries(itemQuantities)
-        .sort((a, b) => b[1] - a[1])
+        .sort((a, b) => b[1].quantity - a[1].quantity)
         .slice(0, 5)
-        .map(([itemName, quantity]) => ({ itemName, quantity }));
+        .map(([itemName, details]) => ({
+          itemName,
+          quantity: details.quantity,
+          farmName: details.farmName
+        }));
 
       pickPlans.forEach(pickPlan => {
         if (pickPlan.user && pickPlan.user.name) {
@@ -54,7 +126,6 @@ const OperationalOverview = () => {
           console.log('Driver Name: Unassigned');
         }
       });
-
 
       const pickPlanStatuses = pickPlans.map(plan => ({
         date: plan.date,
@@ -68,10 +139,17 @@ const OperationalOverview = () => {
         stops: route.stops.length
       }));
 
-          console.log("Route Statuses:", routeStatuses);
-
+      //console.log("****")
+      //console.log(pickPlans)
+      //console.log("!!!!!")
+      //console.log(pickPlanStatuses)
+      console.log("%%%%%")
+      console.log(pickPlansWithStatusCounts)
+      console.log(pickPlansWithStatusCounts[0].user.name)
 
       setOverviewData({
+        pickPlansWithStatusCounts,
+        routesWithStatusCounts,
         numberOfOrders,
         numberOfVendors,
         topItems,
@@ -101,44 +179,88 @@ const OperationalOverview = () => {
 
   const topItemsColumns = [
     { Header: 'Item Name', accessor: 'itemName' },
+    { Header: 'Farm Name', accessor: 'farmName' },
     { Header: 'Quantity', accessor: 'quantity' }
   ];
 
-  const pickPlanColumns = [
-    {
-    Header: 'Date',
-    accessor: 'date',
+const pickPlanColumns = [
+
+  {
+    Header: 'User',
+    accessor: 'user.name', // This is correct, assuming 'Picked' is correctly populated
     Cell: ({ row }) => {
-      const date = new Date(row.date);
-      const formattedDate = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'UTC'
-      }).format(date);
-      return formattedDate;
+      //console.log("Row data in # Picked:", row);  // Log the row data accessed in this cell
+      return row.user.name || 'Unassigned';  // Ensure zero is shown if undefined
+    }
+  },
+  {
+    Header: '# Not Picked',
+    // There's no direct accessor for this because it's a computed value from all statuses except 'Picked'
+    Cell: ({ row }) => {
+      const pickedCount = row.statusCounts.Picked || 0;
+      const totalCount = Object.values(row.statusCounts).reduce((sum, count) => sum + count, 0);
+      const notPickedCount = totalCount - pickedCount;  // Subtract 'Picked' count from total to get 'Not Picked'
+      return notPickedCount || 0;  // Ensure zero is shown if undefined
+    }
+  },
+  {
+    Header: '# Picked',
+    accessor: 'statusCounts.Picked', // This is correct, assuming 'Picked' is correctly populated
+    Cell: ({ row }) => {
+      return row.statusCounts.Picked || 0;  // Ensure zero is shown if undefined
+    }
+  },
+];
+
+
+
+const routeColumns = [
+  {
+    Header: 'Start Time',
+    accessor: 'startTime',
+    Cell: ({ row }) => {
+      return formatEST(row.startTime);
+    }
+  },
+  {
+    Header: 'Driver',
+    accessor: 'driver.name',
+    Cell: ({ row }) => {
+      return row.driver.name || 'Unassigned';  // Ensure it shows 'Unassigned' if undefined
     }
   },
     {
-    Header: 'Picker',
-    accessor: 'user',
+    Header: '# Order Pick in Progress',
+    accessor: 'statusCounts.Order Pick in Progress', // Use 'Order Pick in Progress' from statusCounts
     Cell: ({ row }) => {
-      return row.user ? row.user : 'Unassigned';
+      return row.statusCounts['Order Pick in Progress'] || 0; // Ensure zero is shown if undefined
     }
   },
-
-    { Header: 'Status', accessor: 'status' }
-  ];
-
-  const routeColumns = [
-    {
-      Header: 'Start Time',
-      accessor: 'startTime',
-      Cell: ({ row }) => {
-        console.log('Row Data:', row);
-        return formatEST(row.startTime);
-    },
+  {
+    Header: '# Ready For Driver Pickup',
+    accessor: 'statusCounts.Ready For Driver Pickup', // Use 'Order Pick in Progress' from statusCounts
+    Cell: ({ row }) => {
+      return row.statusCounts['Ready For Driver Pickup'] || 0; // Ensure zero is shown if undefined
+    }
   },
-    { Header: 'Driver', accessor: 'driver' },
-    { Header: 'Stops', accessor: 'stops' }
-  ];
+  {
+    Header: '# Out for Delivery',
+    accessor: 'statusCounts.Out for Delivery', // Use 'Out for Delivery' from statusCounts
+    Cell: ({ row }) => {
+      return row.statusCounts['Out for Delivery'] || 0; // Ensure zero is shown if undefined
+    }
+  },
+    {
+    Header: '# Delivered',
+    accessor: 'statusCounts.Delivered',
+    Cell: ({ row }) => {
+      return row.statusCounts.Delivered || 0;  // Ensure zero is shown if undefined
+    }
+  },
+];
+
+
+
 
   const formatEST = (utcDateString) => {
     // Parse the UTC date string
@@ -170,8 +292,6 @@ const OperationalOverview = () => {
     return `${month}/${day}/${year} ${hours}:${minutes}:${seconds} ${ampm}`;
   };
 
-
-
   return (
     <div className="operational-overview-container">
       <h2>Operational Overview</h2>
@@ -200,11 +320,11 @@ const OperationalOverview = () => {
           </div>
           <div className="overview-pick-plans">
             <h3>Pick Plan Status</h3>
-            <GenericTable data={overviewData.pickPlanStatuses} columns={pickPlanColumns} />
+            <GenericTable data={overviewData.pickPlansWithStatusCounts} columns={pickPlanColumns} />
           </div>
           <div className="overview-routes">
             <h3>Route Status</h3>
-            <GenericTable data={overviewData.routeStatuses} columns={routeColumns} />
+            <GenericTable data={overviewData.routesWithStatusCounts} columns={routeColumns} />
           </div>
         </div>
       )}

@@ -108,7 +108,6 @@ function App() {
               <Link to="/">
                 <img src={logo} className="logo" alt="Dujour Logo" />
               </Link>
-              <h2 className="header-title">Dujour</h2>
             </div>
           </header>
           <Routes>

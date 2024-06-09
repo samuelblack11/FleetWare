@@ -275,3 +275,29 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 .build-cart-section.sidebar-visible {
   margin-right: 500px; /* Ensure this matches the width of the sidebar */
 }
+
+.info-container {
+    display: flex;
+    align-items: center; /* Vertically aligns items to the center */
+    justify-content: center; /* Horizontally centers the content */
+    width: 100%; /* Takes full width of the cell */
+}
+
+
+.info-button {
+    background: none; /* Transparent background */
+    border: 1px solid grey;
+    border-radius: 50%; /* Circle shape */
+    padding: 0;
+    width: 18px; /* Control the size of the button */
+    height: 18px; /* Ensure it is a perfect circle */
+    display: flex;
+    align-items: center; /* Vertically center the content */
+    justify-content: center; /* Horizontally center the content */
+    cursor: pointer;
+    outline: none;
+    font-size: 1rem; /* Adjust based on the size of the button */
+    color: grey; /* Text color */
+    font-family: Arial, sans-serif; /* Ensures consistent font rendering */
+}
+

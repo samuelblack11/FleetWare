@@ -24,7 +24,19 @@
   --button-color-info: #007bff;
   --button-color-info-hover: #0056b3;
   #--table-margin: 20px;
+  --header-height: 160px; /* Define the height of the header */
+
 }
+
+/* Add this CSS to your styles */
+.input-expiration {
+  width: 5ch; /* 4 characters wide */
+}
+
+.input-cvv {
+  width: 3ch; /* 3 characters wide */
+}
+
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
@@ -58,9 +70,13 @@
 
 .build-order-container {
   display: flex;
-  flex-direction: row; /* Change direction to row */
-  align-items: flex-start; /* Align items at the start of the container */
+  flex-direction: row; /* Keep the direction as row */
+  align-items: flex-start; /* Align items at the start of the container vertically */
+  justify-content: center; /* Center items horizontally */
+  margin: 0 auto; /* Center the container itself within its parent */
+  width: 100%; /* Ensure the container takes full width */
 }
+
 
 .cart-summary {
   display: flex;
@@ -215,10 +231,16 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 }
 
 /* Section and Container Styles */
-.customer-info-section, .build-cart-section, .cart-summary {
+.customer-info-section, .cart-summary {
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
   box-shadow: var(--box-shadow);
+  padding: var(--section-padding);
+  margin-bottom: var(--margin-bottom-space);
+}
+
+/* Section and Container Styles */
+.build-cart-section {
   padding: var(--section-padding);
   margin-bottom: var(--margin-bottom-space);
 }
@@ -235,30 +257,46 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   justify-content: center;
 }
 
-.operational-overview-container {
+.cart-sidebar {
+  position: fixed;
+  right: 0;
+  width: 500px;
   padding: var(--section-padding);
-}
-
-.overview-content {
-  margin-top: var(--margin-bottom-space);
-}
-
-.overview-tables {
-  display: flex;
-  justify-content: space-between;
-}
-
-.table-container {
-  width: 48%; /* Ensure the tables take less than half the width each */
-}
-
-.overview-summary {
   margin-bottom: var(--margin-bottom-space);
+  z-index: 1000;
+  overflow-y: auto;
+  transition: top 0.3s, height 0.3s; /* Smooth transition for top and height */
 }
 
-.overview-top-items,
-.overview-pick-plans,
-.overview-routes {
-  margin-bottom: var(--margin-bottom-space);
+.build-cart-section {
+  transition: margin-right 0.3s ease; /* Smooth transition for margin adjustment */
 }
 
+.build-cart-section.sidebar-visible {
+  margin-right: 500px; /* Ensure this matches the width of the sidebar */
+}
+
+.info-container {
+    display: flex;
+    align-items: center; /* Vertically aligns items to the center */
+    justify-content: center; /* Horizontally centers the content */
+    width: 100%; /* Takes full width of the cell */
+}
+
+
+.info-button {
+    background: none; /* Transparent background */
+    border: 1px solid grey;
+    border-radius: 50%; /* Circle shape */
+    padding: 0;
+    width: 18px; /* Control the size of the button */
+    height: 18px; /* Ensure it is a perfect circle */
+    display: flex;
+    align-items: center; /* Vertically center the content */
+    justify-content: center; /* Horizontally center the content */
+    cursor: pointer;
+    outline: none;
+    font-size: 1rem; /* Adjust based on the size of the button */
+    color: grey; /* Text color */
+    font-family: Arial, sans-serif; /* Ensures consistent font rendering */
+}
