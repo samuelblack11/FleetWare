@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { useCallback } from 'react';
 import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import OverviewMap from './OverviewMap';
 import { GenericTable } from './ReusableReactComponents';
 import { LoadScript } from '@react-google-maps/api';
-import { Camera } from 'react-html5-camera-photo';
-import 'react-html5-camera-photo/build/css/index.css';
-//import Quagga from 'quagga';
+import BarcodeScannerComponent from './BarcodeScannerComponent';
 const config = require('../config');
 
 function RouteView() {
@@ -30,88 +27,25 @@ function RouteView() {
   // State definitions
   const [currentLocation, setCurrentLocation] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
-  const [isCameraActive, setCameraActive] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
 
-  const handleDeliverPackage = (stop) => {
-    setCurrentStop(stop); // Set the current stop
-    setCameraActive(true); // Activate the camera
+  const handleDeliverClick = (order) => {
+    setCurrentOrder(order);
+    setShowScanner(true);
   };
 
-const capturePackage = () => {
-  // Assume this function is triggered by the camera component's capture button
-  setCameraActive(false); // Turn off the camera
-  setShowConfirmModal(true); // Open confirmation modal
-};
-
-const handleConfirmDelivery = () => {
-  completeDelivery(currentStop);
-  setShowConfirmModal(false); // Close the modal after confirmation
-};
-
-const handleCloseModal = () => {
-  setShowConfirmModal(false); // Close the modal without taking action
-};
-
-const handleBarcodeDetected = (barcode) => {
-  const expectedBarcode = `Dujour-${currentStop.masterOrderNumber}-${user.email}`;
-  if (barcode === expectedBarcode) {
-    setShowConfirmModal(true);
-    setCameraActive(false); // Turn off the camera after successful scan
-  }
-};
-
-{/*const handleTakePhoto = (dataUri) => {
-  // Use Quagga to decode the barcode from the image
-  Quagga.decodeSingle({
-    decoder: {
-      readers: ["code_128_reader"] // Specify the barcode format if needed
-    },
-    locate: true, // Locate the barcode in the image
-    src: dataUri // Use the image captured by the camera
-  }, (result) => {
-    if (result && result.codeResult) {
-      handleBarcodeDetected(result.codeResult.code);
+  const handleBarcodeScanned = (barcode) => {
+    setShowScanner(false);
+    if (barcode === `${currentOrder.masterOrderNumber}-${currentOrder.email}`) {
+      // Confirm delivery
+      if (window.confirm('Do you want to complete the delivery?')) {
+        handleDeliverPackage(currentOrder);
+      }
     } else {
-      console.error("Barcode not detected.");
+      alert('Barcode does not match.');
     }
-  });
-};*/}
-
-const ConfirmModal = ({ onClose, onConfirm }) => {
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-content">
-        <h4>Confirm Delivery</h4>
-        <p>Are you sure you want to complete the delivery?</p>
-        <button onClick={onConfirm}>Yes</button>
-        <button onClick={onClose}>No</button>
-      </div>
-    </div>
-  );
-};
-
-const completeDelivery = async (stop) => {
-  // API call to update the status to 'Delivered'
-  try {
-    const updatedStops = routeDetails.routes[0].stops.map(s => 
-      s._id === stop._id ? { ...s, status: 'Delivered' } : s
-    );
-
-    const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
-      deliveryRouteId: routeDetails.routes[0]._id,
-      stops: updatedStops
-    });
-
-    setRouteDetails({ routes: [response.data.deliveryRoute] });
-    updateDeliveredOrders(response.data.deliveryRoute.stops);
-    updateCompletedOrders(response.data.deliveryRoute.stops);
-    console.log('Delivery completed successfully');
-  } catch (error) {
-    console.error('Error completing delivery:', error);
-  }
-};
-
+  };
 
   const handleBounceBack = () => {
     const container = document.querySelector('.table-container');
@@ -289,6 +223,37 @@ function openGoogleMaps(lat, lng) {
     setCurrentStop(null);
   };
 
+  const handleDeliverPackage = async (order) => {
+  try {
+    console.log(`Delivering package for order ${order.masterOrderNumber}`);
+    
+    // Find the stop in the route details that matches the current order
+    const updatedStops = routeDetails.routes[0].stops.map(stop => {
+      if (stop._id === order._id) {
+        return { ...stop, status: 'Delivered' }; // Update the status to 'Delivered'
+      }
+      return stop;
+    });
+
+    // Send the updated stops to the backend to update the delivery route
+    const response = await axios.put('/api/deliveryRoutes/updateDeliveryStatus', {
+      deliveryRouteId: routeDetails.routes[0]._id,
+      stops: updatedStops
+    });
+
+    // Log the successful update and update state accordingly
+    console.log('Delivery status update response:', response.data);
+    setRouteDetails({ routes: [response.data.deliveryRoute] });
+    updateDeliveredOrders(response.data.deliveryRoute.stops);
+    updateCompletedOrders(response.data.deliveryRoute.stops);
+
+    // Display a confirmation alert
+    alert('Delivery completed successfully!');
+  } catch (error) {
+    console.error('Error delivering package:', error);
+    alert('Failed to update the delivery status. Please try again.');
+  }
+};
 
 
   const updateCompletedOrders = (stops) => {
@@ -360,12 +325,12 @@ function openGoogleMaps(lat, lng) {
       Cell: ({ row }) => (
         <div data-label="Actions">
           <button className="add-button" onClick={() => handleStatusUpdate(row)}
-                disabled={!allOrdersReadyForNavigation}>
-            {row.status === 'Out for Delivery' ? 'Revert Status' : 'Navigate'}
+            disabled={row.orderStatus !== 'Out for Delivery'}>
+            Navigate
           </button>
-          <button className="add-button" onClick={() => handleDeliverPackage(row)}
-            disabled={row.status === 'Out for Delivery'}>
-              Deliver
+          <button className="add-button" onClick={() => handleDeliverClick(row)}
+            disabled={row.orderStatus !== 'Out for Delivery'}>
+            Deliver
           </button>
         </div>
       )
@@ -415,37 +380,37 @@ function updateMapDirections(origin, destination) {
     });
 }
 
+
 return (
   <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
-    <div style={{ position: 'relative' }}>
-      {isCameraActive && (
-        <Camera
-          //onTakePhoto={(dataUri) => handleTakePhoto(dataUri)}
-          onTakePhoto={(dataUri) => handleNavigate(dataUri)}
-        />
-      )}
-      {showConfirmModal && (
-        <ConfirmModal
-          onClose={handleCloseModal}
-          onConfirm={handleConfirmDelivery}
-        />
-      )}
-      <h2>Route Plan for {reformatDate(formattedDate)}</h2>
-      {routeDetails.routes.length > 0 ? (
+    <div style={{ position: 'relative' }}> {/* Ensure this div is relatively positioned */}
+      {
         <>
-          <OverviewMap stops={routeDetails.routes[0]?.stops || []} />
-          <div className="table-container">
-            <GenericTable data={combinedStops} columns={columns} fullyPickedOrders={deliveredOrders} />
-          </div>
+          <h2>Route Plan for {reformatDate(formattedDate)}</h2>
+          {routeDetails.routes.length > 0 ? (
+            <>
+              <OverviewMap stops={routeDetails.routes[0]?.stops || []} />
+              <div className="table-container">
+                <GenericTable data={combinedStops} columns={columns} fullyPickedOrders={deliveredOrders} />
+              </div>
+            </>
+          ) : (
+            <p>No delivery route available for this date.</p>
+          )}
         </>
-      ) : (
-        <p>No delivery route available for this date.</p>
-      )}
+      }
+      {showScanner && 
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.5)' }}>
+          <BarcodeScannerComponent onScan={handleBarcodeScanned} />
+        </div>
+      }
     </div>
   </LoadScript>
 );
 
 
+
 }
 
 export default RouteView;
+
