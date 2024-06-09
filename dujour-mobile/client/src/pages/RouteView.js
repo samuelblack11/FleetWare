@@ -31,6 +31,7 @@ function RouteView() {
   const [currentOrder, setCurrentOrder] = useState(null);
   const isGoogleApiLoaded = window.google && window.google.maps;
   const [scanAction, setScanAction] = useState(null);  // 'pickup' or 'delivery'
+  const [allOrdersPickedUp, setAllOrdersPickedUp] = useState(false);
 
   const handleDeliverClick = (order) => {
     setCurrentOrder(order);
@@ -40,25 +41,22 @@ function RouteView() {
 
   const handleBarcodeScanned = (barcode) => {
   setShowScanner(false);
-  console.log("----")
   if (scanAction === 'pickup') {
     // Logic for pickup
-    console.log(routeDetails.routes[0]?.stops)
-    const expectedBarcodes = routeDetails.routes[0]?.stops.map(order => `${order.masterOrderNumber}-${order.customerEmail}`);
-    console.log(expectedBarcodes)
+    const expectedBarcodes = routeDetails.routes[0]?.stops.map(order => `Dujour-${order.masterOrderNumber}-${order.customerEmail}`);
     if (expectedBarcodes.includes(barcode)) {
-      handlePickupPackage(routeDetails.routes[0]?.stops.find(order => `${order.masterOrderNumber}-${order.customerEmail}` === barcode));
+      handlePickupPackage(routeDetails.routes[0]?.stops.find(order => `Dujour-${order.masterOrderNumber}-${order.customerEmail}` === barcode));
     } else {
       alert(`Invalid barcode for pickup. Expected one of ${expectedBarcodes.join(', ')}, got: ${barcode}`);
     }
   } else if (scanAction === 'delivery') {
     // Logic for delivery
-    if (barcode === `${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}`) {
+    if (barcode === `Dujour-${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}`) {
       if (window.confirm('Do you want to complete the delivery?')) {
         handleDeliverPackage(currentOrder);
       }
     } else {
-      alert(`Expecting Barcode for delivery: ${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}, but got: ${barcode}`);
+      alert(`Expecting Barcode for delivery: Dujour-${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}, but got: ${barcode}`);
     }
   }
 };
@@ -81,6 +79,14 @@ const handlePickupPackage = async (order) => {
     alert('Failed to update the delivery status. Please try again.');
   }
 };
+
+  useEffect(() => {
+    if (routeDetails.routes[0] && routeDetails.routes[0]?.stops) {
+        // Check if all stops/orders have the status 'Picked up by Driver'
+        const allPickedUp = routeDetails.routes[0]?.stops.every(stop => stop.status === 'Picked up by Driver');
+        setAllOrdersPickedUp(allPickedUp);
+    }
+}, [routeDetails.routes[0]]); // Depend on the currentRoute state or equivalent
 
   const handleCloseScanner = () => {
         setShowScanner(false); // Function to close the scanner
@@ -317,36 +323,41 @@ const columns = [
       <span data-label="Status">{row.orderStatus}</span>
     )
   },
-  {
+    {
     Header: 'Actions',
-    accessor: row => `_id`, // Generating a unique key
+    accessor: row => `_id`,
     Cell: ({ row }) => {
       let buttonLabel = 'Pick Up';
       let buttonAction = () => {};
-      let buttonDisabled = row.orderStatus !== 'Ready for Driver Pickup';
+      let buttonDisabled = true; // Start with disabled true, modify based on conditions
 
-      if (row.orderStatus === 'Ready for Driver Pickup') {
-        buttonLabel = 'Pick Up';
-        buttonAction = () => {
-          setCurrentOrder(row);
-          setCurrentStop(row);
-          setScanAction('pickup');  // Set action as 'pickup'
-          setShowScanner(true);
-          //handlePickupPackage(row);
-        };
-        buttonDisabled = false;
-      } else if (row.orderStatus === 'Picked up by Driver') {
-        buttonLabel = 'Navigate';
-        buttonAction = () => handleStatusUpdate(row);
-        buttonDisabled = false;
-      } else if (row.orderStatus === 'Out for Delivery') {
-        buttonLabel = 'Deliver';
-        buttonAction = () => handleDeliverClick(row);
-        buttonDisabled = false;
-      }
-
-      if (row.orderStatus === 'Delivered') {
-        buttonDisabled = true;
+      switch (row.orderStatus) {
+        case 'Ready for Driver Pickup':
+          buttonLabel = 'Pick Up';
+          buttonAction = () => {
+            setCurrentOrder(row);
+            setCurrentStop(row);
+            setScanAction('pickup');
+            setShowScanner(true);
+          };
+          buttonDisabled = false;
+          break;
+        case 'Picked up by Driver':
+          buttonLabel = 'Navigate';
+          buttonAction = () => handleStatusUpdate(row);
+          buttonDisabled = !allOrdersPickedUp; // Enable only if all orders are picked up
+          break;
+        case 'Out for Delivery':
+          buttonLabel = 'Deliver';
+          buttonAction = () => handleDeliverClick(row);
+          buttonDisabled = false;
+          break;
+        case 'Delivered':
+          buttonDisabled = true;
+          break;
+        default:
+          buttonDisabled = true;
+          break;
       }
 
       return (
