@@ -30,25 +30,57 @@ function RouteView() {
   const [showScanner, setShowScanner] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const isGoogleApiLoaded = window.google && window.google.maps;
+  const [scanAction, setScanAction] = useState(null);  // 'pickup' or 'delivery'
 
   const handleDeliverClick = (order) => {
-    console.log("99999")
-    console.log(order)
     setCurrentOrder(order);
+    setScanAction('delivery');  // Set action as 'delivery'
     setShowScanner(true);
   };
 
   const handleBarcodeScanned = (barcode) => {
-    setShowScanner(false);
+  setShowScanner(false);
+  console.log("----")
+  if (scanAction === 'pickup') {
+    // Logic for pickup
+    console.log(routeDetails.routes[0]?.stops)
+    const expectedBarcodes = routeDetails.routes[0]?.stops.map(order => `${order.masterOrderNumber}-${order.customerEmail}`);
+    console.log(expectedBarcodes)
+    if (expectedBarcodes.includes(barcode)) {
+      handlePickupPackage(routeDetails.routes[0]?.stops.find(order => `${order.masterOrderNumber}-${order.customerEmail}` === barcode));
+    } else {
+      alert(`Invalid barcode for pickup. Expected one of ${expectedBarcodes.join(', ')}, got: ${barcode}`);
+    }
+  } else if (scanAction === 'delivery') {
+    // Logic for delivery
     if (barcode === `${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}`) {
-      // Confirm delivery
       if (window.confirm('Do you want to complete the delivery?')) {
         handleDeliverPackage(currentOrder);
       }
     } else {
-      alert(`Expecting Barcode: ${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}. Got: ${barcode}`);
+      alert(`Expecting Barcode for delivery: ${currentOrder.masterOrderNumber}-${currentOrder.customerEmail}, but got: ${barcode}`);
     }
-  };
+  }
+};
+
+
+const handlePickupPackage = async (order) => {
+  try {
+    console.log(`Picking up package for order ${order.orderId}`);
+    const response = await axios.put(`/api/orders/pickupPackage/${order.orderId}`)
+    // Log the successful update and update state accordingly
+    console.log('Pickup status update response:', response.data);
+    //setRouteDetails({ routes: [response.data.deliveryRoute] });
+    if (response.status === 200) {
+      alert('Pickup completed successfully!');
+    }
+    // Display a confirmation alert
+    fetchRouteDetails();
+  } catch (error) {
+    console.error('Error delivering package:', error);
+    alert('Failed to update the delivery status. Please try again.');
+  }
+};
 
   const handleCloseScanner = () => {
         setShowScanner(false); // Function to close the scanner
@@ -267,41 +299,67 @@ const fetchRouteDetails = async () => {
   return combinedStops;
 }
 
+const columns = [
+  { 
+    Header: 'Order #', 
+    accessor: 'masterOrderNumber', 
+    Cell: ({ row }) => <span data-label="Order #">{row.masterOrderNumber}</span> 
+  },
+  { 
+    Header: 'Address', 
+    accessor: 'address', 
+    Cell: ({ row }) => <span data-label="Address">{row.address}</span> 
+  },
+  {
+    Header: 'Status',
+    accessor: 'orderStatus',
+    Cell: ({ row }) => (
+      <span data-label="Status">{row.orderStatus}</span>
+    )
+  },
+  {
+    Header: 'Actions',
+    accessor: row => `_id`, // Generating a unique key
+    Cell: ({ row }) => {
+      let buttonLabel = 'Pick Up';
+      let buttonAction = () => {};
+      let buttonDisabled = row.orderStatus !== 'Ready for Driver Pickup';
 
-  const columns = [
-    { 
-      Header: 'Order #', 
-      accessor: 'masterOrderNumber', 
-      Cell: ({ row }) => <span data-label="Order #">{row.masterOrderNumber}</span> 
-    },
-    { 
-      Header: 'Address', 
-      accessor: 'address', 
-      Cell: ({ row }) => <span data-label="Address">{row.address}</span> 
-    },
-    {
-      Header: 'Status',
-      accessor: 'orderStatus',
-      Cell: ({ row }) => (
-        <span data-label="Status">{row.orderStatus}</span>
-      )
-    },
-    {
-      Header: 'Actions',
-      Cell: ({ row }) => (
+      if (row.orderStatus === 'Ready for Driver Pickup') {
+        buttonLabel = 'Pick Up';
+        buttonAction = () => {
+          setCurrentOrder(row);
+          setCurrentStop(row);
+          setScanAction('pickup');  // Set action as 'pickup'
+          setShowScanner(true);
+          //handlePickupPackage(row);
+        };
+        buttonDisabled = false;
+      } else if (row.orderStatus === 'Picked up by Driver') {
+        buttonLabel = 'Navigate';
+        buttonAction = () => handleStatusUpdate(row);
+        buttonDisabled = false;
+      } else if (row.orderStatus === 'Out for Delivery') {
+        buttonLabel = 'Deliver';
+        buttonAction = () => handleDeliverClick(row);
+        buttonDisabled = false;
+      }
+
+      if (row.orderStatus === 'Delivered') {
+        buttonDisabled = true;
+      }
+
+      return (
         <div data-label="Actions">
-          <button className="add-button" onClick={() => handleStatusUpdate(row)}
-
-          disabled={row.orderStatus === 'Delivered'}>
-          Navigate</button>
-          <button className="add-button" onClick={() => handleDeliverClick(row)}
-            disabled={row.orderStatus !== 'Out for Delivery'}>
-            Deliver
+          <button className="add-button" onClick={buttonAction} disabled={buttonDisabled}>
+            {buttonLabel}
           </button>
         </div>
-      )
+      );
     }
-  ];
+  }
+];
+
 
 
 function getCurrentLocation() {
@@ -350,24 +408,24 @@ function getCurrentLocation() {
         ) : (
           <p>No delivery route available for this date.</p>
         )}
-        {showScanner && 
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.5)' }}>
-            <BarcodeScannerComponent onScan={handleBarcodeScanned} />
-            <button onClick={handleCloseScanner} style={{
-              position: 'absolute',
-              top: 20,
-              left: 20,
-              padding: '10px 20px',
-              fontSize: '16px',
-              color: '#fff',
-              backgroundColor: '#f00',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer'
-              }}>
-              Close Scanner
-            </button>
-          </div>
+          {showScanner && 
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.5)' }}>
+              <BarcodeScannerComponent actionType={scanAction} onScan={handleBarcodeScanned} />
+              <button onClick={handleCloseScanner} style={{
+                position: 'absolute',
+                top: 20,
+                left: 20,
+                padding: '10px 20px',
+                fontSize: '16px',
+                color: '#fff',
+                backgroundColor: '#f00',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+                }}>
+                Close Scanner
+              </button>
+            </div>
         }
       </div>
     );

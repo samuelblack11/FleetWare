@@ -116,8 +116,8 @@ router.post('/order-statuses', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const { overallStatus } = req.body;
     console.log(id)
-    console.log(overallStatus)
     console.log("Type of orderId:", typeof id); // Print out the type of userId
 
     const orderObjectId = new mongoose.Types.ObjectId(id);
@@ -160,6 +160,34 @@ router.put('/deliverPackage/:id', async (req, res) => {
     }
 
     order.overallStatus = "Delivered";
+    await order.save();
+
+    res.status(200).json({ message: 'Order status updated successfully', order });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+router.put('/pickupPackage/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { overallStatus } = req.body;
+    console.log(id)
+    console.log("Type of orderId:", typeof id); // Print out the type of userId
+
+    const orderObjectId = new mongoose.Types.ObjectId(id);
+    console.log("Converted userId to ObjectId:", orderObjectId);
+
+
+    const order = await Order.findById(orderObjectId);
+    console.log("----")
+    console.log(order)
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    order.overallStatus = "Picked up by Driver";
     await order.save();
 
     res.status(200).json({ message: 'Order status updated successfully', order });

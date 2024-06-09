@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Webcam from 'react-webcam';
 import { BrowserQRCodeReader } from '@zxing/library';
 
-const BarcodeScannerComponent = ({ onScan }) => {
+const BarcodeScannerComponent = ({ onScan, actionType }) => {
     const webcamRef = useRef(null);
     const codeReader = new BrowserQRCodeReader();
 

@@ -10,7 +10,7 @@ const orderSchema = new Schema({
   deliveryDate: Date,
   overallStatus: {
     type: String,
-    enum: ['Order Confirmed', 'Ready for Order Pick', 'Order Pick in Progress', 'Order Pick Complete', 'Ready for Driver Pickup', 'Out for Delivery', 'Delivered'],
+    enum: ['Order Confirmed', 'Ready for Order Pick', 'Order Pick in Progress', 'Order Pick Complete', 'Ready for Driver Pickup', 'Picked up by Driver', 'Out for Delivery', 'Delivered'],
     default: 'Order Confirmed'
   },
   items: [{
