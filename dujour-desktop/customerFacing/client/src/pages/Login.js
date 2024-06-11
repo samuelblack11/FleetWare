@@ -96,34 +96,28 @@ function Login() {
     }
   };
 
-  return (
-    <div className="login-container">
-      <h2>{isSigningUp ? 'Sign Up' : 'Login'}</h2>
-      <form onSubmit={isSigningUp ? handleSignup : handleLogin}>
-        <div>
-          <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div>
-          <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        {isSigningUp && (
-          <div>
-            <label>Role</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="Customer">Customer</option>
-              <option value="Admin">Admin</option>
-            </select>
-          </div>
-        )}
-        <button className="add-button" type="submit">{isSigningUp ? 'Sign Up' : 'Login'}</button>
-      </form>
-      <button className="add-button" onClick={() => setIsSigningUp(!isSigningUp)}>
-        {isSigningUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-      </button>
-    </div>
-  );
+return (
+  <div className="login-container">
+    <h2>{isSigningUp ? 'Sign Up' : 'Login'}</h2>
+    <form onSubmit={isSigningUp ? handleSignup : handleLogin} className="login-form">
+      <div className="form-group">
+        <label>Email</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </div>
+      <div className="form-group">
+        <label>Password</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      </div>
+      <div className="button-group">
+        <button type="submit" className="submit-btn">{isSigningUp ? 'Sign Up' : 'Login'}</button>
+        <button type="button" className="submit-btn" onClick={() => setIsSigningUp(!isSigningUp)}>
+          {isSigningUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
+        </button>
+      </div>
+    </form>
+  </div>
+);
+
 }
 
 export default Login;

@@ -28,16 +28,6 @@
 
 }
 
-/* Add this CSS to your styles */
-.input-expiration {
-  width: 5ch; /* 4 characters wide */
-}
-
-.input-cvv {
-  width: 3ch; /* 3 characters wide */
-}
-
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -166,6 +156,55 @@ tr:nth-child(even) {
   margin-bottom: 5px;
 }
 
+/* Center align text for label cells */
+.customer-info-table .label-cell {
+  text-align: center;  /* Keeps labels centered */
+}
+
+/* Align input fields to the left within their cells */
+.customer-info-table .input-cell {
+  text-align: left;  /* Aligns inputs to the left */
+  display: flex; /* Ensures content aligns properly within the cell */
+  align-items: center; /* Vertically centers the input in the cell */
+}
+
+/* Styling for expiration and CVV inputs */
+.input-expiration, .input-cvv {
+  width: auto; /* Auto width based on content */
+  max-width: 120px; /* Limiting the maximum width */
+  display: inline-block; /* Allows the inputs to respect text alignment */
+  text-align: left; 
+}
+
+/* Adjust padding or margins as necessary */
+.input-expiration input, .input-cvv input {
+  margin-right: 10px; /* Adds space to the right, adjust as needed */
+}
+
+/* Styling for smaller inputs like expiration and CVV */
+.customer-info-table .input-datepicker {
+  max-width: 120px; /* Restricts maximum width */
+  margin-right: 10px;
+}
+
+.customer-info-table .input-cc {
+  max-width: 170px; /* Restricts maximum width */
+  margin-right: 10px;
+}
+
+.customer-info-table .input-expiration, 
+.customer-info-table .input-cvv {
+  max-width: 60px; /* Restricts maximum width */
+  margin-right: 10px;
+}
+
+.customer-info-table .input-name,
+.customer-info-table .input-email,
+.customer-info-table .input-address {
+  max-width: 300px; /* Restricts maximum width */
+  margin-right: 10px;
+}
+
 .form-group input, .form-group select, 
 .popup-inner input[type="text"],
 .popup-inner input[type="email"],
@@ -283,7 +322,6 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
     width: 100%; /* Takes full width of the cell */
 }
 
-
 .info-button {
     background: none; /* Transparent background */
     border: 1px solid grey;
@@ -301,3 +339,35 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
     font-family: Arial, sans-serif; /* Ensures consistent font rendering */
 }
 
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+}
+
+.input-datepicker {
+  width: 90%;
+  padding: var(--input-padding);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+  height: 40px; /* Adjust as needed to match your design */
+  font-size: 16px; /* Ensuring consistency in font size */
+}
+
+/* This style may need !important to override default styles */
+.input-datepicker input {
+  height: 40px !important; /* Override internal styles */
+}
