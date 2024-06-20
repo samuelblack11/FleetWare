@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GenericTable } from './ReusableReactComponents';
 import './AllPages.css';
+const moment = require('moment-timezone');
 
 const LoadingSpinner = () => (
   <div className="spinner-container">
@@ -10,8 +11,8 @@ const LoadingSpinner = () => (
 );
 
 const OrderPicking = () => {
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+  const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
+  const formattedDate = dateInEST.format('YYYY-MM-DD');
   const [selectedDate, setSelectedDate] = useState(formattedDate);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,7 +140,7 @@ const handleSavePickPlan = async () => {
 
   setIsLoading(true);
   try {
-    const date = selectedDate;
+    const date = moment(selectedDate).tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0}).toISOString();
     const pickPlans = pickPlan.map((plan, index) => ({
       date,
       items: plan.items,

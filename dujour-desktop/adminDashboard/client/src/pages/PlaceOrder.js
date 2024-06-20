@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateCreditCardNumber, validateCreditCardExpiration, validateCVV, validateItemQuantities } from './helperFiles/orderValidation';
@@ -8,37 +8,49 @@ import ReactDOMServer from 'react-dom/server';
 import axios from 'axios';
 import { DetailedOrderSummary } from './ReusableReactComponents';
 import logo from '../assets/logo128.png';
+import ReactDatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+const moment = require('moment-timezone');
 
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
   const { cartItems: initialCartItems, totalCost: initialTotalCost } = state || { cartItems: [], totalCost: 0 };
   const navigate = useNavigate();
-  const today = new Date();
-  const userTimezoneOffset = today.getTimezoneOffset() * 60000; // User's timezone offset in milliseconds
-  const estOffset = -300; // EST is UTC-5 hours, which is -300 minutes
-  const estTime = new Date(today.getTime() + userTimezoneOffset + estOffset * 60000);
-  estTime.setHours(10, 0, 0, 0); // Set time to 10:00:00.000
-  const formattedDate = `${estTime.getFullYear()}-${(estTime.getMonth() + 1).toString().padStart(2, '0')}-${estTime.getDate().toString().padStart(2, '0')}`;
+  // Create a new date object for the current time in EST
+  const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
+  const formattedDate = dateInEST.format();
+
   const handleBackToBuildOrder = () => {
   	navigate('/build-order', { state: { cartItems, totalCost } });
   };
 
-  const initialOrderState = {
-    customerName: user?.name || '',
-    customerEmail: user?.email || '',
-    deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
-    deliveryDate: formattedDate,
-    creditCardNumber: '0000000000000000',
-    creditCardExpiration: '1028',
-    creditCardCVV: '222',
-    items: initialCartItems,
+  const getNextSaturday = (currentDate) => {
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() + ((6 - date.getDay() + 7) % 7)); // Get next Saturday
+    //return date.toISOString().split('T')[0]; // Format date as "yyyy-MM-dd"
+    return date
   };
 
+  const initialOrderState = {
+    customerName: user?.name || 'Sam B',
+    customerEmail: user?.email || 'sam@salooapp.com',
+    deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
+    //deliveryDate: getNextSaturday(new Date()),
+    deliveryDate: formattedDate,
+    creditCardNumber: '0000000000000000',
+    creditCardExpiration: '0425',
+    creditCardCVV: '221',
+    items: state?.cartItems || [],
+  }
+
+
   const [orderData, setOrderData] = useState(initialOrderState);
+
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
   const [availableItems, setAvailableItems] = useState([]);
+
 
   useEffect(() => {
     const calculateTotalCost = () => {
@@ -50,6 +62,15 @@ const PlaceOrder = () => {
 
   const handleChange = (e) => {
     setOrderData({ ...orderData, [e.target.name]: e.target.value });
+  };
+
+  const filterDate = (date) => {
+    const nextSaturday = getNextSaturday(new Date());
+    return date.toISOString().split('T')[0] === nextSaturday.toISOString().split('T')[0];
+  };
+
+  const handleDateChange = (date) => {
+    setOrderData({...orderData, deliveryDate: date});
   };
 
   useEffect(() => {
@@ -121,7 +142,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
 
     if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
     if (!validateDeliveryAddress(orderData.deliveryAddress)) { alert('Please enter a valid delivery address.'); return; }
-    if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery date.'); return; }
+    //if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery date.'); return; }
     if (!validateCreditCardNumber(orderData.creditCardNumber)) { alert('Please enter a valid credit card number.'); return; }
     if (!validateCreditCardExpiration(orderData.creditCardExpiration)) { alert('Please enter a valid credit card expiration date.'); return; }
     if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
@@ -169,6 +190,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
     }
   };
 
+            //filterDate={filterDate}
 
   return (
     <div className="customer-info-section">
@@ -178,29 +200,34 @@ const handleItemQuantityChange = (index, newQuantity) => {
         <tbody>
             <tr>
               <td><label htmlFor="customerName">Customer Name:</label></td>
-              <td><input type="text" name="customerName" id="customerName" value={orderData.customerName} onChange={handleChange} required /></td>
+              <td className="input-cell"><input className="input-name" type="text" name="customerName" id="customerName" value={orderData.customerName} onChange={handleChange} required /></td>
             </tr>
             {user.role === 'admin' && (
             <tr>
               <td><label htmlFor="customerEmail">Customer Email:</label></td>
-              <td><input type="email" name="customerEmail" id="customerEmail" value={orderData.customerEmail} onChange={handleChange} required /></td>
+              <td className="input-cell"><input className="input-email" type="email" name="customerEmail" id="customerEmail" value={orderData.customerEmail} onChange={handleChange} required /></td>
             </tr>
           )}
           <tr>
             <td><label htmlFor="deliveryAddress">Delivery Address:</label></td>
-            <td><input type="text" name="deliveryAddress" id="deliveryAddress" value={orderData.deliveryAddress} onChange={handleChange} required /></td>
+            <td className="input-cell"><input className="input-address" type="text" name="deliveryAddress" id="deliveryAddress" value={orderData.deliveryAddress} onChange={handleChange} required /></td>
           </tr>
           <tr>
-            <td><label htmlFor="deliveryDate">Delivery Date:</label></td>
-            <td><input type="date" name="deliveryDate" id="deliveryDate" value={orderData.deliveryDate} onChange={handleChange} required /></td>
+          <td><label htmlFor="deliveryDate">Delivery Date:</label></td>
+          <td className="input-cell"><ReactDatePicker
+            className="input-datepicker"
+            selected={new Date(orderData.deliveryDate)}
+            onChange={handleDateChange}
+            dateFormat="yyyy-MM-dd"
+          /></td>
           </tr>
           <tr>
             <td><label htmlFor="creditCardNumber">Credit Card Number:</label></td>
-            <td><input type="text" name="creditCardNumber" id="creditCardNumber" value={orderData.creditCardNumber} onChange={handleChange} required /></td>
+            <td className="input-cell"><input className="input-cc" type="text" name="creditCardNumber" id="creditCardNumber" value={orderData.creditCardNumber} onChange={handleChange} required /></td>
           </tr>
           <tr>
-            <td><label htmlFor="creditCardExpiration">Expiration Date:</label></td>
-            <td><input 
+            <td><label htmlFor="creditCardExpiration" >Expiration Date:</label></td>
+            <td className="input-cell"><input
               type="text" 
               name="creditCardExpiration" 
               id="creditCardExpiration" 
@@ -214,7 +241,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
       </tr>
       <tr>
         <td><label htmlFor="creditCardCVV">Security Code (CVV):</label></td>
-          <td><input 
+          <td className="input-cell"><input 
             type="text" 
             name="creditCardCVV" 
             id="creditCardCVV" 

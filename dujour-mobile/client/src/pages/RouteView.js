@@ -4,14 +4,14 @@ import './AllPages.css';
 import { AuthContext } from '../App.js';
 import OverviewMap from './OverviewMap';
 import { GenericTable } from './ReusableReactComponents';
-import { LoadScript } from '@react-google-maps/api';
+import { GoogleMap, LoadScript } from '@react-google-maps/api';
 import BarcodeScannerComponent from './BarcodeScannerComponent';
-const config = require('../config');
+const moment = require('moment-timezone');
 
 function RouteView() {
   const authContext = useContext(AuthContext);
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+  const dateInEST = moment().tz("America/New_York");
+  const formattedDate = moment(dateInEST).format('YYYY-MM-DD');
   const { user } = useContext(AuthContext);
   const [routeDetails, setRouteDetails] = useState({ routes: [] });
   const [orders, setOrders] = useState([]);
@@ -80,14 +80,6 @@ const handlePickupPackage = async (order) => {
   }
 };
 
-  useEffect(() => {
-    if (routeDetails.routes[0] && routeDetails.routes[0]?.stops) {
-        // Check if all stops/orders have the status 'Picked up by Driver'
-        const allPickedUp = routeDetails.routes[0]?.stops.every(stop => stop.status === 'Picked up by Driver');
-        setAllOrdersPickedUp(allPickedUp);
-    }
-}, [routeDetails.routes[0]]); // Depend on the currentRoute state or equivalent
-
   const handleCloseScanner = () => {
         setShowScanner(false); // Function to close the scanner
     };
@@ -141,6 +133,8 @@ const handlePickupPackage = async (order) => {
       //console.log("Fetching data with formattedDate:", formattedDate, "and driver email:", user.email);
       
       try {
+        console.log(formattedDate)
+        //const dateForAPICall = 
         const response = await axios.get(`/api/deliveryRoutes/specificRoute?date=${formattedDate}&userId=${user._id}`);
         //console.log("API response:", response.data);
         setRoutePlanExists(response.data.exists);
@@ -164,15 +158,33 @@ const handlePickupPackage = async (order) => {
 
   useEffect(() => {}, [routeDetails]);
 
-  useEffect(() => {
-    // Assuming routeDetails is already populated
-    if (routeDetails && routeDetails.routes.length > 0) {
-      const stops = routeDetails.routes[0].stops;
-      combineStopsWithStatuses(stops)
-        .then(setCombinedStops)
-        .catch(error => console.error('Failed to combine stops with statuses:', error));
-    }
-  }, [routeDetails]);
+useEffect(() => {
+  // Check if route details are properly populated with at least one route
+  if (routeDetails.routes.length > 0) {
+    const stops = routeDetails.routes[0].stops;
+
+    // Combine the stops with their statuses
+    combineStopsWithStatuses(stops)
+      .then(combinedStops => {
+        setCombinedStops(combinedStops);
+
+        // After successfully combining statuses, check if all orders are picked up
+        const allPickedUp = combinedStops.every(stop => stop.orderStatus === 'Picked up by Driver');
+        setAllOrdersPickedUp(allPickedUp);
+
+        console.log("+++++++ Combined stops data:", combinedStops);
+        console.log("All orders picked up:", allPickedUp);
+      })
+      .catch(error => {
+        console.error('Failed to combine stops with statuses:', error);
+      });
+  } else {
+    // If no routes are available, ensure dependent states are reset
+    setCombinedStops([]);
+    setAllOrdersPickedUp(false);
+  }
+}, [routeDetails]);
+
 
 const handleStatusUpdate = async (stop) => {
   try {
@@ -238,6 +250,8 @@ function openGoogleMaps(lat, lng) {
     // Map each stop to its corresponding order status
     const orderStatuses = stops.map(stop => orderStatusMap[stop.orderId] || 'Status Not Found');
     //console.log(orderStatuses)
+    console.log("(((")
+    console.log(orderStatuses)
     return orderStatuses;
   } catch (error) {
     console.error('Failed to fetch order statuses:', error);
@@ -300,7 +314,7 @@ const fetchRouteDetails = async () => {
     ...stop,
     orderStatus: orderStatuses[index] // Add the status to each stop
   }));
- // console.log(combinedStops)
+ console.log(combinedStops)
 
   return combinedStops;
 }
@@ -396,7 +410,7 @@ function getCurrentLocation() {
  return (
     <>
       {!isGoogleApiLoaded ? (
-        <LoadScript googleMapsApiKey={config.googleMapsApiKey}>
+        <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
           <Content />
         </LoadScript>
       ) : (

@@ -1,7 +1,7 @@
 import qrcode
 
 # Data to be encoded
-data = "3-sam@salooapp.com"
+data = "Dujour-3-sam@salooapp.com"
 
 # Create QR code instance
 qr = qrcode.QRCode(

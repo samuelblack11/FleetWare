@@ -3,6 +3,7 @@ import axios from 'axios';
 import { GenericTable, DetailedOrderSummary } from './ReusableReactComponents';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
+const moment = require('moment-timezone');
 
 const OrderForm = ({ order, onSave, onClose, isEditable }) => {
   const initialState = order || {
@@ -167,7 +168,7 @@ const OrderManagement = ({ mode }) => {
       Cell: ({ row }) => {
         const date = new Date(row.deliveryDate);
         const formattedDate = new Intl.DateTimeFormat('en-US', {
-          timeZone: 'UTC'
+          timeZone: 'America/New York'
         }).format(date);
         return formattedDate;
       }

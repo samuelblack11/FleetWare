@@ -27,9 +27,6 @@ router.put('/updateUsers', async (req, res) => {
       for (const stop of route.stops) {
           const orderObjectId = new mongoose.Types.ObjectId(stop.orderId);
           const order = await Order.findById(orderObjectId);
-          //console.log("+++")
-          //console.log(order)
-          //console.log(order.overallStatus)
           if (!order || order.overallStatus !== 'Ready for Driver Pickup') {
               allOrdersReadyForPickup = false;
               break;

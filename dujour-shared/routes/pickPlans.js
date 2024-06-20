@@ -3,6 +3,7 @@ const router = express.Router();
 const PickPlan = require('../models/PickPlan');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const mongoose = require('mongoose');
 
 // Get pick plans by date
 router.get('/', async (req, res) => {
@@ -69,9 +70,20 @@ router.get('/specificPickPlan', async (req, res) => {
     const { date, userId } = req.query; // Assuming userId is passed as a query parameter
 
     try {
+        const allUsers = await User.find({});
+        console.log("All Users:", allUsers);
         // Lookup for the user by userId
         console.log("Attempting to find user with ID:", userId);
-        const user = await User.findById(userId);
+        console.log(date)
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+        console.log("Converted userId to ObjectId:", userObjectId);
+
+        User.collection.getIndexes().then(indexes => {
+          console.log("Indexes:", indexes);
+        }).catch(console.error);
+
+
+        const user = await User.findById(userObjectId);
 
         if (!user) {
             return res.status(404).json({ message: "User not found with the given ID" });
@@ -84,7 +96,10 @@ router.get('/specificPickPlan', async (req, res) => {
             // Create a date object for the given date
             const [year, month, day] = date.split('-').map(Number);
             const targetDate = new Date(Date.UTC(year, month - 1, day));
-            
+            console.log(year)
+            console.log(month)
+            console.log(day)
+            console.log(targetDate)
             // Only consider the date part for the comparison
             query.date = { $gte: targetDate, $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000) };
             console.log(`Query date range: ${targetDate.toISOString()} to ${new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString()}`);
@@ -93,7 +108,7 @@ router.get('/specificPickPlan', async (req, res) => {
         // Lookup for existing pickPlans
         const existingPickPlans = await PickPlan.find(query).populate('user');
         if (existingPickPlans.length > 0) {
-            console.log('Routes found:', existingPickPlans);
+            console.log('Pick Plans found:', existingPickPlans);
             res.json({ exists: true, pickPlans: existingPickPlans });
         } else {
             console.log('No pickPlans found for this user on the specified date.');
@@ -159,6 +174,7 @@ router.put('/updatePickStatus', async (req, res) => {
     console.log(`All items for order:`, allItemsForOrder);
 
     // Update the order status based on the statuses of all items across all pick plans
+    console.log(allItemsForOrder)
     if (allItemsForOrder.some(item => item.status === 'Not Picked')) {
       order.overallStatus = 'Order Pick in Progress';
     } else {

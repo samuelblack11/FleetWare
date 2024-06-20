@@ -1,23 +1,25 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('../../dujour-shared/node_modules/mongoose');
-const config = require('../../dujour-shared/config');
 const cors = require('cors');
 const path = require('path');
 const app = express();
 app.use(express.json());
 app.use(cors());
 const port = process.env.PORT || 3004;
+//const User = require('../dujour-shared/models/User');
 
 // URL encode the password to handle special characters
-const encodedUsername = encodeURIComponent(config.mongoUserName);
-const encodedPassword = encodeURIComponent(config.mongoPwd);
+const encodedUsername = encodeURIComponent(process.env.mongoUserName);
+const encodedPassword = encodeURIComponent(process.env.mongoPwd);
+
 
 // Construct the MongoDB URI using imported configuration
-const uri = `mongodb+srv://${encodedUsername}:${encodedPassword}@${config.mongoClusterName}.mongodb.net/Dujour?retryWrites=true&w=majority&appName=${config.databaseName}`
-
+const uri = `mongodb+srv://${encodedUsername}:${encodedPassword}@${process.env.mongoClusterName}.mongodb.net/Dujour?retryWrites=true&w=majority&appName=${process.env.databaseName}`
+console.log(uri);
 mongoose.connect(uri, { useNewUrlParser: true})
   .then(() => {
-    console.log('Connected to MongoDB Atlas database...');
+    console.log('Connected to database...');
     
     // Ensure we're using the correct database
     const db = mongoose.connection.db;

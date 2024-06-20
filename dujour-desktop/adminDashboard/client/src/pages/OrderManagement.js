@@ -7,7 +7,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
 import logo from '../assets/logo128.png';
-
+const moment = require('moment-timezone');
 
 const OrderForm = ({ order, onSave, onClose, isEditable }) => {
   const initialState = order || {
@@ -227,7 +227,7 @@ const statusOptions = [
     Cell: ({ row }) => {
       const date = new Date(row.deliveryDate);
       const formattedDate = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'UTC'
+        timeZone: 'America/New_York'
       }).format(date);
       return formattedDate;
     }
@@ -263,47 +263,51 @@ const statusOptions = [
   ];
 
 const generateAndOpenPDF = async (order) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
   const barcodeData = `Dujour-${order.masterOrderNumber}-${order.customerEmail}`;
 
-  // Convert logo and QR code to data URLs
-  const qrCodeDataURL = await QRCode.toDataURL(barcodeData);
-  const logoImage = new Image();
-  logoImage.src = logo;  // Assuming 'logo' is imported at the top of your file
-  await new Promise(resolve => logoImage.onload = resolve);
-
-  // Define the HTML content with better styling
+  // Convert QR code to data URL
+  const qrCodeDataURL = await QRCode.toDataURL(barcodeData, { errorCorrectionLevel: 'H' });
+  
+  // Define HTML content with appropriate styling for QR code and content
   const labelContent = `
-    <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; width: 210mm;">
-      <img src="${logoImage.src}" alt="Logo" style="width: 100px;"/>
+    <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; width: 190mm;">
+      <img src="${logo}" alt="Logo" style="width: 100px;"/> <!-- Ensure logo variable is correctly defined -->
       <h2>Dujour Delivery</h2>
-      <p><strong></strong> ${order.customerName}</p>
-      <p><strong></strong> ${order.deliveryAddress}</p>
+      <p>${order.customerName}</p>
+      <p>${order.deliveryAddress}</p>
       <p><strong>Delivery Date:</strong> ${new Date(order.deliveryDate).toLocaleDateString()}</p>
       <img src="${qrCodeDataURL}" style="width: 100px; margin-top: 10px;"/>
     </div>
   `;
 
-  // Render the label content to a temporary div element
+  // Render the HTML content to a temporary div element
   const tempDiv = document.createElement("div");
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
   tempDiv.innerHTML = labelContent;
   document.body.appendChild(tempDiv);
 
-  // Use html2canvas to capture the content with a higher scale for better quality
+  // Convert HTML to canvas with a higher scale for better QR code quality
   const canvas = await html2canvas(tempDiv, {
-    scale: 3, // Increase scale to improve quality
+    scale: 3, // Improve quality
     logging: true,
-    useCORS: true,
-    width: tempDiv.offsetWidth,
-    height: tempDiv.offsetHeight
+    useCORS: true
   });
   document.body.removeChild(tempDiv);
 
-  // Add the rendered content to the PDF, adjust sizes accordingly
+  // Convert canvas to data URL
   const imgData = canvas.toDataURL('image/png');
-  doc.addImage(imgData, 'PNG', 10, 10, 180, 160); // Adjust size to fit the content properly
+
+  // Ensure the PDF fits the image; adjust sizes and margins accordingly
+  doc.addImage(imgData, 'PNG', 10, 10, doc.internal.pageSize.getWidth() - 20, canvas.height / canvas.width * (doc.internal.pageSize.getWidth() - 20));
+  
+  // Open PDF in a new window
   window.open(doc.output('bloburl'), '_blank');
 };
 

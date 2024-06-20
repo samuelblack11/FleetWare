@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GenericTable, GenericPopup } from './ReusableReactComponents';
 import MapComponent from './MapComponent';
+const moment = require('moment-timezone');
 
 const LoadingSpinner = () => {
   return (
@@ -12,8 +13,8 @@ const LoadingSpinner = () => {
 };
 
 const RouteOptimization = () => {
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+  const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
+  const formattedDate = dateInEST.format('YYYY-MM-DD');;
   const [selectedDate, setSelectedDate] = useState(formattedDate);
   const [orders, setOrders] = useState([]);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -194,9 +195,7 @@ useEffect(() => {
   const handleSubmitRoutePlan = async () => {
     setIsLoading(true);
     try {
-      const date = new Date(`${selectedDate}T06:00:00`);
-      const estOffset = 5 * 60 * 60 * 1000;
-      const startTimeIso = new Date(date.getTime() - estOffset).toISOString();
+      const routeDate = new Date(`${selectedDate}T09:00:00`);
 
       const routes = optimizedRoutes.map((route, index) => ({
         clusterId: index,
@@ -209,7 +208,7 @@ useEffect(() => {
           longitude: stop.longitude,
           orderId: stop.orderId
         })),
-        startTime: startTimeIso,
+        startTime: routeDate,
         //driver: selectedUsers[index]
       }));
 

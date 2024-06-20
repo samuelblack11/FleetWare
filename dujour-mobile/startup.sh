@@ -8,6 +8,7 @@ nvm use 16
 # Set the OpenSSL legacy provider for Node.js 17+
 export NODE_OPTIONS=--openssl-legacy-provider
 source ../dujour-shared/config.sh
+# Assuming the .env file is in the server directory and formatted with exports
 
 # Launch MongoDB in a new Terminal window. Adjust the path and command as necessary based on your MongoDB installation.
 osascript -e 'tell app "Terminal" to do script "startmongo"'

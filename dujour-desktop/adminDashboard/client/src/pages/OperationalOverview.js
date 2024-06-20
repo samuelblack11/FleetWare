@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GenericTable } from './ReusableReactComponents';
 import './AllPages.css';
+import { format } from 'date-fns';
+const moment = require('moment-timezone');
 
 const OperationalOverview = () => {
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+  const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
+  const formattedDate = dateInEST.format();
   const [selectedDate, setSelectedDate] = useState(formattedDate);
   const [overviewData, setOverviewData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +23,6 @@ const OperationalOverview = () => {
     console.log("Updated pickPlansWithStatusCounts:", overviewData?.pickPlansWithStatusCounts);
       console.log("Updated routesWithStatusCounts:", overviewData?.routesWithStatusCounts);
   }, [overviewData]);
-
 
   const aggregateStatusCounts = (items) => {
   const statusCounts = {};
@@ -60,10 +61,6 @@ const aggregateRouteStatusCounts = (stops, orders) => {
   console.log(statusCounts)
   return statusCounts;
 };
-
-
-
-
 
   const fetchOverviewData = async (date) => {
     setIsLoading(true);
@@ -219,7 +216,7 @@ const routeColumns = [
     Header: 'Start Time',
     accessor: 'startTime',
     Cell: ({ row }) => {
-      return formatEST(row.startTime);
+      return row.startTime;
     }
   },
   {
@@ -258,39 +255,6 @@ const routeColumns = [
     }
   },
 ];
-
-
-
-
-  const formatEST = (utcDateString) => {
-    // Parse the UTC date string
-    const utcDate = new Date(utcDateString);
-    // Check if the date is valid
-    if (isNaN(utcDate)) {
-      return 'Invalid Date';
-    }
-
-    // Convert to EST (Eastern Standard Time)
-    // Note: toLocaleString with options is used for correct time zone conversion
-    const estDate = new Date(utcDate.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-
-    // Get date components
-    const year = estDate.getFullYear();
-    const month = String(estDate.getMonth() + 1).padStart(2, '0');
-    const day = String(estDate.getDate()).padStart(2, '0');
-
-    // Get time components
-    let hours = estDate.getHours();
-    const minutes = String(estDate.getMinutes()).padStart(2, '0');
-    const seconds = String(estDate.getSeconds()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    hours = String(hours).padStart(2, '0');
-
-    // Format the date and time
-    return `${month}/${day}/${year} ${hours}:${minutes}:${seconds} ${ampm}`;
-  };
 
   return (
     <div className="operational-overview-container">

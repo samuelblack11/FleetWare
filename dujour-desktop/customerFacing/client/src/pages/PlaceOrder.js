@@ -10,19 +10,17 @@ import { DetailedOrderSummary } from './ReusableReactComponents';
 import logo from '../assets/logo128.png';
 import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-
+const moment = require('moment-timezone');
 
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
   const { cartItems: initialCartItems, totalCost: initialTotalCost } = state || { cartItems: [], totalCost: 0 };
   const navigate = useNavigate();
-  const today = new Date();
-  const userTimezoneOffset = today.getTimezoneOffset() * 60000; // User's timezone offset in milliseconds
-  const estOffset = -300; // EST is UTC-5 hours, which is -300 minutes
-  const estTime = new Date(today.getTime() + userTimezoneOffset + estOffset * 60000);
-  estTime.setHours(10, 0, 0, 0); // Set time to 10:00:00.000
-  const formattedDate = `${estTime.getFullYear()}-${(estTime.getMonth() + 1).toString().padStart(2, '0')}-${estTime.getDate().toString().padStart(2, '0')}`;
+  // Create a new date object for the current time in EST
+  const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
+  const formattedDate = dateInEST.format();
+
   const handleBackToBuildOrder = () => {
   	navigate('/build-order', { state: { cartItems, totalCost } });
   };
@@ -34,17 +32,20 @@ const PlaceOrder = () => {
     return date
   };
 
-
-  const [orderData, setOrderData] = useState({
-    customerName: user?.name || 'Default Name',
-    customerEmail: user?.email || 'email@example.com',
-    deliveryAddress: user?.deliveryAddress || '123 Default Address',
-    deliveryDate: getNextSaturday(new Date()),
-    creditCardNumber: '',
-    creditCardExpiration: '',
-    creditCardCVV: '',
+  const initialOrderState = {
+    customerName: user?.name || 'Sam B',
+    customerEmail: user?.email || 'sam@salooapp.com',
+    deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
+    //deliveryDate: getNextSaturday(new Date()),
+    deliveryDate: formattedDate,
+    creditCardNumber: '0000000000000000',
+    creditCardExpiration: '0425',
+    creditCardCVV: '221',
     items: state?.cartItems || [],
-  });
+  }
+
+
+  const [orderData, setOrderData] = useState(initialOrderState);
 
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
@@ -52,9 +53,6 @@ const PlaceOrder = () => {
 
 
   useEffect(() => {
-    console.log("{{{{")
-    console.log(orderData.deliveryDate)
-    console.log(getNextSaturday(new Date()))
     const calculateTotalCost = () => {
       const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
       setTotalCost(total);
@@ -144,7 +142,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
 
     if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
     if (!validateDeliveryAddress(orderData.deliveryAddress)) { alert('Please enter a valid delivery address.'); return; }
-    if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery date.'); return; }
+    //if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery date.'); return; }
     if (!validateCreditCardNumber(orderData.creditCardNumber)) { alert('Please enter a valid credit card number.'); return; }
     if (!validateCreditCardExpiration(orderData.creditCardExpiration)) { alert('Please enter a valid credit card expiration date.'); return; }
     if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
@@ -192,6 +190,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
     }
   };
 
+            //filterDate={filterDate}
 
   return (
     <div className="customer-info-section">
@@ -219,7 +218,6 @@ const handleItemQuantityChange = (index, newQuantity) => {
             className="input-datepicker"
             selected={new Date(orderData.deliveryDate)}
             onChange={handleDateChange}
-            //filterDate={filterDate}
             dateFormat="yyyy-MM-dd"
           /></td>
           </tr>

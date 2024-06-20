@@ -3,11 +3,13 @@ import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
 import { GenericTable } from './ReusableReactComponents';
+import moment from 'moment-timezone';
 
 function PickView() {
   const { user } = useContext(AuthContext); // Access user from AuthContext
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+  const dateInEST = moment().tz("America/New_York").startOf('day');
+  const formattedDate = dateInEST.format('YYYY-MM-DD'); // Ensures only the date component is sent
+
   const [pickPlanDetails, setPickPlanDetails] = useState(null);
   const [pickPlanExists, setPickPlanExists] = useState(false);
   const [fullyPickedOrders, setFullyPickedOrders] = useState([]);
@@ -39,8 +41,10 @@ function PickView() {
     }
 
     try {
+      console.log(formattedDate)
       const response = await axios.get(`/api/pickPlans/specificPickPlan?date=${formattedDate}&userId=${user._id}`);
       setPickPlanExists(response.data.exists);
+      console.log(response.data.exists)
 
       if (response.data.exists) {
         const pickPlan = response.data.pickPlans[0];
@@ -64,6 +68,7 @@ function PickView() {
   }, [fetchData]);
 
   const handleStatusUpdate = async (item) => {
+    console.log(item)
     try {
       const response = await axios.put('/api/pickPlans/updatePickStatus', {
         pickPlanId: pickPlanDetails._id,

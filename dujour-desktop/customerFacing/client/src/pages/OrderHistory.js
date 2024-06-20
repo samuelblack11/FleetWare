@@ -167,7 +167,7 @@ const OrderManagement = ({ mode }) => {
       Cell: ({ row }) => {
         const date = new Date(row.deliveryDate);
         const formattedDate = new Intl.DateTimeFormat('en-US', {
-          timeZone: 'UTC'
+          timeZone: 'America/New_York'
         }).format(date);
         return formattedDate;
       }
