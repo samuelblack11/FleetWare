@@ -371,3 +371,27 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 .input-datepicker input {
   height: 40px !important; /* Override internal styles */
 }
+
+.card-container {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+}
+
+.item-card {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.item-details {
+  padding: 15px;
+}

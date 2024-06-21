@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { GenericTable, GenericPopup, DetailedOrderPopup} from './ReusableReactComponents';
 import './AllPages.css';
@@ -8,6 +8,8 @@ import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
 import logo from '../assets/logo128.png';
 const moment = require('moment-timezone');
+import ReactDatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 const OrderForm = ({ order, onSave, onClose, isEditable }) => {
   const initialState = order || {
@@ -100,6 +102,7 @@ const OrderManagement = ({ mode }) => {
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const { user } = useContext(AuthContext); // Get user info from context
+  const [filterDate, setFilterDate] = useState(null);
 
   useEffect(() => {
     console.log("****")
@@ -171,16 +174,29 @@ const handleCancelEdit = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-  // If no filter is set, return all orders
-  if (!filterField || !filterValue) {
+const filteredOrders = orders.filter(order => {
+  // Return all orders if no filter field is selected or no value/date is set
+  if (!filterField || (!filterValue && !filterDate)) {
     return true;
   }
-  
-  // Assuming all values are strings; adjust if necessary
-  const orderValue = String(order[filterField]).toLowerCase();
-  return orderValue.includes(filterValue.toLowerCase());
+
+  // Special handling for date filtering
+  if (filterField === 'deliveryDate' && filterDate) {
+    // Normalize both dates to the start of the day for a fair comparison
+    const orderDate = new Date(order.deliveryDate).setHours(0, 0, 0, 0);
+    const selectedDate = new Date(filterDate).setHours(0, 0, 0, 0);
+    return orderDate === selectedDate;
+  }
+
+  // Handle other fields assuming they are strings
+  if (filterValue) {
+    const orderValue = String(order[filterField]).toLowerCase();
+    return orderValue.includes(filterValue.toLowerCase());
+  }
+
+  return false;
 });
+
 
 const statusOptions = [
   'Order Confirmed', 
@@ -315,22 +331,36 @@ const generateAndOpenPDF = async (order) => {
 
   return (
     <div>
-      <h3 class="page-header">{mode == 'myOrders' ? 'My Orders' : 'Order Management'}</h3>
+      <h3 className="page-header">{mode == 'myOrders' ? 'My Orders' : 'Order Management'}</h3>
       <div>
-      <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
-        <option value="">Select a field to filter by</option>
-        <option value="customerName">Customer Name</option>
-        <option value="overallStatus">Order Status</option>
-        <option value="deliveryAddress">Delivery Address</option>
-        <option value="deliveryDate">Delivery Date</option>
-    </select>
-  <input
-    type="text"
-    placeholder="Filter value"
-    value={filterValue}
-    onChange={(e) => setFilterValue(e.target.value)}
-  />
+  <select value={filterField} onChange={(e) => {
+    setFilterField(e.target.value);
+    // Reset values appropriately when changing filter types
+    setFilterValue('');
+    setFilterDate(null);
+  }}>
+    <option value="">Select a field to filter by</option>
+    <option value="customerName">Customer Name</option>
+    <option value="overallStatus">Order Status</option>
+    <option value="deliveryAddress">Delivery Address</option>
+    <option value="deliveryDate">Delivery Date</option>
+  </select>
+  {filterField === 'deliveryDate' ? (
+    <ReactDatePicker
+      selected={filterDate}
+      onChange={date => setFilterDate(date)}
+      dateFormat="yyyy-MM-dd"
+    />
+  ) : (
+    <input
+      type="text"
+      placeholder="Filter value"
+      value={filterValue}
+      onChange={(e) => setFilterValue(e.target.value)}
+    />
+  )}
 </div>
+
       <GenericTable data={filteredOrders} columns={columns} />
       {showOrderPopup && (
       <DetailedOrderPopup

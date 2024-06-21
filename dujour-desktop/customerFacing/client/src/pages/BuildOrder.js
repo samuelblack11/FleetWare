@@ -34,6 +34,7 @@ const BuildOrder = () => {
   const [filterValue, setFilterValue] = useState('');
   const [showFarmInfo, setShowFarmInfo] = useState(false);
   const [selectedFarm, setSelectedFarm] = useState(null); 
+  const [imageSources, setImageSources] = useState({}); // State to store image paths
 
   // When you need to show the modal
   const handleShowFarmInfo = (farm) => {
@@ -55,11 +56,13 @@ const BuildOrder = () => {
       const fetchAvailableItems = async () => {
       try {
         const response = await axios.get('/api/items');
-        setAvailableItems(response.data.map(item => ({
+        const items = response.data.map(item => ({
           ...item,
           quantity: 0,
-          unitCost: item.unitCost || 0, // Assuming each item has a unitCost
-        })));
+          unitCost: item.unitCost || 0,
+        }));
+        setAvailableItems(items);
+        fetchImages(items);
       } catch (error) {
         console.error("Error fetching items:", error);
       }
@@ -285,6 +288,21 @@ useEffect(() => {
   return () => window.removeEventListener('resize', adjustCartSidebar);
 }, [cartItems]);
 
+const fetchImages = async (items) => {
+    const newImageSources = {};
+    for (const item of items) {
+        const imageName = item.itemName.replace('/', '-');
+        try {
+            const imagePath = await import(`../assets/${imageName}.png`);
+            newImageSources[item.itemName] = imagePath.default;
+        } catch (e) {
+            console.log(`Failed to load image for ${item.itemName}:`, e);
+            newImageSources[item.itemName] = 'fallback-image-path.png'; // Provide a fallback image path
+        }
+    }
+    setImageSources(newImageSources);
+};
+
 return (
   <div className="build-order-container">
     {cartItems.length > 0 && (
@@ -297,69 +315,51 @@ return (
         toggleUpdateItem={toggleUpdateItem}
       />
     )}
+
     <div className="build-cart-section">
-      <h2>Build Your Cart</h2>
-      <div>
-        <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
-          <option value="">Select a field to filter by</option>
-          <option value="item.itemName">Item Name</option>
-          <option value="item.farm.name">Farm</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Filter value"
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-        />
+  <h2>Build Your Cart</h2>
+  <div>
+    <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
+      <option value="">Select a field to filter by</option>
+      <option value="item.itemName">Item Name</option>
+      <option value="item.farm.name">Farm</option>
+    </select>
+    <input
+      type="text"
+      placeholder="Filter value"
+      value={filterValue}
+      onChange={(e) => setFilterValue(e.target.value)}
+    />
+  </div>
+  <div className="card-container" style={{ gridTemplateColumns: cartItems.length > 0 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)' }}>
+    {filteredItems.map((item, index) => (
+      <div className="item-card" key={index}>
+      <img 
+        src={imageSources[item.itemName]} 
+        alt={item.itemName} 
+        className="item-image"
+      />
+        <div className="item-details">
+          <h4>{item.itemName}</h4>
+          <p>{item.farm.name}</p>
+          <p>${item.unitCost.toFixed(2)}</p>
+          <div>
+            <input
+              className="input-quantity"
+              type="number"
+              min="0"
+              value={item.quantity || ''}
+              onChange={(e) => handleQuantityChange(index, e.target.value)}
+            />
+            <p>${(item.quantity * item.unitCost).toFixed(2)}</p>
+          </div>
+          <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
+          <button onClick={() => displayItemDetails(item)} className="add-button">Details</button>
+        </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Item Name</th>
-            <th>Farm</th>
-            <th>Unit Cost</th>
-            <th>Quantity</th>
-            <th>Line Item Cost</th>
-            <th>Farm Details</th>
-            <th>Add to Cart</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.map((item, index) => (
-            <tr key={index}>
-              <td>{item.itemName}</td>
-              <td>
-                <div className="info-container">
-                  {item.farm.name}
-                  <button
-                    className="info-button"
-                    onClick={() => handleShowFarmInfo(item.farm)}
-                    aria-label="Farm information" // Good for accessibility
-                  >
-                    i
-                  </button>
-                </div>
-              </td>
-              <td>${item.unitCost.toFixed(2)}</td>
-              <td>
-                <input
-                  className="input-quantity"
-                  type="number"
-                  min="0"
-                  value={item.quantity || ''}
-                  onChange={(e) => handleQuantityChange(index, e.target.value)}
-                />
-              </td>
-              <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
-              <td><button onClick={() => displayItemDetails(item)} className="add-button">Details</button></td>
-              <td>
-                <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    ))}
+  </div>
+</div>
     <GenericPopup show={popupVisible} onClose={() => setPopupVisible(false)}>
       {selectedItemDetails && (
         <div>
@@ -372,5 +372,6 @@ return (
   </div>
 );
 };
+
 
 export default BuildOrder;

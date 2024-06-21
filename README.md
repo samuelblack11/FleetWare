@@ -4,4 +4,6 @@ Dujour is an innovative supply chain management tool designed to support the del
 
 <p align="center">
   <img src="/homepage.png" alt="Homepage" height="400" width="400"/>
+  <img src="/menu.png" alt="Homepage" height="400" width="400"/>
+
 </p>
