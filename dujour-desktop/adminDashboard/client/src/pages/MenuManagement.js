@@ -176,6 +176,7 @@ const FarmForm = ({ farm, onSave }) => {
   );
 };
 
+
 const MenuManagement = () => {
     const [items, setItems] = useState([]);
     const [farms, setFarms] = useState([]);
@@ -183,6 +184,39 @@ const MenuManagement = () => {
     const [showFarmPopup, setShowFarmPopup] = useState(false);
     const [currentItem, setCurrentItem] = useState(null); // null for adding, object for editing
     const [currentFarm, setCurrentFarm] = useState(null);
+
+    const ActiveStatusCheckbox = ({ isActive, onChange, itemId }) => {
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <input
+                type="radio"
+                name={`activeStatus-${itemId}`}
+                checked={isActive === true}
+                onChange={() => onChange(true, itemId)}
+                style={{ marginRight: 5 }}
+            /> Yes
+            <input
+                type="radio"
+                name={`activeStatus-${itemId}`}
+                checked={isActive === false}
+                onChange={() => onChange(false, itemId)}
+                style={{ marginLeft: 20, marginRight: 5 }}
+            /> No
+        </div>
+    );
+};
+
+const updateActiveStatus = async (newStatus, itemId) => {
+    try {
+        const response = await axios.put(`/api/items/${itemId}`, { activeStatus: newStatus });
+        console.log('Update Success:', response.data);
+        fetchItems(); // Re-fetch items to update the UI based on the new data
+    } catch (error) {
+        console.error('Error updating item:', error);
+    }
+};
+
+
 
     const columns = [
   {
@@ -201,6 +235,19 @@ const MenuManagement = () => {
     Header: 'Quantity Available',
     accessor: 'quantityAvailable',
   },
+
+  {
+    Header: 'Active',
+    accessor: 'activeStatus',
+    Cell: ({ row }) => (
+        <ActiveStatusCheckbox
+            isActive={row.activeStatus}
+            onChange={updateActiveStatus}
+            itemId={row._id}
+        />
+    ),
+  },
+
   {
     Header: 'Actions',
     accessor: 'actions',

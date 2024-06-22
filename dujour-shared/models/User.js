@@ -8,12 +8,17 @@ const userSchema = new Schema({
   role: {
     type: String,
     enum: ['admin', 'supplier', 'customer', 'employee'],
-    default: 'Customer'
+    default: 'customer'
   },
   lastOrderNumber: { type: Number, default: 0 },
   creditCardInfo: { type: String, default: '' },
   deliveryAddress: { type: String, default: '' },
   isFirstLogin: { type: Boolean, default: true },
+  accountStatus: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'inactive'
+  }
 });
 
 const User = mongoose.model('User', userSchema);

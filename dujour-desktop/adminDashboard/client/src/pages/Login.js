@@ -135,7 +135,7 @@ const deleteAllUsers = async () => {
             <label>Role</label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="supplier">Supplier</option>
-              <option value="employee">Employee</option>
+              {/*<option value="employee">Employee</option>*/}
               {/*<option value="admin">Admin</option>*/}
             </select>
           </div>

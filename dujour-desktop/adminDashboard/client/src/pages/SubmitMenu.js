@@ -8,6 +8,7 @@ const ItemForm = ({ item, onSave }) => {
   const [formState, setFormState] = useState({
     itemName: item ? item.itemName : '',
     unitCost: item ? item.unitCost : '',
+    originalQuantity: item ? item.originalQuantity : '',
     quantityAvailable: item ? item.quantityAvailable : '',
   });
     const { user } = useContext(AuthContext); // Access the user context
@@ -40,19 +41,26 @@ const ItemForm = ({ item, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormState(prevState => ({ ...prevState, [name]: value }));
+    setFormState(prevState => ({
+         ...prevState,
+         [name]: value,
+        originalQuantity: name === 'quantityAvailable' ? value : prevState.originalQuantity
+        }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log(user)
       const farmResponse = await axios.get(`/api/farms/byname/${encodeURIComponent(user.name)}`);
       const farm = farmResponse.data;
 
       const itemData = {
         ...formState,
         farm: farm._id,
-        forDeliveryOn: new Date(getNextSaturday(new Date()))
+        originalQuantity: formState.quantityAvailable,
+        forDeliveryOn: new Date(getNextSaturday(new Date())),
+        activeStatus: false
       };
 
       const apiPath = item ? `/api/items/${item._id}` : '/api/items';
@@ -119,12 +127,14 @@ const SubmitMenu = () => {
     const columns = [
         { Header: 'Item Name', accessor: 'itemName' },
         { Header: 'Unit Cost', accessor: 'unitCost' },
+        { Header: 'Original Quantity', accessor: 'originalQuantity' },
         { Header: 'Quantity Available', accessor: 'quantityAvailable' },
+        { Header: 'Active', accessor: 'activeStatus', Cell: ({ row }) => row.activeStatus ? 'Yes' : 'No' },
         { Header: 'Actions', Cell: ({ row }) => (
-            <>
-                <button onClick={() => handleAddEditItem(row)} className="edit-btn">Edit</button>
-                <button onClick={() => handleDeleteItem(row._id)} className="delete-btn">Delete</button>
-            </>
+        <>
+            <button onClick={() => handleAddEditItem(row)} className="edit-btn" disabled={row.activeStatus}>Edit</button>
+            <button onClick={() => handleDeleteItem(row._id)} className="delete-btn" disabled={row.activeStatus}>Delete</button>
+        </>
         )}
     ];
 
@@ -147,7 +157,7 @@ const getNextSaturday = (currentDate) => {
 
     return (
         <div className="menu-management-container">
-            <h3>Weekly Menu Submission</h3>
+            <h3>Weekly Menu Submission for {user.name}</h3>
             <h4>For Delivery On: {getNextSaturday(new Date())}</h4>
             <button onClick={() => handleAddEditItem()} className="add-button">Add New Menu Item</button>
             {showItemPopup && (

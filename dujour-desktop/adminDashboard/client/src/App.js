@@ -7,13 +7,10 @@ import OrderManagement from './pages/OrderManagement';
 import RouteOptimization from './pages/RouteOptimization';
 import DriverManagement from './pages/DriverManagement';
 import Login from './pages/Login';
-import BuildOrder from './pages/BuildOrder';
-import PlaceOrder from './pages/PlaceOrder';
-import OrderSummary from './pages/OrderSummary';
 import OrderPicking from './pages/OrderPicking';
 import OperationalOverview from './pages/OperationalOverview';
 import SubmitMenu from './pages/SubmitMenu';
-
+import SupplierOrderSummary from './pages/SupplierOrderSummary';
 
 export const AuthContext = createContext(null);
 
@@ -34,11 +31,11 @@ function ButtonGrid() {
   // Render buttons based on user role
   return (
     <div className="container">
-      <Link to="/submit-menu"><button className="dashboard-button">Submit Weekly Menu</button></Link>
       <div className="button-grid">
+        <Link to="/submit-menu"><button className="dashboard-button">Submit Weekly Menu</button></Link>
+        <Link to="/supplier-summary"><button className="dashboard-button">Weekly Order Summary</button></Link>
         {user.role === 'admin' && (
           <>
-            <Link to="/build-order"><button className="dashboard-button">Build Order</button></Link>
             <Link to="/menu-management"><button className="dashboard-button">Menu Management</button></Link>
             <Link to="/order-management"><button className="dashboard-button">Order Management</button></Link>
             <Link to="/order-picking"><button className="dashboard-button">Order Picking</button></Link>
@@ -100,6 +97,7 @@ function App() {
   const [backgroundClass, setBackgroundClass] = useState('');
 
   const login = (userData) => {
+    console.log(userData)
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };
@@ -160,12 +158,10 @@ function App() {
                     <Route path="/route-optimization" element={<RouteOptimization />} />
                     <Route path="/driver-management" element={<DriverManagement />} />
                     <Route path="/operational-overview" element={<OperationalOverview />} />
-                    <Route path="/build-order" element={<BuildOrder />} />
-                    <Route path="/place-order" element={<PlaceOrder />} />
-                    <Route path="/order-summary" element={<OrderSummary />} />
                   </>
                 )}
                 <Route path="/submit-menu" element={<SubmitMenu />} />
+                <Route path="/supplier-summary" element={<SupplierOrderSummary />} />
               </>
             ) : (
               <>

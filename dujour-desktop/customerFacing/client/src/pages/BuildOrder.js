@@ -55,6 +55,19 @@ const BuildOrder = () => {
 };
 
 
+const getNextRelevantSaturday = () => {
+    const date = new Date();
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 5 || dayOfWeek === 6) {  // If it's Friday or Saturday
+        // Return next week's Saturday
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate() + (13 - dayOfWeek)).toISOString().split('T')[0];
+    } else {
+        // Return this week's Saturday
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate() + (6 - dayOfWeek)).toISOString().split('T')[0];
+    }
+};
+
+
 
   // When you need to show the modal
   const handleShowFarmInfo = (farm) => {
@@ -73,20 +86,29 @@ const BuildOrder = () => {
   const handleConfirmOrder = () => {
     navigate('/place-order', { state: { cartItems, totalCost } });
   };
-      const fetchAvailableItems = async () => {
-      try {
+const fetchAvailableItems = async () => {
+    try {
         const response = await axios.get('/api/items');
-        const items = response.data.map(item => ({
-          ...item,
-          quantity: 0,
-          unitCost: item.unitCost || 0,
-        }));
-        setAvailableItems(items);
-        fetchImages(items);
-      } catch (error) {
+        const relevantSaturday = getNextRelevantSaturday(); // Determine the relevant Saturday
+
+        const filteredItems = response.data
+            .filter(item =>
+                item.activeStatus === true &&  // Only include items that are active
+                item.forDeliveryOn.split('T')[0] === relevantSaturday // And scheduled for the relevant Saturday
+            )
+            .map(item => ({
+                ...item,
+                quantity: 0,
+                unitCost: item.unitCost || 0,
+            }));
+
+        setAvailableItems(filteredItems); // Set the filtered and enhanced items
+        fetchImages(filteredItems); // Fetch images for the filtered items
+    } catch (error) {
         console.error("Error fetching items:", error);
-      }
-    };
+    }
+};
+
 
   useEffect(() => {
     fetchAvailableItems();
