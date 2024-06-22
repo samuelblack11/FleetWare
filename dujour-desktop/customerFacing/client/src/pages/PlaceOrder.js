@@ -12,6 +12,14 @@ import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 const moment = require('moment-timezone');
 
+const LoadingSpinner = () => {
+  return (
+    <div className="spinner-container">
+      <div className="spinner" aria-label="Loading"></div>
+    </div>
+  );
+};
+
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
@@ -20,6 +28,8 @@ const PlaceOrder = () => {
   // Create a new date object for the current time in EST
   const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
   const formattedDate = dateInEST.format();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleBackToBuildOrder = () => {
   	navigate('/build-order', { state: { cartItems, totalCost } });
@@ -69,7 +79,7 @@ const getNextSaturday = () => {
     //deliveryDate: getNextSaturday(new Date()),
     deliveryDate: formattedDate,
     creditCardNumber: '',
-    creditCardExpiration: '',
+    ccExpirationDate: '',
     items: state?.cartItems || [],
   }
 
@@ -79,8 +89,9 @@ const getNextSaturday = () => {
         customerEmail: user.email,
         deliveryAddress: user?.deliveryAddress,
         creditCardNumber: '',
-        creditCardExpiration: '',
+        ccExpirationDate: '',
         deliveryDate: getNextSaturday(), // Initialize with the next relevant Saturday
+        items: state?.cartItems,
   });
 
   const [cartItems, setCartItems] = useState(initialCartItems);
@@ -151,6 +162,9 @@ const handleItemQuantityChange = (index, newQuantity) => {
   };
 
   const transformOrderItems = (order) => {
+    console.log("999999")
+    console.log(order)
+
   const transformedItems = order.items.map((item) => ({
     item: {
       _id: item._id,
@@ -174,12 +188,14 @@ const handleItemQuantityChange = (index, newQuantity) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
     if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
     if (!validateDeliveryAddress(orderData.deliveryAddress)) { alert('Please enter a valid delivery address.'); return; }
     //if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery date.'); return; }
     if (!validateCreditCardNumber(orderData.creditCardNumber)) { alert('Please enter a valid credit card number.'); return; }
-    if (!validateCreditCardExpiration(orderData.creditCardExpiration)) { alert('Please enter a valid credit card expiration date.'); return; }
+    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) { alert('Please enter a valid credit card expiration date.'); return; }
     if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
     if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
 
@@ -205,7 +221,8 @@ const handleItemQuantityChange = (index, newQuantity) => {
         paymentMethodId: 'pm_card_visa', // This should be the actual payment method ID
         amount: totalCost * 100, // Amount in cents
         currency: 'usd',
-        emailHtml: orderHtml
+        emailHtml: orderHtml,
+        return_url: `${window.location.origin}/order-summary`
       });
 
 
@@ -226,6 +243,8 @@ const handleItemQuantityChange = (index, newQuantity) => {
   };
   return (
     <div className="customer-info-section">
+    {isLoading && <LoadingSpinner />}
+    {error && <div className="error">{error}</div>}
     <button className="add-button" onClick={handleBackToBuildOrder}>Back to Build Order</button>
       <h3>Customer Information</h3>
       <table className="customer-info-table">

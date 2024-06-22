@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const AvailableItem = require('../models/Item');
 const nodemailer = require('nodemailer');
-const stripe = require('stripe')('your-stripe-secret-key'); // Make sure to replace 'your-stripe-secret-key' with your actual Stripe secret key
+const stripe = require('stripe')(process.env.STRIPE_SECRET_TEST_KEY);
 const Farm = require('../models/Farm');
 const mongoose = require('mongoose');
 
@@ -227,21 +227,21 @@ router.delete('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { orderData, paymentMethodId, amount, currency, emailHtml } = req.body;
-
+  const { orderData, paymentMethodId, amount, currency, emailHtml, return_url } = req.body;
   try {
-  //  // Step 1: Process payment
-  //  const paymentIntent = await stripe.paymentIntents.create({
-  //    amount,
-  //    currency,
-  //    payment_method: paymentMethodId,
-  //    confirmation_method: 'manual',
-  //    confirm: true,
-  //  });
+    // Step 1: Process payment
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency,
+      payment_method: paymentMethodId,
+      confirmation_method: 'manual',
+      confirm: true,
+      return_url: return_url
+    });
 
-  //  if (paymentIntent.status !== 'succeeded') {
-  //    return res.status(400).send('Payment processing failed.');
-  //  }
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).send('Payment processing failed.');
+    }
 
 
     // Step 2: Generate master order number and save the order
@@ -264,35 +264,12 @@ router.post('/', async (req, res) => {
         { new: true }
       );
     }
-
-    // Step 4: Send confirmation email
-   // await sendOrderEmail(order.customerEmail, 'Your Order Summary', emailHtml);
-
     res.status(200).json({ order });
-  } catch (error) {
-    console.error('Error processing order:', error);
-    res.status(500).send('Error processing order');
-  }
+}
+catch (error) {
+  console.error("Error processing order:", error);
+  return res.status(500).send('Error processing order');
+}
 });
-// Configure Nodemailer
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // Use your email service
-  auth: {
-    user: 'your-email@gmail.com',
-    pass: 'your-email-password'
-  }
-});
-
-// Function to send email
-const sendOrderEmail = (to, subject, html) => {
-  const mailOptions = {
-    from: 'your-email@gmail.com',
-    to,
-    subject,
-    html
-  };
-
-  return transporter.sendMail(mailOptions);
-};
 
 module.exports = router;

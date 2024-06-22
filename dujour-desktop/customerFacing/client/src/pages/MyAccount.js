@@ -119,7 +119,14 @@ const MyAccount = () => {
             </tr>
             <tr>
               <td><label htmlFor="password">Password:</label></td>
-              <td><input type="password" name="password" id="password" value={updatedUser.password} onChange={handleChange} /></td>
+                <td>
+                <div>
+                  <input type="password" name="password" id="password" value={updatedUser.password} onChange={handleChange} />
+                </div>
+                <div>
+                <small>Password not displayed.</small>
+                </div>
+                </td>
             </tr>
           </tbody>
         </table>

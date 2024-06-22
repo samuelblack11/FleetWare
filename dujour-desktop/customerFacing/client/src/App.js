@@ -166,7 +166,7 @@ function App() {
               </Link>
             </div>
             <div className="header-content">
-              <h2 className="header-title">Dujour: A Farm to Consumer Concept</h2>
+              <h2 className="header-title">Dujour: A Farm to Consumer Service</h2>
               {user && <MenuBar />}
             </div>
           </div>
