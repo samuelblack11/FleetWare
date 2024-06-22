@@ -25,32 +25,67 @@ const PlaceOrder = () => {
   	navigate('/build-order', { state: { cartItems, totalCost } });
   };
 
-  const getNextSaturday = (currentDate) => {
-    const date = new Date(currentDate);
-    date.setDate(date.getDate() + ((6 - date.getDay() + 7) % 7)); // Get next Saturday
-    //return date.toISOString().split('T')[0]; // Format date as "yyyy-MM-dd"
-    return date
-  };
+  useEffect(() => {
+    // Fetch the decrypted credit card details when the component mounts
+    const fetchCreditCardDetails = async () => {
+      try {
+        const response = await axios.get(`/api/users/forOrderPlacement/${user._id}`);
+        setOrderData({
+          ...orderData,
+          creditCardNumber: response.data.creditCardNumber,
+          ccExpirationDate: response.data.creditCardExpiration
+        });
+      } catch (error) {
+        console.error('Failed to fetch credit card details:', error);
+      }
+    };
+
+    if (user._id) {
+      fetchCreditCardDetails();
+    }
+  }, [user._id]);
+
+
+const getNextSaturday = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    let nextSaturday;
+    if (dayOfWeek === 5 || dayOfWeek === 6) {  // If today is Friday or Saturday
+        // Calculate next week's Saturday
+        nextSaturday = new Date(today.setDate(today.getDate() + (13 - dayOfWeek)));
+    } else {
+        // Calculate this week's Saturday
+        nextSaturday = new Date(today.setDate(today.getDate() + (6 - dayOfWeek)));
+    }
+    return nextSaturday;
+};
+
+  const nextSaturday = getNextSaturday(new Date());
 
   const initialOrderState = {
-    customerName: user?.name || 'Sam B',
-    customerEmail: user?.email || 'sam@salooapp.com',
-    deliveryAddress: user?.deliveryAddress || '2201 N Pershing Dr Apt 444, Arlington, VA 22209',
+    customerName: user?.name || '',
+    customerEmail: user?.email || '',
+    deliveryAddress: user?.deliveryAddress || '',
     //deliveryDate: getNextSaturday(new Date()),
     deliveryDate: formattedDate,
-    creditCardNumber: '0000000000000000',
-    creditCardExpiration: '0425',
-    creditCardCVV: '221',
+    creditCardNumber: '',
+    creditCardExpiration: '',
     items: state?.cartItems || [],
   }
 
-
-  const [orderData, setOrderData] = useState(initialOrderState);
+  const [orderData, setOrderData] = useState({
+        // Initial state setup
+        customerName: user?.name,
+        customerEmail: user.email,
+        deliveryAddress: user?.deliveryAddress,
+        creditCardNumber: '',
+        creditCardExpiration: '',
+        deliveryDate: getNextSaturday(), // Initialize with the next relevant Saturday
+  });
 
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
   const [availableItems, setAvailableItems] = useState([]);
-
 
   useEffect(() => {
     const calculateTotalCost = () => {
@@ -70,7 +105,7 @@ const PlaceOrder = () => {
   };
 
   const handleDateChange = (date) => {
-    setOrderData({...orderData, deliveryDate: date});
+        setOrderData({ ...orderData, deliveryDate: date });
   };
 
   useEffect(() => {
@@ -189,9 +224,6 @@ const handleItemQuantityChange = (index, newQuantity) => {
       alert('Failed to submit the order and send the email. Please try again.');
     }
   };
-
-            //filterDate={filterDate}
-
   return (
     <div className="customer-info-section">
     <button className="add-button" onClick={handleBackToBuildOrder}>Back to Build Order</button>
@@ -219,6 +251,8 @@ const handleItemQuantityChange = (index, newQuantity) => {
             selected={new Date(orderData.deliveryDate)}
             onChange={handleDateChange}
             dateFormat="yyyy-MM-dd"
+            minDate={orderData.deliveryDate}
+            maxDate={orderData.deliveryDate}
           /></td>
           </tr>
           <tr>
@@ -229,9 +263,9 @@ const handleItemQuantityChange = (index, newQuantity) => {
             <td><label htmlFor="creditCardExpiration" >Expiration Date:</label></td>
             <td className="input-cell"><input
               type="text" 
-              name="creditCardExpiration" 
-              id="creditCardExpiration" 
-              value={orderData.creditCardExpiration} 
+              name="ccExpirationDate" 
+              id="ccExpirationDate" 
+              value={orderData.ccExpirationDate} 
               placeholder="MM/YY" 
               onChange={handleChange} 
               required 

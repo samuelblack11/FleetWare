@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useRef, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 import logo from './assets/logo128.png';
@@ -9,7 +9,6 @@ import PlaceOrder from './pages/PlaceOrder';
 import AboutDujour from './pages/AboutDujour';
 import MyAccount from './pages/MyAccount';
 import OrderSummary from './pages/OrderSummary';
-
 export const AuthContext = createContext(null);
 
 function useAuth() {
@@ -61,21 +60,38 @@ const OrderHistoryButton = () => {
 function SettingsButton() {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth(); // Use the custom hook to access AuthContext
+  const { logout } = useContext(AuthContext); // Use the context to access logout method
+  const dropdownRef = useRef(null);
 
   const toggleDropdown = () => setShowDropdown(!showDropdown);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+    setShowDropdown(false); // Close dropdown after navigation
   };
 
   const handleAccountNavigation = () => {
     navigate('/my-account');
+    setShowDropdown(false); // Close dropdown after navigation
   };
 
+  // Use an effect to add an event listener to the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
+
   return (
-    <div className="settings-button-container">
+    <div className="settings-button-container" ref={dropdownRef}>
       <button onClick={toggleDropdown} className="add-button">
         Settings
       </button>

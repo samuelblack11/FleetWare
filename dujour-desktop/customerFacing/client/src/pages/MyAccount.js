@@ -14,7 +14,7 @@ const MyAccount = () => {
   useEffect(() => {
     if (user) {
       setOriginalUser(user);
-      setUpdatedUser({ ...user, password: '' }); // Clear the password field initially
+      setUpdatedUser({ ...user, password: '', creditCardNumber: '', ccExpirationDate: '', cvv: '' });
       setLoading(false);
     }
   }, [user]);
@@ -30,47 +30,56 @@ const MyAccount = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setUpdatedUser({
-      ...updatedUser,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-  };
+  const { name, value, type, checked } = e.target;
+  // Check if the field is 'password' and if it is blank, do not update it
+  if (name === 'password' && value === '') {
+    return;
+  }
+  setUpdatedUser({
+    ...updatedUser,
+    [name]: type === 'checkbox' ? checked : value,
+  });
+};
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    const changedFields = getChangedFields(originalUser, updatedUser);
-    console.log("^^^^");
-    console.log(changedFields);
+  e.preventDefault();
+  const changedFields = getChangedFields(originalUser, updatedUser);
 
-    if (Object.keys(changedFields).length === 0) {
-      alert('Please update at least one field.');
-      return;
-    }
+  // Remove password from updates if it's empty and was not filled out by the user
+  if (changedFields.password === '') {
+    delete changedFields.password;
+  }
+  // Similar check for the credit card number
+  if (changedFields.creditCardNumber === '') {
+    delete changedFields.creditCardNumber;
+  }
 
-    console.log(user._id);
-    axios.put(`/api/users/${user._id}`, changedFields)
-      .then(response => {
-        alert('User updated successfully!');
-        console.log("@@@@@@@");
-        console.log(response.data);
+    // Similar check for the credit card number
+  if (changedFields.ccExpirationDate === '') {
+    delete changedFields.ccExpirationDate;
+  }
 
-        // Update each attribute in updatedUser based on the response
-        const updatedUserData = { ...updatedUser };
-        for (const key in response.data) {
-          if (response.data.hasOwnProperty(key)) {
-            updatedUserData[key] = response.data[key];
-          }
-        }
+  console.log("Changed Fields:", changedFields);
 
-        login(updatedUserData); // Update context with new user data
-        navigate('/'); // Navigate to the home page or another page if needed
-        console.log("User After Update:", updatedUserData); // This will now reflect the updated user data
-      })
-      .catch(error => {
-        console.error('There was an error updating the user data!', error);
-      });
-  };
+  if (Object.keys(changedFields).length === 0) {
+    alert('No changes made.');
+    return;
+  }
+
+  axios.put(`/api/users/${user._id}`, changedFields)
+    .then(response => {
+      alert('User updated successfully!');
+      const updatedUserData = { ...updatedUser, ...response.data };
+      login(updatedUserData); // Update context with new user data
+      navigate('/'); // Navigate to the home page
+    })
+    .catch(error => {
+      console.error('Error updating user data:', error);
+      alert('Failed to update user data. Please try again.');
+    });
+};
+
+
 
   if (loading) {
     return <div>Loading...</div>; // Display loading message while fetching data
@@ -87,6 +96,10 @@ const MyAccount = () => {
         <table className="customer-info-table">
           <tbody>
             <tr>
+              <td><label htmlFor="name">Customer Name:</label></td>
+              <td><input type="name" name="name" id="name" value={updatedUser.name} onChange={handleChange} /></td>
+            </tr>
+            <tr>
               <td><label htmlFor="email">Customer Email:</label></td>
               <td><input type="email" name="email" id="email" value={updatedUser.email} onChange={handleChange} /></td>
             </tr>
@@ -95,8 +108,14 @@ const MyAccount = () => {
               <td><input type="text" name="deliveryAddress" id="deliveryAddress" value={updatedUser.deliveryAddress} onChange={handleChange} /></td>
             </tr>
             <tr>
-              <td><label htmlFor="creditCardInfo">Credit Card Number:</label></td>
-              <td><input type="text" name="creditCardInfo" id="creditCardInfo" value={updatedUser.creditCardInfo} onChange={handleChange} /></td>
+              <td><label htmlFor="creditCardNumber">Credit Card Number:</label></td>
+              <td><input type="text" name="creditCardNumber" id="creditCardNumber" value={updatedUser.creditCardNumber} onChange={handleChange} />
+              <small>Previously stored card information not displayed.</small></td>
+            </tr>
+            <tr>
+              <td><label htmlFor="ccExpirationDate">Expiration Date (MMYY):</label></td>
+              <td><input type="text" name="ccExpirationDate" id="ccExpirationDate" value={updatedUser.ccExpirationDate} onChange={handleChange} />
+              <small>Previously stored card information not displayed.</small></td>
             </tr>
             <tr>
               <td><label htmlFor="password">Password:</label></td>

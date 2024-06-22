@@ -11,7 +11,8 @@ const userSchema = new Schema({
     default: 'customer'
   },
   lastOrderNumber: { type: Number, default: 0 },
-  creditCardInfo: { type: String, default: '' },
+  creditCardNumber: { type: String, default: '' },
+  ccExpirationDate: { type: String, default: '' },
   deliveryAddress: { type: String, default: '' },
   isFirstLogin: { type: Boolean, default: true },
   accountStatus: {

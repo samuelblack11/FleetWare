@@ -47,11 +47,11 @@ const BuildOrder = () => {
   const sliderSettings = {
   dots: true,
   infinite: true,
-  speed: 300,
+  speed: 2500,
   slidesToShow: 3,
   slidesToScroll: 1,
   autoplay: true,
-  autoplaySpeed: 1500,
+  autoplaySpeed: 500,
 };
 
 
@@ -333,17 +333,20 @@ useEffect(() => {
 const fetchImages = async (items) => {
     const newImageSources = {};
     for (const item of items) {
-        const imageName = item.itemName.replace('/', '-');
+        const imageName = item.itemName.replace('/', '-').toLowerCase(); // Clean item name for safe file paths
+        const farmFolderName = item.farm.name.replace(/\s+/g, '-').toLowerCase(); // Convert farm name to a folder-friendly format
         try {
-            const imagePath = await import(`../assets/${imageName}.png`);
+            // Dynamically import the image from the path based on the farm name and item name
+            const imagePath = await import(`../assets/farms/${farmFolderName}/${imageName}.png`);
             newImageSources[item.itemName] = imagePath.default;
         } catch (e) {
             console.log(`Failed to load image for ${item.itemName}:`, e);
-            newImageSources[item.itemName] = 'fallback-image-path.png'; // Provide a fallback image path
+            newImageSources[item.itemName] = 'fallback-image-path.png'; // Provide a fallback image path if loading fails
         }
     }
     setImageSources(newImageSources);
 };
+
 
 return (
   <div className="build-order-container">
@@ -368,18 +371,19 @@ return (
     )}
     <div className="build-cart-section">
       <h2>Build Your Cart</h2>
-      <div>
-        <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
-          <option value="">Select a field to filter by</option>
-          <option value="item.itemName">Item Name</option>
-          <option value="item.farm.name">Farm</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Filter value"
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-        />
+      <h3>For Delivery On {getNextRelevantSaturday(new Date())}</h3>
+      <div className="filter-form">
+          <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
+              <option value="">Select a field to filter by</option>
+              <option value="item.itemName">Item Name</option>
+              <option value="item.farm.name">Farm</option>
+          </select>
+          <input
+              type="text"
+              placeholder="Filter value"
+              value={filterValue}
+              onChange={(e) => setFilterValue(e.target.value)}
+          />
       </div>
       <div className="card-container" style={{ gridTemplateColumns: cartItems.length > 0 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)' }}>
         {filteredItems.map((item, index) => (
@@ -404,7 +408,7 @@ return (
                 <p>${(item.quantity * item.unitCost).toFixed(2)}</p>
               </div>
               <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
-              <button onClick={() => displayItemDetails(item)} className="add-button">Details</button>
+              <button onClick={() => displayItemDetails(item)} className="add-button">Farm Details</button>
             </div>
           </div>
         ))}

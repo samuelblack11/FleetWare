@@ -403,3 +403,11 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   width: 80%;
   margin: 20px auto; /* Center the slider and add some margin */
 }
+
+.filter-form {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Horizontally center the content */
+    gap: 10px;
+}
+

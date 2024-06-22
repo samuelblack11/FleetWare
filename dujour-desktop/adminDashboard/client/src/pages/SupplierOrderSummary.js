@@ -4,7 +4,6 @@ import { AuthContext } from '../App';
 import './AllPages.css';
 import { GenericTable } from './ReusableReactComponents';
 
-
 const getSaturdays = () => {
     const today = new Date();
     const dayOfWeek = today.getDay();

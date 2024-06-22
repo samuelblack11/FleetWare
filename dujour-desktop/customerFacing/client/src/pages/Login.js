@@ -10,7 +10,7 @@ function Login() {
   const [isSigningUp, setIsSigningUp] = useState(false); // To toggle between login and signup form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('Customer'); // Default role; adjust based on your requirements
+  const [role, setRole] = useState('customer'); // Default role; adjust based on your requirements
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -57,6 +57,9 @@ function Login() {
 
   async function registerUser(email, password, role) {
     try {
+      console.log(email)
+      console.log(password)
+      console.log(role)
       const response = await axios.post('/api/users/signup', {
         email,
         password,

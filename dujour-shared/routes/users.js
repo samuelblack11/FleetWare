@@ -4,6 +4,31 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const User = require('../models/User');
 const Farm = require('../models/Farm');
+const crypto = require('crypto');
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Must be 256 bits (32 characters)
+const IV_LENGTH = 16; // For AES, this is always 16
+
+function encrypt(text) {
+  let iv = crypto.randomBytes(IV_LENGTH);
+  let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let encrypted = cipher.update(text);
+
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+  let textParts = text.split(':');
+  let iv = Buffer.from(textParts.shift(), 'hex');
+  let encryptedText = Buffer.from(textParts.join(':'), 'hex');
+  let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let decrypted = decipher.update(encryptedText);
+
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+  return decrypted.toString();
+}
 
 // Route to delete all users
 router.delete('/deleteAll', async (req, res) => {
@@ -15,6 +40,37 @@ router.delete('/deleteAll', async (req, res) => {
     res.status(500).send('Error deleting all users');
   }
 });
+
+// Example in your user data fetching endpoint
+router.get('/forOrderPlacement/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+    console.log("&&&&")
+    console.log(user)
+    
+    // Decrypt the credit card details
+    const decryptedCardNumber = decrypt(user.creditCardNumber);
+    const maskedCardNumber = decryptedCardNumber;
+
+    const decryptedExpDate= decrypt(user.ccExpirationDate);
+    const maskedExpDate = decryptedExpDate;
+
+
+
+    // Send masked data
+    res.json({
+      ...user.toJSON(),
+      creditCardNumber: maskedCardNumber, // only send masked number
+      creditCardExpiration: maskedExpDate, // consider masking if necessary
+    });
+  } catch (error) {
+    res.status(500).send('Server error');
+  }
+});
+
 
 router.get('/:id', async (req, res) => {
   const updatedFields = { ...req.body };
@@ -46,37 +102,34 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT route
 router.put('/:id', async (req, res) => {
   const userId = req.params.id;
   const updatedFields = { ...req.body };
-  console.log("PUT Request UserID:", userId);
-  console.log("PUT Request Body:", req.body);
+
+  if (updatedFields.creditCardNumber) {
+    updatedFields.creditCardNumber = encrypt(updatedFields.creditCardNumber);
+  }
+
+  if (updatedFields.ccExpirationDate) {
+    updatedFields.ccExpirationDate = encrypt(updatedFields.ccExpirationDate);
+  }
+
+  if (updatedFields.password) {
+    updatedFields.password = await bcrypt.hash(updatedFields.password, 10);
+  }
 
   try {
-    // Check if password is being updated
-    if (updatedFields.password) {
-      console.log("Original Password:", updatedFields.password);
-      updatedFields.password = await bcrypt.hash(updatedFields.password, 10);
-      console.log("Hashed Password:", updatedFields.password);
-    }
-
-    console.log("Updated Fields:", updatedFields);
-
     const updatedUser = await User.findByIdAndUpdate(userId, updatedFields, { new: true });
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    console.log("Updated User:", updatedUser);
-    res.json(updatedUser);
+    res.json({ message: 'User updated successfully', userId: updatedUser._id });
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).send('Error updating user');
   }
 });
-
-
-
 
 router.delete('/:id', async (req, res) => {
   try {
@@ -135,8 +188,10 @@ router.post('/signup', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const accountStatus = role === 'customer' ? 'active' : 'inactive';
 
-    const user = new User({ name, email, password: hashedPassword, role });
+
+    const user = new User({ name, email, password: hashedPassword, role, accountStatus });
     await user.save();
 
     const token = jwt.sign(
@@ -145,13 +200,14 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '1h' }
     );
 
+
     res.status(201).json({
       token,
       userDetails: {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
       }
     });
   } catch (error) {
