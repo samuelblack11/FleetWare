@@ -12,6 +12,7 @@ import PlaceOrder from './pages/PlaceOrder';
 import OrderSummary from './pages/OrderSummary';
 import OrderPicking from './pages/OrderPicking';
 import OperationalOverview from './pages/OperationalOverview';
+import SubmitMenu from './pages/SubmitMenu';
 
 
 export const AuthContext = createContext(null);
@@ -33,10 +34,11 @@ function ButtonGrid() {
   // Render buttons based on user role
   return (
     <div className="container">
+      <Link to="/submit-menu"><button className="dashboard-button">Submit Weekly Menu</button></Link>
       <div className="button-grid">
-        <Link to="/build-order"><button className="dashboard-button">Build Order</button></Link>
         {user.role === 'admin' && (
           <>
+            <Link to="/build-order"><button className="dashboard-button">Build Order</button></Link>
             <Link to="/menu-management"><button className="dashboard-button">Menu Management</button></Link>
             <Link to="/order-management"><button className="dashboard-button">Order Management</button></Link>
             <Link to="/order-picking"><button className="dashboard-button">Order Picking</button></Link>
@@ -158,11 +160,12 @@ function App() {
                     <Route path="/route-optimization" element={<RouteOptimization />} />
                     <Route path="/driver-management" element={<DriverManagement />} />
                     <Route path="/operational-overview" element={<OperationalOverview />} />
+                    <Route path="/build-order" element={<BuildOrder />} />
+                    <Route path="/place-order" element={<PlaceOrder />} />
+                    <Route path="/order-summary" element={<OrderSummary />} />
                   </>
                 )}
-                <Route path="/build-order" element={<BuildOrder />} />
-                <Route path="/place-order" element={<PlaceOrder />} />
-                <Route path="/order-summary" element={<OrderSummary />} />
+                <Route path="/submit-menu" element={<SubmitMenu />} />
               </>
             ) : (
               <>

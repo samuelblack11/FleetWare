@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const User = require('../models/User');
+const Farm = require('../models/Farm');
 
 // Route to delete all users
 router.delete('/deleteAll', async (req, res) => {
@@ -75,27 +76,6 @@ router.put('/:id', async (req, res) => {
 });
 
 
-router.post('/signup', async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
-    console.log("Signup Request Body:", req.body);
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already in use' });
-    }
-
-    console.log("Original Password:", password);
-    const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("Hashed Password:", hashedPassword);
-
-    const user = new User({ email, password: hashedPassword, role });
-    await user.save();
-    res.status(201).json({ message: 'User created successfully' });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ message: 'Error creating user' });
-  }
-});
 
 
 router.delete('/:id', async (req, res) => {
@@ -108,54 +88,75 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Login route
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body; // Ensure you receive the password field from the client
-
-    console.log("&&&");
-    console.log(email);
-    console.log(password);
+    const { email, password } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    console.log("***");
-    console.log(user);
-
-
-    // Compare the entered password with the stored hashed password
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log(isMatch)
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user._id, role: user.role }, 
-      'yourSecretKey', // Replace 'yourSecretKey' with your actual secret key
+      'yourSecretKey',
       { expiresIn: '1h' }
     );
 
-    // Return the token and user details including deliveryAddress
     res.json({
       token,
       userDetails: {
         _id: user._id,
         email: user.email,
         role: user.role,
-        deliveryAddress: user.deliveryAddress,
-        password: user.password
+        deliveryAddress: user.deliveryAddress
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
     res.status(500).json({ message: 'Login error' });
   }
 });
 
+// Signup route
+router.post('/signup', async (req, res) => {
+  try {
+    const { email, password, name, role } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({ name, email, password: hashedPassword, role });
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role }, 
+      'yourSecretKey',
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({
+      token,
+      userDetails: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
 
 router.put('/email/:emailAddress/incrementOrderNumber', async (req, res) => {
   console.log(`Received request to increment order number for email: ${req.params.emailAddress}`);

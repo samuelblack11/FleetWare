@@ -10,40 +10,50 @@ function Login() {
   const [isSigningUp, setIsSigningUp] = useState(false); // To toggle between login and signup form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('customer'); // Default role; adjust based on your requirements
+  const [role, setRole] = useState('supplier'); // Default role; adjust based on your requirements
+  const [name, setName] = useState(''); // State to store farm name for suppliers
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const { token, userDetails } = await loginUser(email, password);
-      localStorage.setItem('token', token); // Store token for session management
-      console.log(userDetails);
-      login(userDetails);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const { data } = await axios.post('/api/users/login', { email, password });
+    login(data.userDetails); // Ensure userDetails includes the 'name' attribute
+  } catch (error) {
+    alert(error.message);
+  }
+};
 
 const handleSignup = async (e) => {
-    e.preventDefault();
-    try {
-      // If you need to send `role` to your API, just remove it from the destructuring assignment here
-      const { token, role: returnedRole } = await registerUser(email, password, role);
-      localStorage.setItem('token', token);
-      // Use the role from the API's response if it's different from the one sent
-      console.log(userDetails);
-      login({ email, role: returnedRole });
-      navigate('/');
-    } catch (error) {
-      alert(error.message);
+  e.preventDefault();
+  try {
+    const { data } = await axios.post('/api/users/signup', {
+      email,
+      password,
+      name, // This is the farm name
+      role
+    });
+
+    // Check if the role is 'supplier' and then create the farm
+    if (role === 'supplier') {
+      await axios.post('/api/farms', {
+        name,
+        emailAddress: email,
+      });
     }
+
+    login(data.userDetails); // Ensure userDetails includes the 'name' attribute
+
+  } catch (error) {
+    alert(error.message);
+  }
 };
 
 async function loginUser(email, password) {
   try {
     const response = await axios.post('/api/users/login', {
       email,
-      password
+      password,
+      name
     });
     // Assuming your server responds with the user object and token upon successful authentication
     return response.data; // This will return the response data directly
@@ -58,11 +68,14 @@ async function loginUser(email, password) {
   }
 }
 
-async function registerUser(email, password, role) {
+async function registerUser(email, password, name, role) {
   try {
+    console.log(name)
+    console.log(role)
     const response = await axios.post('/api/users/signup', {
       email,
       password,
+      name,
       role
     });
     // Assuming your server responds with status 201 and a success message upon user creation
@@ -111,15 +124,23 @@ const deleteAllUsers = async () => {
           <label>Password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
+        {isSigningUp &&(
+          <div>
+            <label>Name</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+        )}
         {isSigningUp && (
           <div>
             <label>Role</label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="customer">Customer</option>
-              <option value="admin">Admin</option>
+              <option value="supplier">Supplier</option>
+              <option value="employee">Employee</option>
+              {/*<option value="admin">Admin</option>*/}
             </select>
           </div>
         )}
+
         <button className="add-button" type="submit">{isSigningUp ? 'Sign Up' : 'Login'}</button>
       </form>
       {/* 

@@ -7,6 +7,7 @@ const availableItemSchema = new Schema({
   quantityAvailable: Number,
   unitCost: Number,
   farm: { type: Schema.Types.ObjectId, ref: 'Farm' },
+  forDeliveryOn: Date,
 });
 
 

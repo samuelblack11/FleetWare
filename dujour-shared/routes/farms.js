@@ -12,6 +12,23 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Fetch a farm by name
+router.get('/byname/:name', async (req, res) => {
+    try {
+        const farm = await Farm.findOne({ name: req.params.name });
+        console.log(req.params.name)
+        console.log(farm)
+        if (!farm) {
+            return res.status(404).json({ message: 'Farm not found' });
+        }
+        res.json(farm);
+    } catch (error) {
+        console.error('Error fetching farm by name:', error);
+        res.status(500).json({ message: 'Error fetching farm' });
+    }
+});
+
+
 
 router.post('/', async (req, res) => {
     const farm = new Farm(req.body); // Assuming Farm is your mongoose model for farms
@@ -36,5 +53,6 @@ router.delete('/:id', async (req, res) => {
         res.status(500).send('Error deleting itFarmem');
     }
 });
+
 
 module.exports = router;

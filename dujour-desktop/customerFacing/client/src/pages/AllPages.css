@@ -1,3 +1,6 @@
+@import "~slick-carousel/slick/slick.css"; 
+@import "~slick-carousel/slick/slick-theme.css";
+
 :root {
   --border-color: #ddd;
   --border-radius: 8px;
@@ -60,8 +63,8 @@
 
 .build-order-container {
   display: flex;
-  flex-direction: row; /* Keep the direction as row */
-  align-items: flex-start; /* Align items at the start of the container vertically */
+  flex-direction: column; /* Keep the direction as row */
+  align-items: center; /* Align items at the start of the container vertically */
   justify-content: center; /* Center items horizontally */
   margin: 0 auto; /* Center the container itself within its parent */
   width: 100%; /* Ensure the container takes full width */
@@ -282,6 +285,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 .build-cart-section {
   padding: var(--section-padding);
   margin-bottom: var(--margin-bottom-space);
+  margin-top: 10px; /* Adjust as needed to provide space for the slider */
 }
 
 /* Miscellaneous Styles */
@@ -394,4 +398,8 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .item-details {
   padding: 15px;
+}
+.slider-container {
+  width: 80%;
+  margin: 20px auto; /* Center the slider and add some margin */
 }

@@ -8,6 +8,13 @@ import { GenericPopup, FarmInfoModal } from './ReusableReactComponents'; // Impo
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Slider from 'react-slick';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import fruitPlatter from '../assets/fruitPlatter.png';
+import salad from '../assets/salad.png';
+import selling from '../assets/selling.png';
+import pickingTomatoes from '../assets/pickingTomatoes.png';
 
 const BuildOrder = () => {
   const { user } = useContext(AuthContext);
@@ -35,6 +42,19 @@ const BuildOrder = () => {
   const [showFarmInfo, setShowFarmInfo] = useState(false);
   const [selectedFarm, setSelectedFarm] = useState(null); 
   const [imageSources, setImageSources] = useState({}); // State to store image paths
+  const rotatingImageNames = [fruitPlatter, salad, selling, pickingTomatoes]; // Replace these with your actual image filenames
+
+  const sliderSettings = {
+  dots: true,
+  infinite: true,
+  speed: 300,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 1500,
+};
+
+
 
   // When you need to show the modal
   const handleShowFarmInfo = (farm) => {
@@ -305,6 +325,15 @@ const fetchImages = async (items) => {
 
 return (
   <div className="build-order-container">
+      <div className="slider-container" style={{ margin: "5px 0" }}>
+      <Slider {...sliderSettings}>
+        {rotatingImageNames.map((src, index) => (
+          <div key={index}>
+            <img src={src} alt={`${index}`} style={{ width: '95%', height: '250px' }} />
+          </div>
+        ))}
+      </Slider>
+    </div>
     {cartItems.length > 0 && (
       <CartSidebar 
         cartItems={cartItems} 
@@ -315,51 +344,50 @@ return (
         toggleUpdateItem={toggleUpdateItem}
       />
     )}
-
     <div className="build-cart-section">
-  <h2>Build Your Cart</h2>
-  <div>
-    <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
-      <option value="">Select a field to filter by</option>
-      <option value="item.itemName">Item Name</option>
-      <option value="item.farm.name">Farm</option>
-    </select>
-    <input
-      type="text"
-      placeholder="Filter value"
-      value={filterValue}
-      onChange={(e) => setFilterValue(e.target.value)}
-    />
-  </div>
-  <div className="card-container" style={{ gridTemplateColumns: cartItems.length > 0 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)' }}>
-    {filteredItems.map((item, index) => (
-      <div className="item-card" key={index}>
-      <img 
-        src={imageSources[item.itemName]} 
-        alt={item.itemName} 
-        className="item-image"
-      />
-        <div className="item-details">
-          <h4>{item.itemName}</h4>
-          <p>{item.farm.name}</p>
-          <p>${item.unitCost.toFixed(2)}</p>
-          <div>
-            <input
-              className="input-quantity"
-              type="number"
-              min="0"
-              value={item.quantity || ''}
-              onChange={(e) => handleQuantityChange(index, e.target.value)}
-            />
-            <p>${(item.quantity * item.unitCost).toFixed(2)}</p>
-          </div>
-          <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
-          <button onClick={() => displayItemDetails(item)} className="add-button">Details</button>
-        </div>
+      <h2>Build Your Cart</h2>
+      <div>
+        <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
+          <option value="">Select a field to filter by</option>
+          <option value="item.itemName">Item Name</option>
+          <option value="item.farm.name">Farm</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Filter value"
+          value={filterValue}
+          onChange={(e) => setFilterValue(e.target.value)}
+        />
       </div>
-    ))}
-  </div>
-</div>
+      <div className="card-container" style={{ gridTemplateColumns: cartItems.length > 0 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)' }}>
+        {filteredItems.map((item, index) => (
+          <div className="item-card" key={index}>
+            <img 
+              src={imageSources[item.itemName]} 
+              alt={item.itemName} 
+              className="item-image"
+            />
+            <div className="item-details">
+              <h4>{item.itemName}</h4>
+              <p>{item.farm.name}</p>
+              <p>${item.unitCost.toFixed(2)}</p>
+              <div>
+                <input
+                  className="input-quantity"
+                  type="number"
+                  min="0"
+                  value={item.quantity || ''}
+                  onChange={(e) => handleQuantityChange(index, e.target.value)}
+                />
+                <p>${(item.quantity * item.unitCost).toFixed(2)}</p>
+              </div>
+              <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
+              <button onClick={() => displayItemDetails(item)} className="add-button">Details</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
     <GenericPopup show={popupVisible} onClose={() => setPopupVisible(false)}>
       {selectedItemDetails && (
         <div>
@@ -371,6 +399,7 @@ return (
     <FarmInfoModal show={showFarmInfo} farm={selectedFarm} onClose={handleCloseFarmInfo} />
   </div>
 );
+
 };
 
 
