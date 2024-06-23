@@ -23,6 +23,33 @@ router.post('/', async (req, res) => {
   }
 });
 
+// API Route to update item stock after an order is placed
+router.put('/decrement-stock', async (req, res) => {
+  const itemsToUpdate = req.body; // Expecting an array of objects: [{ itemId: '123', quantity: 10 }, ...]
+  
+  console.log("Received items to update stock:", itemsToUpdate);
+
+  try {
+    const bulkOperations = itemsToUpdate.map(item => ({
+      updateOne: {
+        filter: { _id: item.itemId },
+        update: { $inc: { quantityAvailable: -item.quantity } }
+      }
+    }));
+
+    console.log("Prepared bulk operations for stock update:", bulkOperations);
+
+    const result = await AvailableItem.bulkWrite(bulkOperations);
+    console.log("Bulk update result:", result);
+
+    res.json({ message: 'Stock updated successfully', result });
+  } catch (error) {
+    console.error('Error updating stock:', error);
+    res.status(500).send('Error updating stock');
+  }
+});
+
+
 router.put('/:id', async (req, res) => {
   console.log("Updating item with ID:", req.params.id);
   console.log("New data:", req.body);
@@ -50,5 +77,6 @@ router.delete('/:id', async (req, res) => {
         res.status(500).send('Error deleting item');
     }
 });
+
 
 module.exports = router;

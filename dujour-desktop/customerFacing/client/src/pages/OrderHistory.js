@@ -80,7 +80,7 @@ const OrderForm = ({ order, onSave, onClose, isEditable }) => {
   );
 };
 
-const OrderManagement = ({ mode }) => {
+const OrderHistory = ({ mode }) => {
   const [orders, setOrders] = useState([]);
   const [showOrderPopup, setShowOrderPopup] = useState(false);
   const [forConfirmation, setforConfirmation] = useState(false);
@@ -93,19 +93,21 @@ const OrderManagement = ({ mode }) => {
     if (mode === 'myOrders') {
       fetchMyOrders();
     } else {
-      fetchOrders();
+      fetchMyOrders();
     }
   }, [mode]);
 
-  const fetchMyOrders = async () => {
-    try {
-      const allOrdersResponse = await axios.get('/api/orders');
-      const myOrders = allOrdersResponse.data.filter(order => order.customerEmail === user.email);
-      setOrders(myOrders);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    }
-  };
+const fetchMyOrders = async () => {
+  try {
+    // Ensure you include user authentication to secure this request
+    const response = await axios.get(`/api/orders/orders-by-user?email=${encodeURIComponent(user.email)}`);
+    console.log("++++")
+    console.log(response.data)
+    setOrders(response.data);
+  } catch (error) {
+    console.error('Error fetching my orders:', error);
+  }
+};
 
   const fetchOrders = async () => {
     try {
@@ -119,28 +121,6 @@ const OrderManagement = ({ mode }) => {
   const handleClosePopup = () => {
     setShowOrderPopup(false);
     setCurrentOrder(null);
-  };
-
-  const handleSaveOrder = async (orderData) => {
-    const method = orderData._id ? 'put' : 'post';
-    const url = orderData._id ? `/api/orders/${orderData._id}` : '/api/orders';
-
-    try {
-      await axios[method](url, orderData);
-      fetchOrders();
-    } catch (error) {
-      console.error('Error saving order:', error);
-    }
-    setShowOrderPopup(false);
-  };
-
-  const deleteOrder = async (id) => {
-    try {
-      await axios.delete(`/api/orders/${id}`);
-      fetchOrders();
-    } catch (error) {
-      console.error('Error deleting order:', error);
-    }
   };
 
   const filteredOrders = orders.filter(order => {
@@ -222,4 +202,4 @@ const OrderManagement = ({ mode }) => {
   );
 };
 
-export default OrderManagement;
+export default OrderHistory;

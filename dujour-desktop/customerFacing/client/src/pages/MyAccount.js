@@ -109,13 +109,25 @@ const MyAccount = () => {
             </tr>
             <tr>
               <td><label htmlFor="creditCardNumber">Credit Card Number:</label></td>
-              <td><input type="text" name="creditCardNumber" id="creditCardNumber" value={updatedUser.creditCardNumber} onChange={handleChange} />
-              <small>Previously stored card information not displayed.</small></td>
+              <td>
+              <div>
+              <input type="text" name="creditCardNumber" id="creditCardNumber" value={updatedUser.creditCardNumber} onChange={handleChange} />
+              </div>
+              <div>
+              <small>Previously stored card information not displayed.</small>
+              </div>
+              </td>
             </tr>
             <tr>
               <td><label htmlFor="ccExpirationDate">Expiration Date (MMYY):</label></td>
-              <td><input type="text" name="ccExpirationDate" id="ccExpirationDate" value={updatedUser.ccExpirationDate} onChange={handleChange} />
-              <small>Previously stored card information not displayed.</small></td>
+              <td>
+              <div>
+                <input type="text" name="ccExpirationDate" id="ccExpirationDate" value={updatedUser.ccExpirationDate} onChange={handleChange} />
+                </div>
+                <div>
+                <small>Previously stored card information not displayed.</small>
+                </div>
+                </td>
             </tr>
             <tr>
               <td><label htmlFor="password">Password:</label></td>

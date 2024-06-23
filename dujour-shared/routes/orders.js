@@ -211,6 +211,22 @@ router.post('/by-IDs', async (req, res) => {
   }
 });
 
+// Route to get orders for a specific user by their email
+router.get('/orders-by-user', async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return res.status(400).send('Customer email is required');
+  }
+
+  try {
+    const orders = await Order.find({ customerEmail: email });
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders for user:', error);
+    res.status(500).send('Server error');
+  }
+});
+
 
 
 router.delete('/:id', async (req, res) => {

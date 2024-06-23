@@ -65,9 +65,9 @@
   display: flex;
   flex-direction: column; /* Keep the direction as row */
   align-items: center; /* Align items at the start of the container vertically */
-  justify-content: center; /* Center items horizontally */
-  margin: 0 auto; /* Center the container itself within its parent */
-  width: 100%; /* Ensure the container takes full width */
+  /*justify-content: center; /* Center items horizontally */
+  /*margin: 0 auto; /* Center the container itself within its parent */
+  width: 90%; /* Ensure the container takes full width */
 }
 
 
@@ -301,9 +301,11 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 }
 
 .cart-sidebar {
-  position: fixed;
+  position: sticky;
   right: 0;
-  width: 500px;
+  width: 300px;
+  height: auto;
+  top:  20px;
   padding: var(--section-padding);
   margin-bottom: var(--margin-bottom-space);
   z-index: 1000;
@@ -311,13 +313,36 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   transition: top 0.3s, height 0.3s; /* Smooth transition for top and height */
 }
 
+
+.content-container {
+  display: flex; /* Flex container to align children side by side */
+  justify-content: flex-start; /* Center the children horizontally */
+  align-items: flex-start; /* Align children to start at their top edges */
+  width: 100%; /* Full width to hold sections side by side */
+  margin: auto;
+  position: relative; /* Ensures positioning is relative to its normal flow */
+}
+
+.build-cart-section {
+  flex-grow: 1; /* Allows the cart section to take up remaining space */
+  margin-right: 20px; /* Space between the cart section and the sidebar */
+}
+
+.build-order-container .content-container {
+  display: flex; /* Establishes a flex container */
+  align-items: flex-start; /* Aligns children at the start of the container vertically */
+}
+
+.build-cart-section, .cart-sidebar {
+  flex: 1; /* Gives both sections the ability to grow and take up equal space */
+  margin: 10px; /* Provides some space between them */
+}
+
+
 .build-cart-section {
   transition: margin-right 0.3s ease; /* Smooth transition for margin adjustment */
 }
 
-.build-cart-section.sidebar-visible {
-  margin-right: 500px; /* Ensure this matches the width of the sidebar */
-}
 
 .info-container {
     display: flex;
@@ -378,6 +403,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .card-container {
   display: grid;
+  overflow-y: ;
   gap: 20px;
   padding: 20px;
 }
@@ -400,8 +426,8 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   padding: 15px;
 }
 .slider-container {
-  width: 80%;
-  margin: 20px auto; /* Center the slider and add some margin */
+  width: 100%;
+  margin-bottom: 20px; /* Center the slider and add some margin */
 }
 
 .filter-form {
@@ -411,3 +437,11 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
     gap: 10px;
 }
 
+.about-dujour {
+    color: var(--button-color-primary);
+    font-size: 24px; /* Ensuring consistency in font size */
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    margin: 20px auto; /* Center the slider and add some margin */
+    width: 80%;
+}

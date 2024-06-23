@@ -48,8 +48,6 @@ router.get('/forOrderPlacement/:id', async (req, res) => {
     if (!user) {
       return res.status(404).send('User not found');
     }
-    console.log("&&&&")
-    console.log(user)
     
     // Decrypt the credit card details
     const decryptedCardNumber = decrypt(user.creditCardNumber);

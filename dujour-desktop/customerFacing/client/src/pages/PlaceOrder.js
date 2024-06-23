@@ -80,6 +80,7 @@ const getNextSaturday = () => {
     deliveryDate: formattedDate,
     creditCardNumber: '',
     ccExpirationDate: '',
+    creditCardCVV: '',
     items: state?.cartItems || [],
   }
 
@@ -90,21 +91,30 @@ const getNextSaturday = () => {
         deliveryAddress: user?.deliveryAddress,
         creditCardNumber: '',
         ccExpirationDate: '',
+        creditCardCVV: '',
         deliveryDate: getNextSaturday(), // Initialize with the next relevant Saturday
         items: state?.cartItems,
   });
 
   const [cartItems, setCartItems] = useState(initialCartItems);
+  const shippingCharge = 5; // Flat shipping fee
+  const minimumOrderAmount = 30; // Minimum order amount before shipping
   const [totalCost, setTotalCost] = useState(initialTotalCost);
   const [availableItems, setAvailableItems] = useState([]);
 
   useEffect(() => {
     const calculateTotalCost = () => {
-      const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
-      setTotalCost(total);
+      const subtotal = cartItems.reduce((acc, item) => {
+        const itemTotal = item.quantity * item.unitCost;
+        return acc + itemTotal;
+      }, 0);
+      const roundedSubtotal = Math.round(subtotal * 100) / 100;
+      const finalTotal = roundedSubtotal + shippingCharge;
+      setTotalCost(finalTotal);
     };
     calculateTotalCost();
   }, [cartItems]);
+
 
   const handleChange = (e) => {
     setOrderData({ ...orderData, [e.target.name]: e.target.value });
@@ -143,7 +153,6 @@ const handleItemQuantityChange = (index, newQuantity) => {
   const updatedCartItems = [...cartItems];
   updatedCartItems[index] = { ...item, quantity: Number(newQuantity) };
   setCartItems(updatedCartItems);
-  updateTotalCost();
 };
 
 
@@ -162,8 +171,6 @@ const handleItemQuantityChange = (index, newQuantity) => {
   };
 
   const transformOrderItems = (order) => {
-    console.log("999999")
-    console.log(order)
 
   const transformedItems = order.items.map((item) => ({
     item: {
@@ -180,16 +187,27 @@ const handleItemQuantityChange = (index, newQuantity) => {
   }));
 
   const totalCost = transformedItems.reduce((acc, item) => {
-    return acc + (item.quantity * item.item.unitCost);
+    const itemTotal = (item.quantity * item.item.unitCost);
+    // Round the item total to two decimal places before adding to accumulator
+    const roundedItemTotal = Math.round(itemTotal * 100) / 100;
+    return acc + roundedItemTotal;
   }, 0);
 
-  return { ...order, items: transformedItems, totalCost: totalCost.toFixed(2) };
+  // Optionally, round the final total to two decimal places if needed
+  const roundedTotalCost = Math.round(totalCost * 100) / 100;
+
+  return { ...order, items: transformedItems, totalCost: roundedTotalCost };
 };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+    // Check if subtotal meets the minimum required amount before shipping
+    if (subtotal < minimumOrderAmount) {
+      alert(`Minimum order amount of $${minimumOrderAmount} not met. Please add more items.`);
+      return; // Stop further execution if minimum order amount not met
+    }
 
     if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
     if (!validateDeliveryAddress(orderData.deliveryAddress)) { alert('Please enter a valid delivery address.'); return; }
@@ -198,6 +216,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
     if (!validateCreditCardExpiration(orderData.ccExpirationDate)) { alert('Please enter a valid credit card expiration date.'); return; }
     if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
     if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
+    setIsLoading(true);
 
     const transformedOrder = transformOrderItems(orderData);
 
@@ -215,11 +234,13 @@ const handleItemQuantityChange = (index, newQuantity) => {
       </>
     );
 
+    const amountInCents = Math.round(totalCost * 100); // Convert totalCost to cents and round to the nearest integer
+
     try {
       const response = await axios.post('/api/orders', {
         orderData,
         paymentMethodId: 'pm_card_visa', // This should be the actual payment method ID
-        amount: totalCost * 100, // Amount in cents
+        amount: amountInCents, // Amount in cents
         currency: 'usd',
         emailHtml: orderHtml,
         return_url: `${window.location.origin}/order-summary`
@@ -227,6 +248,18 @@ const handleItemQuantityChange = (index, newQuantity) => {
 
 
       if (response.status === 200) {
+          // New lines: Update inventory after successful order placement
+        const stockUpdateData = cartItems.map(item => ({
+          itemId: item._id,
+          quantity: item.quantity  // Negative because we are decrementing the stock
+        }));
+        try {
+          await axios.put('/api/items/decrement-stock', stockUpdateData);
+          // Optionally handle response from the stock update
+        } catch (stockError) {
+          console.error('Failed to update stock:', stockError);
+          // Handle error, perhaps log it or display a message, but don't block order confirmation
+        }
         alert('Order submitted and email sent successfully!');
         setOrderData(initialOrderState);
         setCartItems([]);
@@ -240,6 +273,9 @@ const handleItemQuantityChange = (index, newQuantity) => {
       console.error('Failed to submit the order and send the email.', error);
       alert('Failed to submit the order and send the email. Please try again.');
     }
+
+
+
   };
   return (
     <div className="customer-info-section">
@@ -345,6 +381,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
             ))}
           </tbody>
         </table>
+        <p className="total-cost">Shipping Charge: ${shippingCharge.toFixed(2)}</p>
         <p className="total-cost">Total Cost: ${totalCost.toFixed(2)}</p>
         <div className="submitButton">
           <form onSubmit={handleSubmit}>

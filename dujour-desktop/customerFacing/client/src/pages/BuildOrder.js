@@ -43,6 +43,8 @@ const BuildOrder = () => {
   const [selectedFarm, setSelectedFarm] = useState(null); 
   const [imageSources, setImageSources] = useState({}); // State to store image paths
   const rotatingImageNames = [fruitPlatter, salad, selling, pickingTomatoes]; // Replace these with your actual image filenames
+  const minimumOrderAmount = 30; // Minimum order amount before shipping
+  const [error, setError] = useState('');
 
   const sliderSettings = {
   dots: true,
@@ -83,9 +85,18 @@ const getNextRelevantSaturday = () => {
   };
 
   const navigate = useNavigate();
+
   const handleConfirmOrder = () => {
+    if (totalCost < minimumOrderAmount) {
+      setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
+      return;
+    }
+    setError(''); // Clear any previous error messages
     navigate('/place-order', { state: { cartItems, totalCost } });
   };
+
+
+
 const fetchAvailableItems = async () => {
     try {
         const response = await axios.get('/api/items');
@@ -255,6 +266,7 @@ const updateTotalCost = (cartItems) => {
 const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOrder, handleItemQuantityChange, toggleUpdateItem }) => {
   return (
     <div className="cart-sidebar">
+      {error && <div className="about-dujour">{error}</div>}
       <h2>Cart</h2>
       <div className="table-container">
         <table className="table-align">
@@ -298,37 +310,34 @@ const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOr
           </tbody>
         </table>
       </div>
-      <p className="total-cost">Total Cost: ${totalCost.toFixed(2)}</p>
+      <p className="total-cost">Order Total: ${totalCost.toFixed(2)}</p>
       <button onClick={handleConfirmOrder} className="add-button">Confirm Order</button>
     </div>
   );
 };
-
 useEffect(() => {
-  const adjustCartSidebar = () => {
+  const adjustTableHeight = () => {
     const buildCartSection = document.querySelector('.build-cart-section');
-    const cartSidebar = document.querySelector('.cart-sidebar');
-    if (buildCartSection && cartSidebar) {
-      const buildCartRect = buildCartSection.getBoundingClientRect();
-      cartSidebar.style.top = `${buildCartRect.top}px`;
-      cartSidebar.style.height = `${buildCartRect.height}px`;
-      buildCartSection.style.marginRight = `${cartSidebar.offsetWidth}px`; // Adjust margin-right to avoid overlap
+    const cardContainer = document.querySelector('.card-container');
+    const tableContainer = document.querySelector('.table-container');
+    const cartContainer = document.querySelector('.cart-sidebar');
+
+    if (cardContainer && tableContainer) {
+      // Set the height of the table container to match the card container
+      const cardContainerHeight = cardContainer.getBoundingClientRect().height;
+      tableContainer.style.height = `${cardContainerHeight}px`;
     }
   };
 
-  if (cartItems.length > 0) {
-    adjustCartSidebar();
-    window.addEventListener('resize', adjustCartSidebar);
-  } else {
-    const buildCartSection = document.querySelector('.build-cart-section');
-    if (buildCartSection) {
-      buildCartSection.style.marginRight = '0';
-    }
-    window.removeEventListener('resize', adjustCartSidebar);
-  }
+  // Adjust the table height when components are mounted or resized
+  adjustTableHeight();
+  window.addEventListener('resize', adjustTableHeight);
 
-  return () => window.removeEventListener('resize', adjustCartSidebar);
-}, [cartItems]);
+  return () => {
+    // Clean up the event listener on component unmount
+    window.removeEventListener('resize', adjustTableHeight);
+  };
+}, []); // Dependencies are kept empty as the layout changes are not dependent on external state.
 
 const fetchImages = async (items) => {
     const newImageSources = {};
@@ -350,7 +359,7 @@ const fetchImages = async (items) => {
 
 return (
   <div className="build-order-container">
-      <div className="slider-container" style={{ margin: "5px 0" }}>
+    <div className="slider-container" style={{ margin: "5px 0" }}>
       <Slider {...sliderSettings}>
         {rotatingImageNames.map((src, index) => (
           <div key={index}>
@@ -359,60 +368,62 @@ return (
         ))}
       </Slider>
     </div>
-    {cartItems.length > 0 && (
-      <CartSidebar 
-        cartItems={cartItems} 
-        totalCost={totalCost} 
-        removeItemFromCart={removeItemFromCart} 
-        handleConfirmOrder={handleConfirmOrder} 
-        handleItemQuantityChange={handleItemQuantityChange}
-        toggleUpdateItem={toggleUpdateItem}
-      />
-    )}
-    <div className="build-cart-section">
-      <h2>Build Your Cart</h2>
-      <h3>For Delivery On {getNextRelevantSaturday(new Date())}</h3>
-      <div className="filter-form">
+    <div className="content-container">
+      <div className="build-cart-section">
+        <h2>Build Your Cart</h2>
+        <h3>For Delivery On {getNextRelevantSaturday(new Date())}</h3>
+        <div className="filter-form">
           <select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
-              <option value="">Select a field to filter by</option>
-              <option value="item.itemName">Item Name</option>
-              <option value="item.farm.name">Farm</option>
+            <option value="">Select a field to filter by</option>
+            <option value="item.itemName">Item Name</option>
+            <option value="item.farm.name">Farm</option>
           </select>
           <input
-              type="text"
-              placeholder="Filter value"
-              value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
+            type="text"
+            placeholder="Filter value"
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
           />
-      </div>
-      <div className="card-container" style={{ gridTemplateColumns: cartItems.length > 0 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)' }}>
-        {filteredItems.map((item, index) => (
-          <div className="item-card" key={index}>
-            <img 
-              src={imageSources[item.itemName]} 
-              alt={item.itemName} 
-              className="item-image"
-            />
-            <div className="item-details">
-              <h4>{item.itemName}</h4>
-              <p>{item.farm.name}</p>
-              <p>${item.unitCost.toFixed(2)}</p>
-              <div>
-                <input
-                  className="input-quantity"
-                  type="number"
-                  min="0"
-                  value={item.quantity || ''}
-                  onChange={(e) => handleQuantityChange(index, e.target.value)}
-                />
-                <p>${(item.quantity * item.unitCost).toFixed(2)}</p>
+        </div>
+        <div className="card-container" style={{ gridTemplateColumns: cartItems.length > 0 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)' }}>
+          {filteredItems.map((item, index) => (
+            <div className="item-card" key={index}>
+              <img 
+                src={imageSources[item.itemName]} 
+                alt={item.itemName} 
+                className="item-image"
+              />
+              <div className="item-details">
+                <h4>{item.itemName}</h4>
+                <p>{item.farm.name}</p>
+                <p>${item.unitCost.toFixed(2)}</p>
+                <div>
+                  <input
+                    className="input-quantity"
+                    type="number"
+                    min="0"
+                    value={item.quantity || ''}
+                    onChange={(e) => handleQuantityChange(index, e.target.value)}
+                  />
+                  <p>${(item.quantity * item.unitCost).toFixed(2)}</p>
+                </div>
+                <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
+                <button onClick={() => displayItemDetails(item)} className="add-button">Farm Details</button>
               </div>
-              <button onClick={() => handleAddToCart(item)} className="add-button">Add to Cart</button>
-              <button onClick={() => displayItemDetails(item)} className="add-button">Farm Details</button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+      {cartItems.length > 0 && (
+        <CartSidebar
+          cartItems={cartItems}
+          totalCost={totalCost}
+          removeItemFromCart={removeItemFromCart}
+          handleConfirmOrder={handleConfirmOrder}
+          handleItemQuantityChange={handleItemQuantityChange}
+          toggleUpdateItem={toggleUpdateItem}
+        />
+      )}
     </div>
     <GenericPopup show={popupVisible} onClose={() => setPopupVisible(false)}>
       {selectedItemDetails && (
@@ -425,6 +436,7 @@ return (
     <FarmInfoModal show={showFarmInfo} farm={selectedFarm} onClose={handleCloseFarmInfo} />
   </div>
 );
+
 
 };
 
