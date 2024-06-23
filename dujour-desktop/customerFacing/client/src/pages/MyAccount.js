@@ -32,9 +32,31 @@ const MyAccount = () => {
   const handleChange = (e) => {
   const { name, value, type, checked } = e.target;
   // Check if the field is 'password' and if it is blank, do not update it
+
+
   if (name === 'password' && value === '') {
     return;
   }
+
+  if (name === 'ccExpirationDate') {
+    let formattedValue = value.replace(
+      /[^0-9]/g, '' // Remove non-numeric characters
+    ).substring(0, 4); // Limit to 4 characters
+
+    // Automatically insert a slash between MM and YY
+    if (formattedValue.length > 2) {
+      formattedValue = formattedValue.substring(0, 2) + '/' + formattedValue.substring(2);
+    }
+
+    setUpdatedUser({
+      ...updatedUser,
+      ccExpirationDate: formattedValue
+    });
+    return;
+  }
+
+
+
   setUpdatedUser({
     ...updatedUser,
     [name]: type === 'checkbox' ? checked : value,
@@ -97,46 +119,40 @@ const MyAccount = () => {
           <tbody>
             <tr>
               <td><label htmlFor="name">Customer Name:</label></td>
-              <td><input type="name" name="name" id="name" value={updatedUser.name} onChange={handleChange} /></td>
+              <td className="input-cell"><input type="text" name="name" id="name" value={updatedUser.name} onChange={handleChange}  className="input-name"/></td>
             </tr>
             <tr>
               <td><label htmlFor="email">Customer Email:</label></td>
-              <td><input type="email" name="email" id="email" value={updatedUser.email} onChange={handleChange} /></td>
+              <td className="input-cell"><input type="email" name="email" id="email" value={updatedUser.email} onChange={handleChange} className="input-email"  /></td>
             </tr>
             <tr>
               <td><label htmlFor="deliveryAddress">Delivery Address:</label></td>
-              <td><input type="text" name="deliveryAddress" id="deliveryAddress" value={updatedUser.deliveryAddress} onChange={handleChange} /></td>
+              <td className="input-cell"><input type="text" name="deliveryAddress" id="deliveryAddress" value={updatedUser.deliveryAddress} onChange={handleChange} className="input-address"  /></td>
             </tr>
             <tr>
               <td><label htmlFor="creditCardNumber">Credit Card Number:</label></td>
-              <td>
-              <div>
-              <input type="text" name="creditCardNumber" id="creditCardNumber" value={updatedUser.creditCardNumber} onChange={handleChange} />
-              </div>
-              <div>
-              <small>Previously stored card information not displayed.</small>
-              </div>
-              </td>
-            </tr>
-            <tr>
-              <td><label htmlFor="ccExpirationDate">Expiration Date (MMYY):</label></td>
-              <td>
-              <div>
-                <input type="text" name="ccExpirationDate" id="ccExpirationDate" value={updatedUser.ccExpirationDate} onChange={handleChange} />
-                </div>
-                <div>
+              <td className="input-cell">
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <input type="text" name="creditCardNumber" id="creditCardNumber" value={updatedUser.creditCardNumber} onChange={handleChange} />
                 <small>Previously stored card information not displayed.</small>
                 </div>
+              </td>
+            </tr>
+              <tr>
+                <td><label htmlFor="ccExpirationDate">Expiration Date (MM/YY):</label></td>
+                <td className="input-cell">
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <input type="text" name="ccExpirationDate" id="ccExpirationDate" value={updatedUser.ccExpirationDate} onChange={handleChange} className="input-expiration"/>
+                        <small>Previously stored card information not displayed.</small>
+                    </div>
                 </td>
             </tr>
             <tr>
               <td><label htmlFor="password">Password:</label></td>
-                <td>
-                <div>
-                  <input type="password" name="password" id="password" value={updatedUser.password} onChange={handleChange} />
-                </div>
-                <div>
-                <small>Password not displayed.</small>
+                <td className="input-cell">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <input type="text" name="password" id="password" value={updatedUser.password} onChange={handleChange} />
+                  <small>Password not displayed.</small>
                 </div>
                 </td>
             </tr>

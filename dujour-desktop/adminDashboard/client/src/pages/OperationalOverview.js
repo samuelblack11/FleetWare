@@ -7,7 +7,7 @@ const moment = require('moment-timezone');
 
 const OperationalOverview = () => {
   const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
-  const formattedDate = dateInEST.format();
+  const formattedDate = dateInEST.format('YYYY-MM-DD');;
   const [selectedDate, setSelectedDate] = useState(formattedDate);
   const [overviewData, setOverviewData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +20,6 @@ const OperationalOverview = () => {
   }, [selectedDate]);
 
   useEffect(() => {
-    console.log("Updated pickPlansWithStatusCounts:", overviewData?.pickPlansWithStatusCounts);
-      console.log("Updated routesWithStatusCounts:", overviewData?.routesWithStatusCounts);
   }, [overviewData]);
 
   const aggregateStatusCounts = (items) => {
@@ -57,8 +55,6 @@ const aggregateRouteStatusCounts = (stops, orders) => {
       }
     }
   });
-  console.log("======")
-  console.log(statusCounts)
   return statusCounts;
 };
 
@@ -85,10 +81,6 @@ const aggregateRouteStatusCounts = (stops, orders) => {
         ...route,
         statusCounts: aggregateRouteStatusCounts(route.stops, orders)
       }));
-
-      console.log("::::::")
-      console.log(routesWithStatusCounts)
-      console.log(orders)
 
       const numberOfOrders = orders.length;
       const vendorIds = new Set();
@@ -136,14 +128,6 @@ const aggregateRouteStatusCounts = (stops, orders) => {
         stops: route.stops.length
       }));
 
-      //console.log("****")
-      //console.log(pickPlans)
-      //console.log("!!!!!")
-      //console.log(pickPlanStatuses)
-      console.log("%%%%%")
-      console.log(pickPlansWithStatusCounts)
-      console.log(pickPlansWithStatusCounts[0].user.name)
-
       setOverviewData({
         pickPlansWithStatusCounts,
         routesWithStatusCounts,
@@ -186,7 +170,6 @@ const pickPlanColumns = [
     Header: 'User',
     accessor: 'user.name', // This is correct, assuming 'Picked' is correctly populated
     Cell: ({ row }) => {
-      //console.log("Row data in # Picked:", row);  // Log the row data accessed in this cell
       return row.user.name || 'Unassigned';  // Ensure zero is shown if undefined
     }
   },
@@ -209,14 +192,13 @@ const pickPlanColumns = [
   },
 ];
 
-
-
 const routeColumns = [
   {
     Header: 'Start Time',
     accessor: 'startTime',
     Cell: ({ row }) => {
-      return row.startTime;
+      const estTime = moment(row.startTime).tz('America/New_York').format('YYYY-MM-DD hh:mm A');
+      return estTime;
     }
   },
   {

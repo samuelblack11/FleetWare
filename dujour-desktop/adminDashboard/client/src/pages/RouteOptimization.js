@@ -67,6 +67,9 @@ useEffect(() => {
       } 
       else {
         const { data: ordersData } = await axios.get(`/api/orders?date=${selectedDate}`);
+        console.log(ordersData)
+
+
         setOrders(ordersData);
         setShowRoutePlan(false);
         setRoutePlan([]);
@@ -91,7 +94,8 @@ useEffect(() => {
   const fetchUsers = async () => {
     try {
       const response = await axios.get('/api/users');
-      setUsers(response.data);
+      const filteredUsers = response.data.filter(user => user.role !== 'supplier' && user.role !== 'customer');
+      setUsers(filteredUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to fetch users.');

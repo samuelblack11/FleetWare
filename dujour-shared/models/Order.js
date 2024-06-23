@@ -21,17 +21,20 @@ const orderSchema = new Schema({
 });
 
 orderSchema.pre('save', async function(next) {
-  try {
+  if (this.isModified('totalCost')) {
+    return next();  // Skip this middleware if totalCost is already provided
+  }
 
+  try {
     const total = await this.items.reduce(async (accPromise, currentItem) => {
       const acc = await accPromise;
-      const item = await mongoose.model('AvailableItem').findById(currentItem._id);
+      const item = await mongoose.model('AvailableItem').findById(currentItem.item);
+      const shippingCharge = 5;
       if (!item) {
-        console.error(`Item with id ${currentItem._id} not found`);
-        throw new Error(`Item with id ${currentItem._id} not found`);
+        console.error(`Item with id ${currentItem.item} not found`);
+        throw new Error(`Item with id ${currentItem.item} not found`);
       }
-
-      return acc + (item.unitCost * currentItem.quantity);
+      return acc + (item.unitCost * currentItem.quantity) + shippingCharge;
     }, Promise.resolve(0));
 
     this.totalCost = total;
@@ -41,6 +44,7 @@ orderSchema.pre('save', async function(next) {
     next(error);
   }
 });
+
 
 const Order = mongoose.model('Order', orderSchema, 'orders');
 module.exports = Order;

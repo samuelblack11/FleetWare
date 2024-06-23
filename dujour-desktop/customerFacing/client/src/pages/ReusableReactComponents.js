@@ -45,7 +45,7 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
 
   // Calculate the total order cost
   const totalOrderCost = order.items.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2);
-
+  const shippingCharge = 5;
   return (
     <div className="popup">
       <div className="popup-inner">
@@ -54,6 +54,7 @@ export const DetailedOrderPopup = ({ show, order, onClose }) => {
         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
         <p><strong>Delivery Date:</strong> {new Date(order.deliveryDate).toLocaleDateString()}</p>
         <p><strong>Order Status:</strong> {order.status}</p>
+        <p><strong>Shipping Charge:</strong> ${shippingCharge}</p>
         <p><strong>Total Cost:</strong> ${totalOrderCost}</p>
         <table>
           <thead>
@@ -122,6 +123,7 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
   console.log(order)
   // Helper function to calculate the total cost of an item
   const calculateItemTotal = (item) => (item.quantity * item.item.unitCost).toFixed(2);
+  const shippingCharge = 5;
 
   return (
     <div className={isPopup ? "popup" : "order-summary"}>
@@ -141,6 +143,7 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
         {!forConfirmation && (
           <p><strong>Order Status:</strong> {order.overallStatus}</p>
         )}
+        <p><strong>Shipping Charge:</strong> ${shippingCharge}</p>
         <p><strong>Total Cost:</strong> ${order.totalCost}</p>
         <table>
           <thead>

@@ -111,12 +111,32 @@ const getNextSaturday = () => {
       const roundedSubtotal = Math.round(subtotal * 100) / 100;
       const finalTotal = roundedSubtotal + shippingCharge;
       setTotalCost(finalTotal);
+      setOrderData(oldData => ({ ...oldData, totalCost: finalTotal }));
+
     };
     calculateTotalCost();
-  }, [cartItems]);
+  }, [cartItems, shippingCharge]);
 
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'ccExpirationDate') {
+      let formattedValue = value.replace(
+        /[^0-9]/g, '' // Remove non-numeric characters
+      ).substring(0, 4); // Limit to 4 characters
+
+      // Automatically insert a slash between MM and YY
+      if (formattedValue.length > 2) {
+        formattedValue = formattedValue.substring(0, 2) + '/' + formattedValue.substring(2);
+      }
+
+      setOrderData({
+        ...orderData,
+        ccExpirationDate: formattedValue
+      });
+      return;
+    }
     setOrderData({ ...orderData, [e.target.name]: e.target.value });
   };
 
@@ -170,8 +190,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
     setCartItems(updatedCartItems);
   };
 
-  const transformOrderItems = (order) => {
-
+const transformOrderItems = (order) => {
   const transformedItems = order.items.map((item) => ({
     item: {
       _id: item._id,
@@ -186,23 +205,30 @@ const handleItemQuantityChange = (index, newQuantity) => {
     _id: item._id
   }));
 
-  const totalCost = transformedItems.reduce((acc, item) => {
-    const itemTotal = (item.quantity * item.item.unitCost);
-    // Round the item total to two decimal places before adding to accumulator
-    const roundedItemTotal = Math.round(itemTotal * 100) / 100;
-    return acc + roundedItemTotal;
-  }, 0);
+  // Calculate total only if it's not already provided
+  if (order.totalCost === undefined) {
+    const totalCost = transformedItems.reduce((acc, item) => {
+      const itemTotal = (item.quantity * item.item.unitCost);
+      // Round the item total to two decimal places before adding to accumulator
+      const roundedItemTotal = Math.round(itemTotal * 100) / 100;
+      return acc + roundedItemTotal;
+    }, 0);
 
-  // Optionally, round the final total to two decimal places if needed
-  const roundedTotalCost = Math.round(totalCost * 100) / 100;
+    // Optionally, round the final total to two decimal places if needed
+    order.totalCost = Math.round(totalCost * 100) / 100;
+  }
 
-  return { ...order, items: transformedItems, totalCost: roundedTotalCost };
+  return { ...order, items: transformedItems };
 };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+    const finalTotal = subtotal + shippingCharge; // Correctly calculate total cost including shipping
+    setOrderData(oldData => ({ ...oldData, totalCost: finalTotal }));
+
     // Check if subtotal meets the minimum required amount before shipping
     if (subtotal < minimumOrderAmount) {
       alert(`Minimum order amount of $${minimumOrderAmount} not met. Please add more items.`);
@@ -218,8 +244,10 @@ const handleItemQuantityChange = (index, newQuantity) => {
     if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
     setIsLoading(true);
 
-    const transformedOrder = transformOrderItems(orderData);
-
+    const transformedOrder = transformOrderItems({
+        ...orderData,
+        totalCost: finalTotal  // Use finalTotal directly here
+    });
     const orderHtml = ReactDOMServer.renderToString(
       <>
         <img src={logo} className="logo" alt="Dujour Logo" />
@@ -234,18 +262,19 @@ const handleItemQuantityChange = (index, newQuantity) => {
       </>
     );
 
-    const amountInCents = Math.round(totalCost * 100); // Convert totalCost to cents and round to the nearest integer
+    const amountInCents = Math.round(finalTotal * 100); // Convert totalCost to cents and round to the nearest integer
 
     try {
       const response = await axios.post('/api/orders', {
-        orderData,
+        orderData: { ...orderData, totalCost: finalTotal }, // Make sure to include updated totalCost here
         paymentMethodId: 'pm_card_visa', // This should be the actual payment method ID
         amount: amountInCents, // Amount in cents
         currency: 'usd',
         emailHtml: orderHtml,
         return_url: `${window.location.origin}/order-summary`
       });
-
+      console.log("::::")
+      console.log(response)
 
       if (response.status === 200) {
           // New lines: Update inventory after successful order placement
@@ -265,7 +294,9 @@ const handleItemQuantityChange = (index, newQuantity) => {
         setCartItems([]);
         const savedOrder = response.data.order;
         const masterOrderNumber = savedOrder.masterOrderNumber;
-        navigate('/order-summary', { state: { orderData: transformedOrder, cartItems, totalCost, masterOrderNumber } });
+        console.log("{{{{")
+        console.log(transformedOrder)
+        navigate('/order-summary', { state: { orderData: transformedOrder, cartItems, masterOrderNumber } });
       } else {
         alert('Failed to submit the order.');
       }
@@ -286,21 +317,21 @@ const handleItemQuantityChange = (index, newQuantity) => {
       <table className="customer-info-table">
         <tbody>
             <tr>
-              <td><label htmlFor="customerName">Customer Name:</label></td>
+              <td><label htmlFor="customerName">Customer Name</label></td>
               <td className="input-cell"><input className="input-name" type="text" name="customerName" id="customerName" value={orderData.customerName} onChange={handleChange} required /></td>
             </tr>
             {user.role === 'admin' && (
             <tr>
-              <td><label htmlFor="customerEmail">Customer Email:</label></td>
+              <td><label htmlFor="customerEmail">Customer Email</label></td>
               <td className="input-cell"><input className="input-email" type="email" name="customerEmail" id="customerEmail" value={orderData.customerEmail} onChange={handleChange} required /></td>
             </tr>
           )}
           <tr>
-            <td><label htmlFor="deliveryAddress">Delivery Address:</label></td>
+            <td><label htmlFor="deliveryAddress">Delivery Address</label></td>
             <td className="input-cell"><input className="input-address" type="text" name="deliveryAddress" id="deliveryAddress" value={orderData.deliveryAddress} onChange={handleChange} required /></td>
           </tr>
           <tr>
-          <td><label htmlFor="deliveryDate">Delivery Date:</label></td>
+          <td><label htmlFor="deliveryDate">Delivery Date</label></td>
           <td className="input-cell"><ReactDatePicker
             className="input-datepicker"
             selected={new Date(orderData.deliveryDate)}
@@ -311,11 +342,11 @@ const handleItemQuantityChange = (index, newQuantity) => {
           /></td>
           </tr>
           <tr>
-            <td><label htmlFor="creditCardNumber">Credit Card Number:</label></td>
+            <td><label htmlFor="creditCardNumber">Credit Card Number</label></td>
             <td className="input-cell"><input className="input-cc" type="text" name="creditCardNumber" id="creditCardNumber" value={orderData.creditCardNumber} onChange={handleChange} required /></td>
           </tr>
           <tr>
-            <td><label htmlFor="creditCardExpiration" >Expiration Date:</label></td>
+            <td><label htmlFor="creditCardExpiration" >Expiration Date (MM/YY)</label></td>
             <td className="input-cell"><input
               type="text" 
               name="ccExpirationDate" 
@@ -329,7 +360,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
         </td>
       </tr>
       <tr>
-        <td><label htmlFor="creditCardCVV">Security Code (CVV):</label></td>
+        <td><label htmlFor="creditCardCVV">Security Code (CVV)</label></td>
           <td className="input-cell"><input 
             type="text" 
             name="creditCardCVV" 
@@ -382,7 +413,7 @@ const handleItemQuantityChange = (index, newQuantity) => {
           </tbody>
         </table>
         <p className="total-cost">Shipping Charge: ${shippingCharge.toFixed(2)}</p>
-        <p className="total-cost">Total Cost: ${totalCost.toFixed(2)}</p>
+        <p className="total-cost">Total Cost: ${totalCost}</p>
         <div className="submitButton">
           <form onSubmit={handleSubmit}>
             <button className="submit-btn" type="submit">Submit Order</button>

@@ -13,6 +13,11 @@ const OrderSummary = () => {
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
 
+    useEffect(() => {
+    setTotalCost(orderData.totalCost); // Update local state when orderData.totalCost changes
+  }, [orderData.totalCost]); // Ensures this runs only if orderData.totalCost changes
+
+
   const currentOrder = {
     customerEmail: orderData.customerEmail || '',
     deliveryAddress: orderData.deliveryAddress || '',
@@ -26,6 +31,11 @@ const OrderSummary = () => {
   useEffect(() => {
     // Log the current order
   }, [currentOrder]);
+
+  useEffect(() => {
+  console.log("Received state in OrderSummary:", location.state);
+}, []);
+
 
   const handleBackToBuildOrder = () => {
     navigate('/build-order', { state: { cartItems, totalCost } });

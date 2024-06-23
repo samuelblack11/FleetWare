@@ -204,7 +204,7 @@ tr:nth-child(even) {
 .customer-info-table .input-name,
 .customer-info-table .input-email,
 .customer-info-table .input-address {
-  max-width: 300px; /* Restricts maximum width */
+  max-width: 320px; /* Restricts maximum width */
   margin-right: 10px;
 }
 
@@ -445,3 +445,10 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
     margin: 20px auto; /* Center the slider and add some margin */
     width: 80%;
 }
+
+/* Custom width for the credit card expiration date input */
+.ccExpirationDate {
+  width: 60px;
+  text-align: center;
+}
+

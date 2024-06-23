@@ -9,7 +9,17 @@ const mongoose = require('mongoose');
 router.get('/', async (req, res) => {
   try {
     const { date } = req.query;
-    const pickPlans = await PickPlan.find({ date }).populate('user');
+    const startOfDay = new Date(date);
+    const endOfDay = new Date(date);
+    endOfDay.setUTCHours(23, 59, 59, 999); // Set the end of the day to the last millisecond
+
+    const pickPlans = await PickPlan.find({
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    }).populate('user');
+    
     res.json(pickPlans);
   } catch (error) {
     console.error('Error fetching pick plans:', error);

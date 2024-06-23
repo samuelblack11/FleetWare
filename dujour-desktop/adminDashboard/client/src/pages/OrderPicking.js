@@ -31,7 +31,7 @@ const OrderPicking = () => {
         const { data: ordersData } = await axios.get(`/api/orders/detailed-orders?date=${selectedDate}`);
         console.log("Fetched Orders:", ordersData);
         setOrders(ordersData);
-
+        console.log(selectedDate)
         const { data: pickPlansData } = await axios.get(`/api/pickPlans?date=${selectedDate}`);
         console.log("Fetched Pick Plans:", pickPlansData);
 
@@ -69,7 +69,8 @@ const OrderPicking = () => {
   const fetchUsers = async () => {
     try {
       const response = await axios.get('/api/users');
-      setUsers(response.data);
+      const filteredUsers = response.data.filter(user => user.role !== 'supplier' && user.role !== 'customer');
+      setUsers(filteredUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to fetch users.');

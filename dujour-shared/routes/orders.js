@@ -69,12 +69,31 @@ router.get('/detailed-orders', async (req, res) => {
 });
 
 
-
-// Get all orders
+// Get orders with an optional date parameter
 router.get('/', async (req, res) => {
   try {
-    // Fetch all orders
-    const orders = await Order.find().exec();
+    const { date } = req.query;
+    let orders;
+    console.log(date)
+
+    if (date) {
+      // Calculate the start and end of the day for the specified date
+      const startOfDay = new Date(date);
+      const endOfDay = new Date(date);
+      endOfDay.setUTCHours(23, 59, 59, 999); // Set the end of the day to the last millisecond
+
+      // Fetch orders for the specific date
+      orders = await Order.find({
+        deliveryDate: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        }
+      }).exec();
+      console.log(orders)
+    } else {
+      // Fetch all orders if no date is provided
+      orders = await Order.find().exec();
+    }
 
     // For each order, fetch the corresponding items
     for (let order of orders) {
@@ -95,6 +114,8 @@ router.get('/', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+
 
 // Route to get the statuses of multiple orders by their IDs
 router.post('/order-statuses', async (req, res) => {
