@@ -285,7 +285,6 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 .build-cart-section {
   padding: var(--section-padding);
   margin-bottom: var(--margin-bottom-space);
-  margin-top: 10px; /* Adjust as needed to provide space for the slider */
 }
 
 /* Miscellaneous Styles */
@@ -305,7 +304,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   right: 0;
   width: 300px;
   height: auto;
-  top:  20px;
+  top:  0px;
   padding: var(--section-padding);
   margin-bottom: var(--margin-bottom-space);
   z-index: 1000;
@@ -316,6 +315,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .content-container {
   display: flex; /* Flex container to align children side by side */
+  flex-direction: row; /* Make sure it's row to lay items side by side */
   justify-content: flex-start; /* Center the children horizontally */
   align-items: flex-start; /* Align children to start at their top edges */
   width: 100%; /* Full width to hold sections side by side */
@@ -335,7 +335,8 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .build-cart-section, .cart-sidebar {
   flex: 1; /* Gives both sections the ability to grow and take up equal space */
-  margin: 10px; /* Provides some space between them */
+  margin-top: 0;
+  padding-top: 0;
 }
 
 

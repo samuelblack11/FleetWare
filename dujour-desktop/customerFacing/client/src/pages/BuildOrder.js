@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext} from 'react';
+import React, { useState, useEffect, useContext, useLayoutEffect} from 'react';
 import axios from 'axios';
 import './AllPages.css';
 import { AuthContext } from '../App.js';
@@ -315,29 +315,42 @@ const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOr
     </div>
   );
 };
-useEffect(() => {
-  const adjustTableHeight = () => {
+
+useLayoutEffect(() => {
+  const adjustTableContainerMargin = () => {
     const buildCartSection = document.querySelector('.build-cart-section');
     const cardContainer = document.querySelector('.card-container');
+    const cartSidebar = document.querySelector('.cart-sidebar');
     const tableContainer = document.querySelector('.table-container');
-    const cartContainer = document.querySelector('.cart-sidebar');
+    const cartHeader = cartSidebar.querySelector('h2');
 
-    if (cardContainer && tableContainer) {
-      // Set the height of the table container to match the card container
-      const cardContainerHeight = cardContainer.getBoundingClientRect().height;
-      tableContainer.style.height = `${cardContainerHeight}px`;
+    if (buildCartSection && cardContainer && tableContainer && cartHeader) {
+      const buildCartSectionTop = buildCartSection.getBoundingClientRect().top;
+      const cardContainerTop = cardContainer.getBoundingClientRect().top;
+      const cartSidebarTop = cartSidebar.getBoundingClientRect().top;
+      const cartHeaderHeight = cartHeader.offsetHeight;
+
+      console.log("---");
+      console.log(cartSidebarTop);
+      console.log(buildCartSectionTop);
+      console.log(cardContainerTop);
+
+      // Adjust marginTopDifference by subtracting cartHeaderHeight
+      const marginTopDifference = (cardContainerTop - buildCartSectionTop) - cartHeaderHeight;
+      console.log(marginTopDifference);
+      tableContainer.style.marginTop = `${marginTopDifference}px`;
     }
   };
 
-  // Adjust the table height when components are mounted or resized
-  adjustTableHeight();
-  window.addEventListener('resize', adjustTableHeight);
+  adjustTableContainerMargin();
+  window.addEventListener('resize', adjustTableContainerMargin);
 
   return () => {
-    // Clean up the event listener on component unmount
-    window.removeEventListener('resize', adjustTableHeight);
+    window.removeEventListener('resize', adjustTableContainerMargin);
   };
-}, []); // Dependencies are kept empty as the layout changes are not dependent on external state.
+}, []);
+
+
 
 const fetchImages = async (items) => {
     const newImageSources = {};
