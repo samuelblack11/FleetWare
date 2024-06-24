@@ -51,7 +51,6 @@ const ItemForm = ({ item, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log(user)
       const farmResponse = await axios.get(`/api/farms/byname/${encodeURIComponent(user.name)}`);
       const farm = farmResponse.data;
 

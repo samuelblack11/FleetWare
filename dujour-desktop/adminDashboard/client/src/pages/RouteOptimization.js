@@ -44,13 +44,10 @@ useEffect(() => {
       setRoutePlanExists(exists);
       if (exists) {
         const { data: routePlan } = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
-        console.log("**")
-        console.log(routePlan)
         setRoutePlan(routePlan);
 
       // Initialize users for each route, use "Set Driver" as a placeholder if no driver is assigned
       const usersInit = routePlan.routes.reduce((acc, route, index) => {
-      console.log(route)
       // Check if the route has a driver and the driver has an _id, otherwise use a placeholder
       if (route.driver && route.driver._id) {
         acc[index] = route.driver._id;
@@ -59,17 +56,12 @@ useEffect(() => {
       }
       return acc;
     }, {});
-      console.log("&&&")
-      console.log(usersInit)
       setSelectedUsers(usersInit);
       setShowRoutePlan(true);
       setPlanSaved(true);
       } 
       else {
         const { data: ordersData } = await axios.get(`/api/orders?date=${selectedDate}`);
-        console.log(ordersData)
-
-
         setOrders(ordersData);
         setShowRoutePlan(false);
         setRoutePlan([]);
@@ -114,7 +106,6 @@ useEffect(() => {
   const checkForExistingRoutePlan = async (selectedDate) => {
     try {
       const response = await axios.get(`/api/deliveryRoutes?date=${selectedDate}`);
-      console.log(response)
       return response.data.exists;
     } catch (error) {
       console.error("Error checking for existing route plan:", error);
@@ -215,10 +206,6 @@ useEffect(() => {
         startTime: routeDate,
         //driver: selectedUsers[index]
       }));
-
-      console.log(optimizedRoutes)
-
-      console.log("Submitting Routes: ", routes);
     const response = await axios.post('/api/deliveryRoutes', { routes });
     setRoutePlanExists(true);
     setRoutePlan({ routes: response.data.routes });  // Ensure to update with the response data which includes route IDs
@@ -267,9 +254,6 @@ const handleConfirmDriverAssignments = async () => {
       driver: user ? user._id : null // Ensure we have a valid user before accessing _id
     };
   });
-
-  console.log("Updated Routes:");
-  console.log(updatedRoutes);
 
   try {
     await axios.put('/api/deliveryRoutes/updateUsers', {

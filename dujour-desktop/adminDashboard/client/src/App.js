@@ -33,7 +33,7 @@ function ButtonGrid() {
     <div className="container">
       <div className="button-grid">
         <Link to="/submit-menu"><button className="dashboard-button">Submit Weekly Menu</button></Link>
-        <Link to="/supplier-summary"><button className="dashboard-button">Weekly Order Summary</button></Link>
+        <Link to="/supplier-summary"><button className="dashboard-button">Weekly Item Totals</button></Link>
         {user.role === 'admin' && (
           <>
             <Link to="/menu-management"><button className="dashboard-button">Menu Management</button></Link>

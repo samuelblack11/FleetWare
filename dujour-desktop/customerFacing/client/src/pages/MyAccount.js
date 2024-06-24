@@ -81,8 +81,6 @@ const MyAccount = () => {
     delete changedFields.ccExpirationDate;
   }
 
-  console.log("Changed Fields:", changedFields);
-
   if (Object.keys(changedFields).length === 0) {
     alert('No changes made.');
     return;

@@ -322,33 +322,31 @@ useLayoutEffect(() => {
     const cardContainer = document.querySelector('.card-container');
     const cartSidebar = document.querySelector('.cart-sidebar');
     const tableContainer = document.querySelector('.table-container');
-    const cartHeader = cartSidebar.querySelector('h2');
+    const cartHeader = cartSidebar?.querySelector('h2');
 
-    if (buildCartSection && cardContainer && tableContainer && cartHeader) {
+    if (buildCartSection && cardContainer && cartSidebar && tableContainer && cartHeader) {
       const buildCartSectionTop = buildCartSection.getBoundingClientRect().top;
       const cardContainerTop = cardContainer.getBoundingClientRect().top;
       const cartSidebarTop = cartSidebar.getBoundingClientRect().top;
       const cartHeaderHeight = cartHeader.offsetHeight;
 
-      console.log("---");
-      console.log(cartSidebarTop);
-      console.log(buildCartSectionTop);
-      console.log(cardContainerTop);
-
       // Adjust marginTopDifference by subtracting cartHeaderHeight
       const marginTopDifference = (cardContainerTop - buildCartSectionTop) - cartHeaderHeight;
-      console.log(marginTopDifference);
       tableContainer.style.marginTop = `${marginTopDifference}px`;
     }
   };
 
-  adjustTableContainerMargin();
-  window.addEventListener('resize', adjustTableContainerMargin);
+  // Only execute if the cart has items
+  if (cartItems.length > 0) {
+    adjustTableContainerMargin();
+    window.addEventListener('resize', adjustTableContainerMargin);
 
-  return () => {
-    window.removeEventListener('resize', adjustTableContainerMargin);
-  };
-}, []);
+    return () => {
+      window.removeEventListener('resize', adjustTableContainerMargin);
+    };
+  }
+}, [cartItems.length]); // Run effect when cartItems changes
+
 
 
 

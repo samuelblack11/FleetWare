@@ -16,8 +16,6 @@ router.get('/', async (req, res) => {
 router.get('/byname/:name', async (req, res) => {
     try {
         const farm = await Farm.findOne({ name: req.params.name });
-        console.log(req.params.name)
-        console.log(farm)
         if (!farm) {
             return res.status(404).json({ message: 'Farm not found' });
         }

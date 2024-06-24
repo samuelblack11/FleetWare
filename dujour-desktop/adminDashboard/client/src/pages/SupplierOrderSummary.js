@@ -93,7 +93,7 @@ const fetchFarmIdByName = async (farmName) => {
 
     return (
         <div className="order-summary-container">
-            <h2>Weekly Order Summary</h2>
+            <h2>Weekly Item Totals</h2>
             <h3>for {user.name}</h3>
             <h3>on {thisSaturday}</h3>
             <GenericTable data={ordersSummaryThisSaturday} columns={columns} />

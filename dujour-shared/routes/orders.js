@@ -39,11 +39,6 @@ router.get('/detailed-orders', async (req, res) => {
 
         const farm = await Farm.findById(item.farm).exec();
 
-        // Debug logging to check each item and farm details
-        //console.log("Order Item: ", JSON.stringify(orderItem, null, 2));
-       // console.log("Item: ", JSON.stringify(item, null, 2));
-        //console.log("Farm: ", JSON.stringify(farm, null, 2));
-
         return {
           itemName: item.itemName,
           itemUnitCost: item.unitCost,
@@ -59,8 +54,6 @@ router.get('/detailed-orders', async (req, res) => {
       };
     }));
 
-    //console.log("Detailed Orders: ", JSON.stringify(detailedOrders, null, 2)); // Log the detailed orders
-
     res.json(detailedOrders);
   } catch (error) {
     console.error('Error fetching detailed orders:', error);
@@ -74,7 +67,6 @@ router.get('/', async (req, res) => {
   try {
     const { date } = req.query;
     let orders;
-    console.log(date)
 
     if (date) {
       // Calculate the start and end of the day for the specified date
@@ -89,7 +81,6 @@ router.get('/', async (req, res) => {
           $lte: endOfDay
         }
       }).exec();
-      console.log(orders)
     } else {
       // Fetch all orders if no date is provided
       orders = await Order.find().exec();
@@ -102,9 +93,6 @@ router.get('/', async (req, res) => {
         item.item = itemDetails; // Replace the item ID with the full item details
       }
     }
-
-    // Log the populated orders to verify the results
-    console.log('Populated Orders:', JSON.stringify(orders, null, 2));
 
     // Send the response
     res.json(orders);
@@ -138,16 +126,8 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { overallStatus } = req.body;
-    console.log(id)
-    console.log("Type of orderId:", typeof id); // Print out the type of userId
-
     const orderObjectId = new mongoose.Types.ObjectId(id);
-    console.log("Converted userId to ObjectId:", orderObjectId);
-
-
     const order = await Order.findById(orderObjectId);
-    console.log("----")
-    console.log(order)
     if (!order) {
       return res.status(404).send('Order not found');
     }
@@ -166,16 +146,8 @@ router.put('/deliverPackage/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { overallStatus } = req.body;
-    console.log(id)
-    console.log("Type of orderId:", typeof id); // Print out the type of userId
-
     const orderObjectId = new mongoose.Types.ObjectId(id);
-    console.log("Converted userId to ObjectId:", orderObjectId);
-
-
     const order = await Order.findById(orderObjectId);
-    console.log("----")
-    console.log(order)
     if (!order) {
       return res.status(404).send('Order not found');
     }
@@ -194,16 +166,8 @@ router.put('/pickupPackage/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { overallStatus } = req.body;
-    console.log(id)
-    console.log("Type of orderId:", typeof id); // Print out the type of userId
-
     const orderObjectId = new mongoose.Types.ObjectId(id);
-    console.log("Converted userId to ObjectId:", orderObjectId);
-
-
     const order = await Order.findById(orderObjectId);
-    console.log("----")
-    console.log(order)
     if (!order) {
       return res.status(404).send('Order not found');
     }

@@ -57,9 +57,6 @@ function Login() {
 
   async function registerUser(email, password, role) {
     try {
-      console.log(email)
-      console.log(password)
-      console.log(role)
       const response = await axios.post('/api/users/signup', {
         email,
         password,
@@ -70,7 +67,6 @@ function Login() {
     } catch (error) {
       // More nuanced error handling
       let errorMessage = 'Signup failed due to an unexpected error';
-      console.log("-----");
       console.log(error.response);
       if (error.response) {
         // Include more error details if available and in development mode

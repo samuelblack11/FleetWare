@@ -3,7 +3,6 @@ import React from 'react';
 import logo from '../assets/logo128.png';
 
 export const GenericTable = ({ data, columns, handleEditClick, deleteCargo, fullyPickedOrders = [] }) => {
-  //console.log("Rendering GenericTable with data:", data[0]);
   return (
     <table>
       <thead>
@@ -123,7 +122,6 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
   if (!show) {
     return null;
   }
-  console.log(order)
   // Helper function to calculate the total cost of an item
   const calculateItemTotal = (item) => (item.quantity * item.item.unitCost).toFixed(2);
 

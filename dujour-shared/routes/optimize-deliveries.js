@@ -37,7 +37,6 @@ router.post('/', async (req, res) => {
       // Assuming 'coordinates' is your array of geocoded addresses
       const singleRouteClusterAssignments = new Array(coordinates.length).fill(0);
       optimizedRoutes = [optimizeRouteForCluster(0, singleRouteClusterAssignments, coordinates, orders, warehouseCoordinates)];
-      console.log(optimizedRoutes)
     } else {
       // Clustering based on selected method
       const clusterAssignments = await clusterAddresses(coordinates, numClusters, method);
@@ -49,8 +48,6 @@ router.post('/', async (req, res) => {
     }
     // Build response with order details
     const optimizedRoutesWithOrders = optimizedRoutes.filter(route => route.length > 0);
-    console.log("****")
-    console.log(optimizedRoutesWithOrders)
     res.json({ optimizedRoutes: optimizedRoutesWithOrders });
 
   } catch (error) {
@@ -60,7 +57,6 @@ router.post('/', async (req, res) => {
 });
 
 async function geocodeAddresses(input) {
-  console.log(`Input is ${input}`)
   const addresses = Array.isArray(input) ? input : [input];
   const results = [];
 
@@ -76,17 +72,14 @@ async function geocodeAddresses(input) {
   const result = response.data.results;
   if (result.length > 0) {
   const location = result[0].geometry.location;
-  console.log("Location object:", result[0].geometry.location);
   if (location) {
     const lat = location.lat;
     const lng = location.lng;
     results.push({ latitude: lat, longitude: lng, formattedAddress: result[0].formatted_address });
   } else {
-    console.log(`No location data found for address: ${address}`);
     results.push(null); // Or handle this case as needed
   }
 } else {
-  console.log(`No results found for address: ${address}`);
   results.push(null);
 }
     } catch (error) {
@@ -146,7 +139,6 @@ function optimizeRouteForCluster(clusterId, clusterAssignments, coordinates, ord
 
 
 function calculateDistance(point1, point2) {
-  console.log(`Point 1 ${point1}`)
   return Math.sqrt(Math.pow(point1.latitude - point2.latitude, 2) + Math.pow(point1.longitude - point2.longitude, 2));
 }
 

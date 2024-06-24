@@ -29,11 +29,8 @@ const OrderPicking = () => {
       setIsLoading(true);
       try {
         const { data: ordersData } = await axios.get(`/api/orders/detailed-orders?date=${selectedDate}`);
-        console.log("Fetched Orders:", ordersData);
         setOrders(ordersData);
-        console.log(selectedDate)
         const { data: pickPlansData } = await axios.get(`/api/pickPlans?date=${selectedDate}`);
-        console.log("Fetched Pick Plans:", pickPlansData);
 
         if (pickPlansData.length > 0) {
           setPickPlan(pickPlansData);
@@ -79,30 +76,80 @@ const OrderPicking = () => {
 
   const handleChange = (setter) => (e) => setter(e.target.value);
 
-  const handleCreatePickPlan = () => {
+const handleCreatePickPlan = () => {
+    // Flatten all items with additional properties for sorting and tracking
     const allItems = orders.flatMap(order => 
-      order.items.map(item => ({
-        ...item,
-        masterOrderNumber: order.masterOrderNumber,
-        orderID: order._id
-      }))
+        order.items.map(item => ({
+            ...item,
+            orderID: order._id,
+            masterOrderNumber: order.masterOrderNumber,  // Assuming you want to display this as "order number"
+            farmName: item.farmName,
+            vendorLocationNumber: item.vendorLocationNumber
+        }))
     );
-    const sortedItems = allItems.sort((a, b) => a.vendorLocationNumber - b.vendorLocationNumber);
 
-    // Split the sorted items into groups based on the number of pickers
-    const chunkSize = Math.ceil(sortedItems.length / numberOfPickers);
-    const dividedPickPlans = [];
-    for (let i = 0; i < numberOfPickers; i++) {
-      dividedPickPlans.push({
-        items: sortedItems.slice(i * chunkSize, (i + 1) * chunkSize),
-        user: null
-      });
-    }
+    // Group items by order
+    const itemsByOrder = allItems.reduce((acc, item) => {
+        if (!acc[item.orderID]) {
+            acc[item.orderID] = [];
+        }
+        acc[item.orderID].push(item);
+        return acc;
+    }, {});
 
-    setPickPlan(dividedPickPlans);
+    // Sort orders within each group by vendor location number
+    const sortedOrders = Object.values(itemsByOrder).map(order => {
+        return order.sort((a, b) => a.vendorLocationNumber - b.vendorLocationNumber);
+    });
+
+    // Initialize pick plans and track item counts per picker
+    const dividedPickPlans = Array.from({ length: numberOfPickers }, () => ({ items: [], itemCount: 0 }));
+
+    // Function to find the picker with the least items
+    const findLeastLoadedPicker = () => {
+        return dividedPickPlans.reduce((min, picker, index) => {
+            return (min === null || picker.itemCount < dividedPickPlans[min].itemCount) ? index : min;
+        }, null);
+    };
+
+    // Assign orders to pickers
+    sortedOrders.forEach(order => {
+        const farmName = order[0].farmName;
+        const orderSize = order.length;
+
+        // Check if any picker already has items from this farm
+        const pickerIndex = dividedPickPlans.findIndex(picker => 
+            picker.items.some(item => item.farmName === farmName)
+        );
+
+        let targetPickerIndex = pickerIndex === -1 ? findLeastLoadedPicker() : pickerIndex;
+        
+        // Check if assigning to this picker would imbalance the load
+        if (pickerIndex === -1) {
+            const leastLoadedPickerIndex = findLeastLoadedPicker();
+            const potentialImbalance = dividedPickPlans[leastLoadedPickerIndex].itemCount + orderSize - dividedPickPlans[targetPickerIndex].itemCount;
+            if (potentialImbalance > 5) {
+                // Find another picker if the imbalance is too high
+                targetPickerIndex = leastLoadedPickerIndex;
+            }
+        }
+
+        // Add items to the target picker
+        dividedPickPlans[targetPickerIndex].items.push(...order);
+        dividedPickPlans[targetPickerIndex].itemCount += orderSize;
+    });
+
+    // Prepare the final pick plans by removing the itemCount tracking
+    const finalPickPlans = dividedPickPlans.map(picker => ({
+        items: picker.items
+    }));
+
+    setPickPlan(finalPickPlans);
     setShowPickPlan(true);
     setPlanSaved(false);
-  };
+};
+
+
 
   const handleUndoPickPlan = () => {
   setShowPickPlan(false);

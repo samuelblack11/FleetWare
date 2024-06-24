@@ -32,13 +32,6 @@ router.post('/', async (req, res) => {
   try {
     const { date, pickPlans } = req.body;
 
-    // Loop through each pick plan and each item to print the orderId
-    pickPlans.forEach(plan => {
-      plan.items.forEach(item => {
-        console.log(`Order ID for item ${item.itemName}: ${item.orderID}`);
-      });
-    });
-
     await PickPlan.deleteMany({ date }); // Remove existing plans for the date
     const newPickPlans = pickPlans.map(plan => new PickPlan(plan));
     await PickPlan.insertMany(newPickPlans);
@@ -68,7 +61,16 @@ router.put('/updateUsers', async (req, res) => {
 router.delete('/', async (req, res) => {
   try {
     const { date } = req.query;
-    await PickPlan.deleteMany({ date });
+    const startOfDay = new Date(date);
+    const endOfDay = new Date(date);
+    endOfDay.setUTCHours(23, 59, 59, 999); // Set the end of the day to the last millisecond
+    // Delete documents where 'date' is within the specified start and end of the day
+    await PickPlan.deleteMany({
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
     res.status(200).send('Pick plans deleted successfully');
   } catch (error) {
     console.error('Error deleting pick plans:', error);
@@ -81,12 +83,8 @@ router.get('/specificPickPlan', async (req, res) => {
 
     try {
         const allUsers = await User.find({});
-        console.log("All Users:", allUsers);
         // Lookup for the user by userId
-        console.log("Attempting to find user with ID:", userId);
-        console.log(date)
         const userObjectId = new mongoose.Types.ObjectId(userId);
-        console.log("Converted userId to ObjectId:", userObjectId);
 
         User.collection.getIndexes().then(indexes => {
           console.log("Indexes:", indexes);
@@ -106,19 +104,13 @@ router.get('/specificPickPlan', async (req, res) => {
             // Create a date object for the given date
             const [year, month, day] = date.split('-').map(Number);
             const targetDate = new Date(Date.UTC(year, month - 1, day));
-            console.log(year)
-            console.log(month)
-            console.log(day)
-            console.log(targetDate)
             // Only consider the date part for the comparison
             query.date = { $gte: targetDate, $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000) };
-            console.log(`Query date range: ${targetDate.toISOString()} to ${new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString()}`);
         }
 
         // Lookup for existing pickPlans
         const existingPickPlans = await PickPlan.find(query).populate('user');
         if (existingPickPlans.length > 0) {
-            console.log('Pick Plans found:', existingPickPlans);
             res.json({ exists: true, pickPlans: existingPickPlans });
         } else {
             console.log('No pickPlans found for this user on the specified date.');
@@ -134,7 +126,6 @@ router.put('/updatePickStatus', async (req, res) => {
   const { pickPlanId, itemId, newStatus } = req.body;
 
   try {
-    console.log(`Updating pick plan ID: ${pickPlanId}, item ID: ${itemId}, new status: ${newStatus}`);
     
     const pickPlan = await PickPlan.findById(pickPlanId);
     if (!pickPlan) {
@@ -150,23 +141,17 @@ router.put('/updatePickStatus', async (req, res) => {
 
     // Update the item status
     item.status = newStatus;
-    console.log(`Updated item status to: ${newStatus}`);
-
     // Save the pick plan after updating the item status
     await pickPlan.save();
-    console.log("Pick Plan saved after item status update");
-
     // Update pick plan status based on the updated items
     if (pickPlan.items.some(item => item.status === 'Not Picked')) {
       pickPlan.status = 'Pick In Progress';
     } else {
       pickPlan.status = 'Pick Complete';
     }
-    console.log(`Updated Pick Plan status to: ${pickPlan.status}`);
 
     // Save the pick plan after updating the pick plan status
     await pickPlan.save();
-    console.log("Pick Plan saved after status update");
 
     // Find the order associated with this item
     const order = await Order.findOne({ masterOrderNumber: item.masterOrderNumber });
@@ -177,24 +162,19 @@ router.put('/updatePickStatus', async (req, res) => {
 
     // Find all pick plans associated with this order
     const allPickPlansForOrder = await PickPlan.find({ 'items.masterOrderNumber': item.masterOrderNumber });
-    console.log(`All pick plans for order (masterOrderNumber: ${item.masterOrderNumber}):`, allPickPlansForOrder);
 
     // Transform allPickPlansForOrder to get all items associated with the order
     const allItemsForOrder = allPickPlansForOrder.flatMap(pp => pp.items.filter(i => i.masterOrderNumber === item.masterOrderNumber));
-    console.log(`All items for order:`, allItemsForOrder);
 
     // Update the order status based on the statuses of all items across all pick plans
-    console.log(allItemsForOrder)
     if (allItemsForOrder.some(item => item.status === 'Not Picked')) {
       order.overallStatus = 'Order Pick in Progress';
     } else {
       order.overallStatus = 'Order Pick Complete';
     }
-    console.log(`Updated Order overall status to: ${order.overallStatus}`);
 
     // Save the order after updating the order status
     await order.save();
-    console.log("Order saved after status update");
 
     res.status(200).json({ message: "Item status updated successfully", pickPlan });
   } catch (error) {

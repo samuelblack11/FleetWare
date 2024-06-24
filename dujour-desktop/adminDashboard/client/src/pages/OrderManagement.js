@@ -105,8 +105,6 @@ const OrderManagement = ({ mode }) => {
   const [filterDate, setFilterDate] = useState(null);
 
   useEffect(() => {
-    console.log("****")
-    console.log("Current mode:", mode);
     if (mode === 'myOrders') {
       fetchMyOrders(); // Function to fetch only the current user's orders
     } else {

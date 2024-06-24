@@ -26,9 +26,6 @@ router.post('/', async (req, res) => {
 // API Route to update item stock after an order is placed
 router.put('/decrement-stock', async (req, res) => {
   const itemsToUpdate = req.body; // Expecting an array of objects: [{ itemId: '123', quantity: 10 }, ...]
-  
-  console.log("Received items to update stock:", itemsToUpdate);
-
   try {
     const bulkOperations = itemsToUpdate.map(item => ({
       updateOne: {
@@ -37,10 +34,7 @@ router.put('/decrement-stock', async (req, res) => {
       }
     }));
 
-    console.log("Prepared bulk operations for stock update:", bulkOperations);
-
     const result = await AvailableItem.bulkWrite(bulkOperations);
-    console.log("Bulk update result:", result);
 
     res.json({ message: 'Stock updated successfully', result });
   } catch (error) {
@@ -51,8 +45,6 @@ router.put('/decrement-stock', async (req, res) => {
 
 
 router.put('/:id', async (req, res) => {
-  console.log("Updating item with ID:", req.params.id);
-  console.log("New data:", req.body);
   try {
     const updatedItem = await AvailableItem.findByIdAndUpdate(
       req.params.id,

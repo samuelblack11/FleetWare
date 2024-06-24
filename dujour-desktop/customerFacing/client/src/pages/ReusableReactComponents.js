@@ -120,7 +120,6 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
   if (!show) {
     return null;
   }
-  console.log(order)
   // Helper function to calculate the total cost of an item
   const calculateItemTotal = (item) => (item.quantity * item.item.unitCost).toFixed(2);
   const shippingCharge = 5;

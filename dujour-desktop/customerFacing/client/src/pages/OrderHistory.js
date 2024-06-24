@@ -101,8 +101,6 @@ const fetchMyOrders = async () => {
   try {
     // Ensure you include user authentication to secure this request
     const response = await axios.get(`/api/orders/orders-by-user?email=${encodeURIComponent(user.email)}`);
-    console.log("++++")
-    console.log(response.data)
     setOrders(response.data);
   } catch (error) {
     console.error('Error fetching my orders:', error);

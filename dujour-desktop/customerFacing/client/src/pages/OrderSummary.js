@@ -32,11 +32,6 @@ const OrderSummary = () => {
     // Log the current order
   }, [currentOrder]);
 
-  useEffect(() => {
-  console.log("Received state in OrderSummary:", location.state);
-}, []);
-
-
   const handleBackToBuildOrder = () => {
     navigate('/build-order', { state: { cartItems, totalCost } });
   };

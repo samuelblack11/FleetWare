@@ -214,19 +214,16 @@ router.post('/signup', async (req, res) => {
 });
 
 router.put('/email/:emailAddress/incrementOrderNumber', async (req, res) => {
-  console.log(`Received request to increment order number for email: ${req.params.emailAddress}`);
   try {
     // Log the received email address for debugging
 
     const emailAddress = req.params.emailAddress;
     // Log the query being made to ensure correctness
-    console.log(`Querying for user with email: ${emailAddress}`);
 
     const user = await User.findOne({ email: emailAddress });
 
     // Check if the user was found and log the result
     if (!user) {
-      console.log(`No user found for email: ${emailAddress}`);
       return res.status(404).send('User not found');
     } else {
       console.log(`User found: ${user.email} with current lastOrderNumber: ${user.lastOrderNumber}`);
@@ -236,7 +233,6 @@ router.put('/email/:emailAddress/incrementOrderNumber', async (req, res) => {
     await user.save();
 
     // Log the updated order number for confirmation
-    console.log(`Incremented lastOrderNumber for user: ${user.email} to ${user.lastOrderNumber}`);
 
     res.send(`User order number incremented successfully for ${user.email} to ${user.lastOrderNumber}`);
   } catch (error) {

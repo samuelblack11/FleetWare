@@ -22,11 +22,9 @@ const ItemForm = ({ item, onSave, farms }) => {
     // API call to add or update item
     try {
       if (item) {
-        console.log("Submitting form with data:", formState);
         await axios.put(`/api/items/${item._id}`, formState);
       } else {
         await axios.post('/api/items', formState);
-        console.log("POST COMPLETE")
       }
       onSave(); // Trigger fetching items and closing popup
     } catch (error) {
@@ -209,7 +207,6 @@ const MenuManagement = () => {
 const updateActiveStatus = async (newStatus, itemId) => {
     try {
         const response = await axios.put(`/api/items/${itemId}`, { activeStatus: newStatus });
-        console.log('Update Success:', response.data);
         fetchItems(); // Re-fetch items to update the UI based on the new data
     } catch (error) {
         console.error('Error updating item:', error);
@@ -344,7 +341,6 @@ const updateActiveStatus = async (newStatus, itemId) => {
 
     const handleDeleteItem = async (id) => {
         try {
-            console.log(`Deleting item with id: ${id}`);
             await axios.delete(`/api/items/${id}`);
             fetchItems(); // Refresh items list after deletion
         } catch (error) {
@@ -364,12 +360,10 @@ const updateActiveStatus = async (newStatus, itemId) => {
         // Delete each filtered item
         for (const item of itemsToDelete) {
             await axios.delete(`/api/items/${item._id}`);
-            console.log(`Deleted item with id: ${item._id}`);
         }
         fetchItems();
         // Delete the farm after all associated items are deleted
         await axios.delete(`/api/farms/${farmId}`);
-        console.log(`Farm with id ${farmId} has been deleted.`);
 
         // Refresh farms list after deletion
         fetchFarms();

@@ -108,14 +108,6 @@ const aggregateRouteStatusCounts = (stops, orders) => {
           farmName: details.farmName
         }));
 
-      pickPlans.forEach(pickPlan => {
-        if (pickPlan.user && pickPlan.user.name) {
-          console.log(`Driver Name: ${pickPlan.user.name}`);
-        } else {
-          console.log('Driver Name: Unassigned');
-        }
-      });
-
       const pickPlanStatuses = pickPlans.map(plan => ({
         date: plan.date,
         user: plan.user ? plan.user.name : 'Unassigned',

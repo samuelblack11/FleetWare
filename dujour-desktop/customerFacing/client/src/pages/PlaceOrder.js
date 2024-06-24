@@ -273,8 +273,6 @@ const transformOrderItems = (order) => {
         emailHtml: orderHtml,
         return_url: `${window.location.origin}/order-summary`
       });
-      console.log("::::")
-      console.log(response)
 
       if (response.status === 200) {
           // New lines: Update inventory after successful order placement
@@ -294,8 +292,6 @@ const transformOrderItems = (order) => {
         setCartItems([]);
         const savedOrder = response.data.order;
         const masterOrderNumber = savedOrder.masterOrderNumber;
-        console.log("{{{{")
-        console.log(transformedOrder)
         navigate('/order-summary', { state: { orderData: transformedOrder, cartItems, masterOrderNumber } });
       } else {
         alert('Failed to submit the order.');
