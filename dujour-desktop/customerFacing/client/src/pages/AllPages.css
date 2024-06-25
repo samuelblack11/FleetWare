@@ -427,8 +427,8 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   padding: 15px;
 }
 .slider-container {
-  width: 100%;
-  margin-bottom: 20px; /* Center the slider and add some margin */
+  width: 80%;
+  margin: 0 auto 20px; /* Center the slider and add some margin at the bottom */
 }
 
 .filter-form {
@@ -452,4 +452,167 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   width: 60px;
   text-align: center;
 }
+
+.menu {
+  display: flex;
+  justify-content: center; /* Center content horizontally */
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  position: relative; /* For absolutely positioning the right buttons */
+}
+.menu button {
+  background: none;
+  border: none;
+  color: rgba(128, 50, 50, 0.8);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.left-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Adds space between buttons */
+  flex-grow: 1; /* Take up remaining space */
+}
+
+.right-buttons {
+  position: absolute;
+  right: 10px; /* Align to the right with some padding */
+  display: flex;
+  gap: 10px; /* Adds space between buttons */
+}
+
+.landing-page .hero {
+  position: relative;
+  width: 100%;
+  height: 80vh; /* Adjust the height as needed */
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.landing-page .hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensure the image covers the hero section without stretching */
+}
+
+.landing-page .overlay-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+}
+
+.landing-page .overlay-text h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.landing-page .overlay-text button {
+  padding: 10px 20px;
+  font-size: 1.6rem;
+  background-color: --button-color-primary;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.landing-page .overlay-text button:hover {
+  background-color: --button-color-primary-hover;
+}
+
+.mission-statement, .values, .contact-form {
+  padding: 20px;
+  text-align: center;
+}
+
+.value-box {
+  display: inline-block;
+  padding: 20px;
+  margin: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.value-desc {
+  color: var(--button-color-primary);
+  font-size: 16px; /* Ensuring consistency in font size */
+} 
+
+.contact-form form {
+  display: flex;
+  flex-direction: column;
+  margin: 20px;
+  padding: 10px;
+  background: #f9f9f9;
+}
+
+.contact-form input, .contact-form textarea {
+  margin: 10px 0;
+  padding: 8px;
+}
+
+.contact-form button {
+  background: var(--button-color-primary);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.contact-form button:hover {
+  background: var(--button-color-primary-hover);
+}
+
+.hero {
+  position: relative;
+  height: 300px;
+}
+
+.hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+}
+.hero-text h1 {
+  color: rgba(128, 50, 50, 0.8);
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+nav {
+  background: #f8f8f8;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
+
+
+
+
 

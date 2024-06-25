@@ -371,13 +371,13 @@ const fetchImages = async (items) => {
 return (
   <div className="build-order-container">
     <div className="slider-container" style={{ margin: "5px 0" }}>
-      <Slider {...sliderSettings}>
+      {/*<Slider {...sliderSettings}>
         {rotatingImageNames.map((src, index) => (
           <div key={index}>
             <img src={src} alt={`${index}`} style={{ width: '95%', height: '250px' }} />
           </div>
         ))}
-      </Slider>
+      </Slider>*/}
     </div>
     <div className="content-container">
       <div className="build-cart-section">

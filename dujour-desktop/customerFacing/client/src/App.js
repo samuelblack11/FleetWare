@@ -4,6 +4,7 @@ import './App.css';
 import logo from './assets/logo128.png';
 import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
+import LandingPage from './pages/LandingPage';
 import BuildOrder from './pages/BuildOrder';
 import PlaceOrder from './pages/PlaceOrder';
 import AboutDujour from './pages/AboutDujour';
@@ -16,109 +17,76 @@ function useAuth() {
 }
 
 function MenuBar() {
-  return (
-    <div className="menu-bar">
-      <AboutDujourButton />
-      <OrderHistoryButton />
-      <SettingsButton />
-    </div>
-  );
-}
-
-const AboutDujourButton = () => {
-  return (
-    <button className="add-button">
-      <Link 
-        to="/about-dujour" 
-        style={{ 
-          color: 'white', 
-          textDecoration: 'none' 
-        }}
-      >
-        About Dujour
-      </Link>
-    </button>
-  );
-};
-
-const OrderHistoryButton = () => {
-  return (
-    <button className="add-button">
-      <Link 
-        to="/order-history" 
-        style={{ 
-          color: 'white', 
-          textDecoration: 'none' 
-        }}
-      >
-        Order History
-      </Link>
-    </button>
-  );
-};
-
-function SettingsButton() {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const navigate = useNavigate();
-  const { logout } = useContext(AuthContext); // Use the context to access logout method
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const dropdownRef = useRef(null);
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const toggleDropdown = () => setShowDropdown(!showDropdown);
+  const toggleDropdown = () => {
+    setDropdownVisible(!dropdownVisible);
+  };
 
-  const handleLogout = () => {
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setDropdownVisible(false);
+    }
+  };
+
+   const handleLogout = () => {
     logout();
     navigate('/login');
-    setShowDropdown(false); // Close dropdown after navigation
   };
 
-  const handleAccountNavigation = () => {
-    navigate('/my-account');
-    setShowDropdown(false); // Close dropdown after navigation
-  };
 
-  // Use an effect to add an event listener to the dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [dropdownRef]);
-
+  }, []);
   return (
-    <div className="settings-button-container" ref={dropdownRef}>
-      <button onClick={toggleDropdown} className="add-button">
-        Settings
-      </button>
-      {showDropdown && (
-        <div className="dropdown-menu">
-          <button onClick={handleAccountNavigation} className="add-button">My Account</button>
-          <button onClick={handleLogout} className="add-button">Logout</button>
+    <div className="menu">
+      <div className="left-buttons">
+        <button>
+          <Link to="/build-order">Shop</Link>
+        </button>
+        <button>
+          <Link to="/">Dujour</Link>
+        </button>
+        <button>
+          <Link to="/about-dujour">About</Link>
+        </button>
+      </div>
+      <div className="right-buttons">
+        <div className="dropdown-container" ref={dropdownRef}>
+          <button onClick={toggleDropdown}>
+            My Account
+          </button>
+          {dropdownVisible && (
+            <div className="dropdown-menu">
+            <button>
+              <Link to="/my-account">Account Details</Link>
+            </button>
+            <button>
+              <Link to="/order-history">Order History</Link>
+            </button >
+              <button onClick={handleLogout} style={{ 
+                  color: 'white', 
+                  display: 'block', 
+                  marginLeft: 'auto', 
+                  marginRight: 'auto', 
+                  width: 'fit-content'
+                }}
+              >Logout</button>
+            </div>
+          )}
         </div>
-      )}
+
+        <button>
+          <Link to="/cart">Cart</Link>
+        </button>
+      </div>
     </div>
-  );
-}
-
-
-function LogoutButton() {
-  const navigate = useNavigate(); // Now it's called within the context of <Router>
-  const { logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  return (
-    <button onClick={handleLogout} className="logout-button">
-      Logout
-    </button>
   );
 }
 
@@ -166,14 +134,14 @@ function App() {
               </Link>
             </div>
             <div className="header-content">
-              <h2 className="header-title">Dujour: A Farm to Consumer Service</h2>
               {user && <MenuBar />}
             </div>
           </div>
           <Routes>
             {user ? (
               <>
-                <Route path="/" element={<BuildOrder />} /> {/* Default route for authenticated users */}
+                <Route path="/" element={<LandingPage />} /> {/* Default route for authenticated users */}
+                <Route path="/landing-page" element={<LandingPage />} />
                 <Route path="/build-order" element={<BuildOrder />} />
                 <Route path="/place-order" element={<PlaceOrder />} />
                 <Route path="/order-history" element={<OrderHistory />} />
