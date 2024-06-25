@@ -22,9 +22,6 @@ const AboutDujour = () => {
         ever before. Join us in this mission by placing your order today.
       </p>
       <br />
-      <p>
-        Please send any feedback or concerns to sam@dujourdelivery.com
-      </p>
     </div>
   );
 

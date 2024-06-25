@@ -502,7 +502,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .landing-page .overlay-text {
   position: absolute;
-  top: 50%;
+  top: 60%;
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
@@ -527,6 +527,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .landing-page .overlay-text button:hover {
   background-color: --button-color-primary-hover;
+  color: rgba(128, 50, 50, 0.8); /* Ensure this matches the hover color */
 }
 
 .mission-statement, .values, .contact-form {
@@ -534,17 +535,36 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
   text-align: center;
 }
 
+.values {
+  display: flex;
+  flex-direction: row; /* Arranges children from left to right */
+  flex-wrap: nowrap; /* This ensures the boxes wrap if there is not enough space */
+  width: 100%; /* Ensure the parent container takes full width */
+  justify-content: space-between; /* This distributes space between the items */
+}
 .value-box {
   display: inline-block;
+  width: 25%; /* Adjust width to fit within parent container */
   padding: 20px;
   margin: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
 
+.value-title {
+    color: var(--button-color-primary);
+    font-size: 24px; /* Ensuring consistency in font size */
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    margin: 20px auto; /* Center the slider and add some margin */
+    width: 80%;
+}
+
 .value-desc {
   color: var(--button-color-primary);
   font-size: 16px; /* Ensuring consistency in font size */
+  font-weight: var(--font-weight-bold);
+
 } 
 
 .contact-form form {
@@ -610,9 +630,23 @@ nav {
   align-items: center;
 }
 
+.landingPageImage {
+  max-width: 100%; /* Limits the width to the width of the container */
+  max-height: 1000px; /* Limits the height to 500px */
+  width: auto; /* Ensures the image maintains its aspect ratio */
+  height: auto; /* Ensures the image maintains its aspect ratio */
+}
 
+.shop-now-button, .submit-btn {
+  border-color: var(--button-color-primary);
+  background-color: rgba(255, 255, 255, 0.01); /* Black background with 50% transparency */
+  color: rgba(255, 255, 255, 0.9); /* Default text color */
+  font-weight: var(--font-weight-bold);
+}
 
-
-
-
+.shop-now-button:hover, .submit-btn:hover {
+  color: rgba(128, 50, 50, 0.8); /* Text color with 80% opacity */
+  background-color: rgba(255, 255, 255, 1.0); /* White background with 40% transparency */
+  font-weight: var(--font-weight-bold);
+}
 

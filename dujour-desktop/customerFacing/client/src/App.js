@@ -128,10 +128,15 @@ function App() {
         <LocationListener />
         <div className={`App ${backgroundClass}`}>
           <div className="header-container">
+          <div className="upper-app-header">
             <div className="header-logo">
               <Link to="/">
                 <img src={logo} className="logo" alt="Dujour Logo" />
               </Link>
+              <div className="american-flag">
+                🇺🇸
+              </div>
+            </div>
             </div>
             <div className="header-content">
               {user && <MenuBar />}

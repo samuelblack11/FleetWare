@@ -257,4 +257,34 @@ router.get('/email/:emailAddress', async (req, res) => {
   }
 });
 
+// Route to send email
+router.post('/send-email', async (req, res) => {
+  const { name, email, message } = req.body;
+
+  // Create transporter object using SMTP transport
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', // or another email provider
+    auth: {
+      user: process.env.EMAIL_USER, // your email address
+      pass: process.env.EMAIL_PASS // your email password
+    }
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER, // sender address
+    to: 'sam@dujourdelivery.com', // receiver
+    subject: 'Message from Dujour Customer', // Subject line
+    text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`, // plain text body
+    html: `<p>Name: <b>${name}</b></p><p>Email: <b>${email}</b></p><p>Message: <b>${message}</b></p>` // html body
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).send({ message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('Failed to send email', error);
+    res.status(500).send({ message: 'Failed to send email', error: error.message });
+  }
+});
+
 module.exports = router;

@@ -20,8 +20,27 @@ body {
     overflow: visible;
 }
 
+.upper-app-header {
+    display: flex;
+    justify-content: center; /* Center the logo horizontally */
+    align-items: center; /* Center items vertically */
+    position: relative; /* Allows absolute positioning of the flag */
+    width: 100%; /* Full width of the header */
+    padding: 10px 20px;
+}
+
 .header-logo {
+    flex: 1; /* Allows the logo to take available space and stay centered */
+    text-align: center; /* Center the content within the flex item */
     margin-bottom: 10px;
+}
+
+.american-flag {
+    position: absolute; /* Position it absolutely within the upper-app-header */
+    top: 50%; /* Align it vertically in the middle */
+    transform: translateY(-50%); /* Shift it upwards by half of its own height to truly center it */
+    right: 20px; /* Move it to the right edge */
+    font-size: 3.5rem; /* Adjust size as needed */
 }
 
 .header-content {
