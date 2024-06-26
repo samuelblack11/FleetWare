@@ -69,6 +69,18 @@ const getNextSaturday = () => {
     return nextSaturday;
 };
 
+
+  const shippingCharge = 5; // Flat shipping fee
+  const minimumOrderAmount = 30; // Minimum order amount before shipping
+  const [availableItems, setAvailableItems] = useState([]);
+
+  const calculateInitialTotalCost = () => {
+        const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+        const roundedSubtotal = Math.round(subtotal * 100) / 100; // rounding to 2 decimal places
+        const finalTotal = roundedSubtotal + shippingCharge;
+        return finalTotal;
+    };
+
   const nextSaturday = getNextSaturday(new Date());
 
       // Initialize with data passed from BuildOrder or define fallback defaults
@@ -82,7 +94,7 @@ const getNextSaturday = () => {
             ccExpirationDate: '',
             creditCardCVV: '',
             items: state?.cartItems,
-            totalCost: state?.orderData?.totalCost || 0,
+            totalCost: state?.orderData?.totalCost || calculateInitialTotalCost() || 0,
         };
     });
 
@@ -90,17 +102,12 @@ const getNextSaturday = () => {
     customerName: user?.name || '',
     customerEmail: user?.email || '',
     deliveryAddress: user?.deliveryAddress || '',
-    //deliveryDate: getNextSaturday(new Date()),
     deliveryDate: formattedDate,
     creditCardNumber: '',
     ccExpirationDate: '',
     creditCardCVV: '',
     items: state?.cartItems || [],
   }
-
-  const shippingCharge = 5; // Flat shipping fee
-  const minimumOrderAmount = 30; // Minimum order amount before shipping
-  const [availableItems, setAvailableItems] = useState([]);
 
 useEffect(() => {
     const calculateTotalCost = () => {
@@ -406,7 +413,7 @@ const transformOrderItems = (order) => {
         <p className="total-cost">Total Cost: ${orderData.totalCost.toFixed(2)}</p>
         <div className="submitButton">
           <form onSubmit={handleSubmit}>
-            <button className="submit-btn" type="submit">Submit Order</button>
+            <button className="add-button" type="submit">Submit Order</button>
           </form>
         </div>
       </div>

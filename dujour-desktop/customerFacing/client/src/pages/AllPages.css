@@ -479,7 +479,7 @@ button:hover, .popup-inner .popup-ok-btn:hover, .popup-inner .popup-cancel-btn:h
 
 .right-buttons {
   position: absolute;
-  right: 10px; /* Align to the right with some padding */
+  right: 60px; /* Align to the right with some padding */
   display: flex;
   gap: 10px; /* Adds space between buttons */
 }
@@ -670,4 +670,66 @@ nav {
   min-width: 20px; /* Ensures the circle does not become an oval */
 }
 
+.mini-cart-dropdown {
+  position: absolute;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 100;
+}
+
+.mini-cart-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mini-cart-footer {
+  width: 100%;
+}
+
+.mini-cart-table td, .mini-cart-table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.mini-cart-quantity-input {
+  width: 30px;
+}
+
+.mini-cart-remove-btn {
+  color: red;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+
+.mini-cart-go-to-cart-btn {
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.menu .mini-cart-dropdown .add-button {
+    font-size: 16px;  /* Smaller font size for dropdown buttons */
+    color: white;     /* Optional: Change the text color if needed */
+    background-color: var(--button-color-primary);
+}
+
+.menu .mini-cart-dropdown .delete-btn {
+    font-size: 16px;  /* Smaller font size for dropdown buttons */
+    color: white;     /* Optional: Change the text color if needed */
+    background-color: var(--button-color-danger);
+}
+
+.mini-cart-dropdown .mini-cart-remove-btn {
+    font-size: 16px;  /* Ensure consistency in button font sizes */
+}
+
+.mini-cart-dropdown button {
+    font-size: 16px;  /* General style for all buttons within the dropdown */
+}
 

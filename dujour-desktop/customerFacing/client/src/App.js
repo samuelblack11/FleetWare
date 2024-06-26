@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { CartProvider } from './context/CartContext'; // Import the CartProvider
 import { CartContext } from './context/CartContext'; // Ensure this path is correct based on your file structure
+import { useCart } from './context/CartContext';
 
 export const AuthContext = createContext(null);
 
@@ -22,35 +23,37 @@ function useAuth() {
 }
 
 function MenuBar() {
-  const { cartItems } = useContext(CartContext);
+  const { cartItems, setCartItems, addToCart, removeFromCart } = useCart();
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [cartDropdownVisible, setCartDropdownVisible] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const cartDropdownRef = useRef(null);
   const dropdownRef = useRef(null);
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const toggleDropdown = () => {
-    setDropdownVisible(!dropdownVisible);
-  };
-
-    // Effect to calculate the total number of items in the cart
+  // Effect to calculate the total number of items in the cart
   useEffect(() => {
     const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
     setCartItemCount(itemCount);
   }, [cartItems]); // Update count when cartItems changes
 
+  const toggleDropdown = () => {
+    setDropdownVisible(!dropdownVisible);
+  };
+
+  const toggleCartDropdown = () => {
+    setCartDropdownVisible(!cartDropdownVisible);
+  };
 
   const handleClickOutside = (event) => {
+    if (cartDropdownRef.current && !cartDropdownRef.current.contains(event.target)) {
+      setCartDropdownVisible(false);
+    }
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
       setDropdownVisible(false);
     }
   };
-
-   const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
 
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
@@ -58,6 +61,77 @@ function MenuBar() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+   const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+function MiniCartDropdown({ cartItems, setCartItems, navigate }) {
+
+
+  function handleItemQuantityChange(index, quantity) {
+    const newQuantity = parseInt(quantity, 10);
+    const newCartItems = cartItems.map((item, idx) => {
+        if (idx === index) {
+            return { ...item, quantity: newQuantity };
+        }
+        return item;
+    });
+    setCartItems(newCartItems);
+}
+
+
+  const removeItemFromCart = (itemId) => {
+    const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
+    setCartItems(updatedCartItems);
+  };
+
+    return (
+      <div className="mini-cart-dropdown" ref={cartDropdownRef}>
+        {cartItems.length > 0 ? (
+          <div>
+            <table className="mini-cart-table">
+              <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Cost</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+              <tbody>
+                {cartItems.map((item, index) => (
+                  <tr key={item._id || index}>
+                    <td>{item.itemName}</td>
+                    <td>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        min="1"
+                        onChange={(e) => handleItemQuantityChange(index, e.target.value)}
+                        className="mini-cart-quantity-input"
+                      />
+                    </td>
+                    <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
+                    <td>
+                      <button onClick={() => removeItemFromCart(item._id)} className="delete-btn">Remove</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mini-cart-footer">
+              <p>Order Total: ${cartItems.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2)}</p>
+              <button onClick={() => navigate('/place-order')} className="add-button">Checkout</button>
+            </div>
+          </div>
+        ) : (
+          <p>Your cart is empty.</p>
+        )}
+      </div>
+    );
+}
+
   return (
     <div className="menu">
       <div className="left-buttons">
@@ -72,6 +146,7 @@ function MenuBar() {
         </button>
       </div>
       <div className="right-buttons">
+
         <div className="dropdown-container" ref={dropdownRef}>
           <button onClick={toggleDropdown}>
             <FontAwesomeIcon icon={faUser} /> 
@@ -95,15 +170,19 @@ function MenuBar() {
             </div>
           )}
         </div>
-        <button>
-  <Link to="/cart">
-    <FontAwesomeIcon icon={faShoppingCart} />
-    {cartItemCount > 0 && 
-      <span className="cart-item-count">{cartItemCount}</span>
-    }
-  </Link>
-</button>
-
+        <div className="dropdown-container">
+          <button onClick={toggleCartDropdown}>
+            <FontAwesomeIcon icon={faShoppingCart} />
+            {cartItemCount > 0 && <span className="cart-item-count">{cartItemCount}</span>}
+          </button>
+            {cartDropdownVisible && (
+              <MiniCartDropdown 
+                cartItems={cartItems}
+                setCartItems={setCartItems}
+                navigate={navigate}
+              />
+            )}
+        </div>
       </div>
     </div>
   );
