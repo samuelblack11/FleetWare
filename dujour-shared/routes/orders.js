@@ -155,6 +155,30 @@ router.put('/deliverPackage/:id', async (req, res) => {
     order.overallStatus = "Delivered";
     await order.save();
 
+    ///////////////////////////////////////////////
+
+    const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const mailOptions = {
+      from: '"Dujour Delivery" <sam@dujourdelivery.com>',
+      to: order.customerEmail,
+      subject: 'Your Order has been Delivered!',
+      text: `Hello ${order.customerName},\n\nYour order has been successfully delivered. Thank you for choosing Dujour Delivery!\n\nBest Regards,\nThe Dujour Team`, // plain text body
+      html: `<p>Hello <b>${order.customerName}</b>,</p><p>Your order has been successfully delivered. Thank you for choosing Dujour Delivery!</p><p>Best Regards,<br>The Dujour Team</p>` // html body
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send delivery confirmation email', error);
+    }
+    ///////////////////////////////////////////////
     res.status(200).json({ message: 'Order status updated successfully', order });
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -265,6 +289,36 @@ router.post('/', async (req, res) => {
         { new: true }
       );
     }
+
+    ///////////////////////////////////////////////
+
+    const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const mailOptions = {
+      from: '"Dujour Delivery" <sam@dujourdelivery.com>',
+      to: order.customerEmail,
+      subject: 'Your Order is Confirmed',
+      text: `Hello ${order.customerName},\n\nThank you for your order with Dujour Delivery! Your order has been placed successfully and will be delivered as per your request.\n\nIf you have any questions or need to adjust your order, please contact us through dujourdelivery.com.\n\nBest Regards,\nThe Dujour Team`, // plain text body
+      html: `<p>Hello <b>${order.customerName}</b>,</p><p>Thank you for your order with Dujour Delivery! Your order has been placed successfully and will be delivered as per your request.</p><p>If you have any questions or need to adjust your order, please contact us through dujourdelivery.com.</p><p>Best Regards,<br>The Dujour Team</p>` // html body
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send delivery confirmation email', error);
+    }
+    ///////////////////////////////////////////////
+
+
+
+
+
     res.status(200).json({ order });
 }
 catch (error) {

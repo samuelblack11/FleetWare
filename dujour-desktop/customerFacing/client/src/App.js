@@ -10,6 +10,11 @@ import PlaceOrder from './pages/PlaceOrder';
 import AboutDujour from './pages/AboutDujour';
 import MyAccount from './pages/MyAccount';
 import OrderSummary from './pages/OrderSummary';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { CartProvider } from './context/CartContext'; // Import the CartProvider
+import { CartContext } from './context/CartContext'; // Ensure this path is correct based on your file structure
+
 export const AuthContext = createContext(null);
 
 function useAuth() {
@@ -17,6 +22,8 @@ function useAuth() {
 }
 
 function MenuBar() {
+  const { cartItems } = useContext(CartContext);
+  const [cartItemCount, setCartItemCount] = useState(0);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const dropdownRef = useRef(null);
   const { logout } = useContext(AuthContext);
@@ -25,6 +32,13 @@ function MenuBar() {
   const toggleDropdown = () => {
     setDropdownVisible(!dropdownVisible);
   };
+
+    // Effect to calculate the total number of items in the cart
+  useEffect(() => {
+    const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+    setCartItemCount(itemCount);
+  }, [cartItems]); // Update count when cartItems changes
+
 
   const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -60,7 +74,7 @@ function MenuBar() {
       <div className="right-buttons">
         <div className="dropdown-container" ref={dropdownRef}>
           <button onClick={toggleDropdown}>
-            My Account
+            <FontAwesomeIcon icon={faUser} /> 
           </button>
           {dropdownVisible && (
             <div className="dropdown-menu">
@@ -81,10 +95,15 @@ function MenuBar() {
             </div>
           )}
         </div>
-
         <button>
-          <Link to="/cart">Cart</Link>
-        </button>
+  <Link to="/cart">
+    <FontAwesomeIcon icon={faShoppingCart} />
+    {cartItemCount > 0 && 
+      <span className="cart-item-count">{cartItemCount}</span>
+    }
+  </Link>
+</button>
+
       </div>
     </div>
   );
@@ -125,6 +144,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       <Router>
+        <CartProvider>
         <LocationListener />
         <div className={`App ${backgroundClass}`}>
           <div className="header-container">
@@ -162,6 +182,7 @@ function App() {
             )}
           </Routes>
         </div>
+      </CartProvider>
       </Router>
     </AuthContext.Provider>
   );

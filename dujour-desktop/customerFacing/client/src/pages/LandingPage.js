@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './AllPages.css';
 import marketImage from '../assets/marketImage.png';
 import marketImage2 from '../assets/marketImage2.png';
@@ -31,8 +32,7 @@ function LandingPage() {
       <div className="hero">
         <img className = "landingPageImage" src={marketImage} alt="Farm to Consumer" />
         <div className="overlay-text">
-          <h1>A Farm to Consumer Service</h1>
-          <h2>Get Back to Your Roots</h2>
+          <h1>Get Back to Your Roots</h1>
           <button className="shop-now-button">
             <Link to="/build-order">Shop Now</Link>
           </button>
@@ -44,6 +44,16 @@ function LandingPage() {
         </p>
       </div>
       <div className="values">
+        <div className="value-box">
+        <div className="value-title">
+          Farm to Consumer
+        </div>
+        <div className="value-desc">
+          Logistical excellence is the backbone of our last mile delivery service. We utilize
+          advanced technology and a dedicated mobile app to seamlessly coordinate product pickup,
+          order sortation, and delivery without a storefront intermediary.
+        </div>
+        </div>
         <div className="value-box">
         <div className="value-title">
           Eat Local, Eat Clean
@@ -65,16 +75,6 @@ function LandingPage() {
           This support boosts local economies and preserves the rich agricultural heritage of our regions.
         </div>
         </div>
-        <div className="value-box">
-        <div className="value-title">
-          Logistical Excellence
-        </div>
-        <div className="value-desc">
-          Our last mile delivery service utilizes advanced technology and a dedicated mobile app
-          to seamlessly coordinate the pickup of products from multiple farmers at the market,
-          ensuring orders are accurately sorted and promptly delivered.
-        </div>
-        </div>
       </div>
       <div className="hero">
         <img className = "landingPageImage" src={marketImage2} alt="Farm to Consumer" />
@@ -82,17 +82,34 @@ function LandingPage() {
           <h1>Begin buying directly from farmers in your area today</h1>
         </div>
       </div>
-      <div className="contact-form">
+     <div className="contact-form">
         <div className="value-title">
           Contact Us
         </div>
         <div className="value-desc">
-          Have a question? Fill out our contact form and someone from oru team will be in touch within 48 hours.
+          Have a question? Fill out our contact form and someone from our team will be in touch within 48 hours.
         </div>
-        <form>
-          <input type="text" placeholder="Name" />
-          <input type="email" placeholder="Email" />
-          <textarea placeholder="Message"></textarea>
+        <form onSubmit={handleSubmit}>
+          <input 
+            type="text" 
+            placeholder="Name" 
+            name="name"
+            value={formState.name} 
+            onChange={handleChange} 
+          />
+          <input 
+            type="email" 
+            placeholder="Email" 
+            name="email" 
+            value={formState.email} 
+            onChange={handleChange} 
+          />
+          <textarea 
+            placeholder="Message" 
+            name="message" 
+            value={formState.message} 
+            onChange={handleChange} 
+          ></textarea>
           <button type="submit">Send</button>
         </form>
       </div>

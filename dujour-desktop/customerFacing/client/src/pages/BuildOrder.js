@@ -15,11 +15,12 @@ import fruitPlatter from '../assets/fruitPlatter.png';
 import salad from '../assets/salad.png';
 import selling from '../assets/selling.png';
 import pickingTomatoes from '../assets/pickingTomatoes.png';
+import { useCart } from '../context/CartContext';
 
 const BuildOrder = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
-  const { cartItems: initialCartItems, totalCost: initialTotalCost } = location.state || { cartItems: [], totalCost: 0 };
+  const { cartItems, setCartItems, addToCart, removeFromCart } = useCart();
 
     const initialOrderState = {
     customerEmail: '',
@@ -29,10 +30,10 @@ const BuildOrder = () => {
     creditCardExpiration: '',
     creditCardCVV: '',
     items: [],
+    totalCost: 0,  // Add totalCost here
   };
   const [orderData, setOrderData] = useState(initialOrderState);
   const [availableItems, setAvailableItems] = useState([]); // Items fetched from the server
-  const [cartItems, setCartItems] = useState(initialCartItems); // Items added to the cart
   const [totalCost, setTotalCost] = useState(0);
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
@@ -86,14 +87,14 @@ const getNextRelevantSaturday = () => {
 
   const navigate = useNavigate();
 
-  const handleConfirmOrder = () => {
-    if (totalCost < minimumOrderAmount) {
-      setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
-      return;
-    }
-    setError(''); // Clear any previous error messages
-    navigate('/place-order', { state: { cartItems, totalCost } });
-  };
+const handleConfirmOrder = () => {
+  if (orderData.totalCost < minimumOrderAmount) {
+    setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
+    return;
+  }
+  setError('');
+  navigate('/place-order', { state: { orderData } }); // pass entire orderData including totalCost
+};
 
 
 
@@ -120,18 +121,17 @@ const fetchAvailableItems = async () => {
     }
 };
 
-
   useEffect(() => {
     fetchAvailableItems();
   }, []);
 
-    useEffect(() => {
-    const calculateTotalCost = () => {
-      const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
-      setTotalCost(total);
-    };
-    calculateTotalCost();
-  }, [cartItems]);
+useEffect(() => {
+  const calculateTotalCost = () => {
+    const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+    setOrderData(currentData => ({ ...currentData, totalCost: total }));
+  };
+  calculateTotalCost();
+}, [cartItems]);
 
 
   const filteredItems = availableItems.filter(item => {
@@ -164,19 +164,10 @@ const fetchAvailableItems = async () => {
     setOrderData({ ...orderData, [e.target.name]: e.target.value });
   };
 
-  const handleQuantityChange = (index, quantity) => {
-      const newItems = [...availableItems];
-      newItems[index] = { ...newItems[index], quantity: Number(quantity) };
-      setAvailableItems(newItems);
-      updateTotalCost(newItems);
-};
-
 const removeItemFromCart = (itemId) => {
   const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
   setCartItems(updatedCartItems);
 };
-
-
 
 const toggleUpdateItem = (index) => {
   const updatedCartItems = cartItems.map((item, idx) =>
@@ -196,9 +187,9 @@ const handleItemQuantityChange = (index, newQuantity) => {
   const updatedCartItems = [...cartItems];
   updatedCartItems[index] = { ...item, quantity: newQuantity };
   setCartItems(updatedCartItems);
-  // No need to call updateTotalCost here if it's called within useEffect or elsewhere when cartItems changes.
-};
+  updateTotalCost([...cartItems, { ...cartItems[index], quantity: newQuantity}]);
 
+};
 
 const handleAddToCart = (itemToAdd) => {
   if (!itemToAdd) {
@@ -237,6 +228,24 @@ const handleAddToCart = (itemToAdd) => {
   updateTotalCost([...cartItems, { ...itemToAdd, quantity: itemToAdd.quantity }]);
 };
 
+const updateTotalCost = (cartItems) => {
+  const totalCost = cartItems.reduce((acc, item) => {
+    const stockItem = availableItems.find(stockItem => stockItem._id === item._id);
+    if (stockItem) {
+      return acc + (stockItem.unitCost * item.quantity);
+    }
+    return acc;
+  }, 0);
+  setTotalCost(totalCost);
+};
+
+const handleQuantityChange = (index, quantity) => {
+  const newItems = [...availableItems];
+  newItems[index] = { ...newItems[index], quantity: Number(quantity) };
+  setAvailableItems(newItems);
+};
+
+
 
 const displayItemDetails = (itemToAdd) => {
   const stockItem = availableItems.find(item => item._id === itemToAdd._id);
@@ -248,18 +257,6 @@ const displayItemDetails = (itemToAdd) => {
 
   setSelectedItemDetails(stockItem);
   setPopupVisible(true);
-};
-
-const updateTotalCost = (cartItems) => {
-  const totalCost = cartItems.reduce((acc, item) => {
-    const stockItem = availableItems.find(stockItem => stockItem._id === item._id);
-    if (stockItem) {
-      return acc + (stockItem.unitCost * item.quantity);
-    }
-    return acc;
-  }, 0);
-
-  setTotalCost(totalCost);
 };
 
 // Inside BuildOrder component, define CartSidebar
@@ -310,7 +307,7 @@ const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOr
           </tbody>
         </table>
       </div>
-      <p className="total-cost">Order Total: ${totalCost.toFixed(2)}</p>
+      <p className="total-cost">Total Cost: ${orderData.totalCost.toFixed(2)}</p>
       <button onClick={handleConfirmOrder} className="add-button">Confirm Order</button>
     </div>
   );
@@ -447,9 +444,6 @@ return (
     <FarmInfoModal show={showFarmInfo} farm={selectedFarm} onClose={handleCloseFarmInfo} />
   </div>
 );
-
-
 };
-
 
 export default BuildOrder;

@@ -5,6 +5,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Farm = require('../models/Farm');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Must be 256 bits (32 characters)
 const IV_LENGTH = 16; // For AES, this is always 16
 
@@ -260,7 +261,6 @@ router.get('/email/:emailAddress', async (req, res) => {
 // Route to send email
 router.post('/send-email', async (req, res) => {
   const { name, email, message } = req.body;
-
   // Create transporter object using SMTP transport
   const transporter = nodemailer.createTransport({
     service: 'gmail', // or another email provider
@@ -271,7 +271,7 @@ router.post('/send-email', async (req, res) => {
   });
 
   const mailOptions = {
-    from: process.env.EMAIL_USER, // sender address
+    from: email, // sender address
     to: 'sam@dujourdelivery.com', // receiver
     subject: 'Message from Dujour Customer', // Subject line
     text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`, // plain text body

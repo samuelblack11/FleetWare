@@ -11,6 +11,7 @@ import logo from '../assets/logo128.png';
 import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 const moment = require('moment-timezone');
+import { useCart } from '../context/CartContext';
 
 const LoadingSpinner = () => {
   return (
@@ -23,16 +24,16 @@ const LoadingSpinner = () => {
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
-  const { cartItems: initialCartItems, totalCost: initialTotalCost } = state || { cartItems: [], totalCost: 0 };
+  const { cartItems, setCartItems, totalCost, clearCart } = useCart();
   const navigate = useNavigate();
   // Create a new date object for the current time in EST
   const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
   const formattedDate = dateInEST.format();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
+  // In PlaceOrder when navigating back
   const handleBackToBuildOrder = () => {
-  	navigate('/build-order', { state: { cartItems, totalCost } });
+    navigate('/build-order', { state: { orderData } });  // Pass entire orderData
   };
 
   useEffect(() => {
@@ -49,12 +50,10 @@ const PlaceOrder = () => {
         console.error('Failed to fetch credit card details:', error);
       }
     };
-
     if (user._id) {
       fetchCreditCardDetails();
     }
   }, [user._id]);
-
 
 const getNextSaturday = () => {
     const today = new Date();
@@ -72,6 +71,21 @@ const getNextSaturday = () => {
 
   const nextSaturday = getNextSaturday(new Date());
 
+      // Initialize with data passed from BuildOrder or define fallback defaults
+  const [orderData, setOrderData] = useState(() => {
+        return {
+            customerName: user?.name || '',
+            customerEmail: user?.email || '',
+            deliveryAddress: user?.deliveryAddress || '',
+            deliveryDate: nextSaturday,
+            creditCardNumber: '',
+            ccExpirationDate: '',
+            creditCardCVV: '',
+            items: state?.cartItems,
+            totalCost: state?.orderData?.totalCost || 0,
+        };
+    });
+
   const initialOrderState = {
     customerName: user?.name || '',
     customerEmail: user?.email || '',
@@ -84,38 +98,21 @@ const getNextSaturday = () => {
     items: state?.cartItems || [],
   }
 
-  const [orderData, setOrderData] = useState({
-        // Initial state setup
-        customerName: user?.name,
-        customerEmail: user.email,
-        deliveryAddress: user?.deliveryAddress,
-        creditCardNumber: '',
-        ccExpirationDate: '',
-        creditCardCVV: '',
-        deliveryDate: getNextSaturday(), // Initialize with the next relevant Saturday
-        items: state?.cartItems,
-  });
-
-  const [cartItems, setCartItems] = useState(initialCartItems);
   const shippingCharge = 5; // Flat shipping fee
   const minimumOrderAmount = 30; // Minimum order amount before shipping
-  const [totalCost, setTotalCost] = useState(initialTotalCost);
   const [availableItems, setAvailableItems] = useState([]);
 
-  useEffect(() => {
+useEffect(() => {
     const calculateTotalCost = () => {
-      const subtotal = cartItems.reduce((acc, item) => {
-        const itemTotal = item.quantity * item.unitCost;
-        return acc + itemTotal;
-      }, 0);
-      const roundedSubtotal = Math.round(subtotal * 100) / 100;
-      const finalTotal = roundedSubtotal + shippingCharge;
-      setTotalCost(finalTotal);
-      setOrderData(oldData => ({ ...oldData, totalCost: finalTotal }));
-
+        const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+        const roundedSubtotal = Math.round(subtotal * 100) / 100; // rounding to 2 decimal places
+        const finalTotal = roundedSubtotal + shippingCharge;
+        return finalTotal;
     };
-    calculateTotalCost();
-  }, [cartItems, shippingCharge]);
+    const total = calculateTotalCost();
+    setOrderData(oldData => ({ ...oldData, totalCost: total })); // Assuming you want to store totalCost in orderData
+}, [cartItems, shippingCharge]);
+
 
 
   const handleChange = (e) => {
@@ -175,13 +172,10 @@ const handleItemQuantityChange = (index, newQuantity) => {
   setCartItems(updatedCartItems);
 };
 
-
-
 	const removeItemFromCart = (itemId) => {
   	const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
   	setCartItems(updatedCartItems);
 	};
-
 
   const toggleUpdateItem = (index) => {
     const updatedCartItems = cartItems.map((item, idx) =>
@@ -409,7 +403,7 @@ const transformOrderItems = (order) => {
           </tbody>
         </table>
         <p className="total-cost">Shipping Charge: ${shippingCharge.toFixed(2)}</p>
-        <p className="total-cost">Total Cost: ${totalCost}</p>
+        <p className="total-cost">Total Cost: ${orderData.totalCost.toFixed(2)}</p>
         <div className="submitButton">
           <form onSubmit={handleSubmit}>
             <button className="submit-btn" type="submit">Submit Order</button>

@@ -3,20 +3,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import './AllPages.css';
 import { DetailedOrderSummary } from './ReusableReactComponents';
 import axios from 'axios';
+import { CartContext } from '../context/CartContext'; // Import CartContext
+
 
 const OrderSummary = () => {
+  const { cartItems, totalCost, clearCart } = useContext(CartContext); // Use the CartContext
   const location = useLocation();
   const navigate = useNavigate();
-  const { orderData, cartItems: initialCartItems, totalCost: initialTotalCost, masterOrderNumber } = location.state || { orderData: {}, cartItems: [], totalCost: 0, masterOrderNumber: null };
+  const { orderData, masterOrderNumber } = location.state || { orderData: {}, masterOrderNumber: null };
   const [showOrderPopup, setShowOrderPopup] = useState(true);  // Set to true to show the order summary initially
   const [forConfirmation, setForConfirmation] = useState(false);  // You can adjust this based on your needs
-  const [cartItems, setCartItems] = useState(initialCartItems);
-  const [totalCost, setTotalCost] = useState(initialTotalCost);
-
-    useEffect(() => {
-    setTotalCost(orderData.totalCost); // Update local state when orderData.totalCost changes
-  }, [orderData.totalCost]); // Ensures this runs only if orderData.totalCost changes
-
 
   const currentOrder = {
     customerEmail: orderData.customerEmail || '',
@@ -41,8 +37,6 @@ const OrderSummary = () => {
   };
 
   const handleBackToMenu = () => {
-    setCartItems([]);
-    setTotalCost(0);
     navigate('/build-order', { state: { cartItems: [], totalCost: 0 } });
   }
 

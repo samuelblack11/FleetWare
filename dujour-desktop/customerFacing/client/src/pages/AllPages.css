@@ -650,3 +650,24 @@ nav {
   font-weight: var(--font-weight-bold);
 }
 
+.cart-button {
+  position: relative;
+  font-size: 24px; /* Adjust size as necessary */
+}
+
+.cart-item-count {
+  position: absolute;
+  top: 16px; /* Adjust position as necessary */
+  right: 12px; /* Adjust position as necessary */
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 50%;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px; /* Ensures the circle does not become an oval */
+}
+
+
