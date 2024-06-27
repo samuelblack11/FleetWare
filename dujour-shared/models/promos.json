@@ -1,0 +1,11 @@
+[
+    {
+        "code": "SAVE20",
+        "type": "discount",
+        "amount": 20
+    },
+    {
+        "code": "FREESHIP",
+        "type": "freeShipping"
+    }
+]

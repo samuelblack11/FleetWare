@@ -66,25 +66,32 @@ function MenuBar() {
     navigate('/login');
   };
 
-function MiniCartDropdown({ cartItems, setCartItems, navigate }) {
+function MiniCartDropdown({ navigate }) {
+  const { cartItems, updateCartItem, removeFromCart } = useCart();
+  const [inputValues, setInputValues] = useState({});
 
+      // Initialize input values based on cart items
+    useEffect(() => {
+        const initialValues = {};
+        cartItems.forEach(item => {
+            initialValues[item._id] = String(item.quantity);
+        });
+        setInputValues(initialValues);
+    }, [cartItems]);
 
-  function handleItemQuantityChange(index, quantity) {
-    const newQuantity = parseInt(quantity, 10);
-    const newCartItems = cartItems.map((item, idx) => {
-        if (idx === index) {
-            return { ...item, quantity: newQuantity };
+    const handleInputChange = (itemId, value) => {
+        setInputValues(prev => ({ ...prev, [itemId]: value }));
+    };
+
+    const handleBlur = (itemId) => {
+        const quantity = parseInt(inputValues[itemId], 10);
+        if (!isNaN(quantity) && quantity >= 1) {
+            updateCartItem(itemId, quantity, false); // Update cart item on blur if valid
+        } else {
+            // Reset to original quantity if invalid
+            setInputValues(prev => ({ ...prev, [itemId]: String(cartItems.find(item => item._id === itemId).quantity) }));
         }
-        return item;
-    });
-    setCartItems(newCartItems);
-}
-
-
-  const removeItemFromCart = (itemId) => {
-    const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
-    setCartItems(updatedCartItems);
-  };
+    };
 
     return (
       <div className="mini-cart-dropdown" ref={cartDropdownRef}>
@@ -99,32 +106,33 @@ function MiniCartDropdown({ cartItems, setCartItems, navigate }) {
                 <th>Actions</th>
               </tr>
             </thead>
-              <tbody>
-                {cartItems.map((item, index) => (
-                  <tr key={item._id || index}>
-                    <td>{item.itemName}</td>
-                    <td>
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        min="1"
-                        onChange={(e) => handleItemQuantityChange(index, e.target.value)}
-                        className="mini-cart-quantity-input"
-                      />
-                    </td>
-                    <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
-                    <td>
-                      <button onClick={() => removeItemFromCart(item._id)} className="delete-btn">Remove</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="mini-cart-footer">
-              <p>Order Total: ${cartItems.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2)}</p>
-              <button onClick={() => navigate('/place-order')} className="add-button">Checkout</button>
-            </div>
-          </div>
+                        <tbody>
+                        {cartItems.map((item) => (
+                            <tr key={item._id}>
+                                <td>{item.itemName}</td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        value={inputValues[item._id] || item.quantity}
+                                        onChange={(e) => handleInputChange(item._id, e.target.value)}
+                                        onBlur={() => handleBlur(item._id)}
+                                        className="mini-cart-quantity-input"
+                                        min="1"
+                                    />
+                                </td>
+                                <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
+                                <td>
+                                    <button onClick={() => removeFromCart(item._id)} className="delete-btn">Remove</button>
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                    <div className="mini-cart-footer">
+                        <p>Order Total: ${cartItems.reduce((total, item) => total + item.quantity * item.unitCost, 0).toFixed(2)}</p>
+                        <button onClick={() => navigate('/place-order')} className="add-button">Checkout</button>
+                    </div>
+                </div>
         ) : (
           <p>Your cart is empty.</p>
         )}
@@ -176,9 +184,7 @@ function MiniCartDropdown({ cartItems, setCartItems, navigate }) {
             {cartItemCount > 0 && <span className="cart-item-count">{cartItemCount}</span>}
           </button>
             {cartDropdownVisible && (
-              <MiniCartDropdown 
-                cartItems={cartItems}
-                setCartItems={setCartItems}
+              <MiniCartDropdown
                 navigate={navigate}
               />
             )}

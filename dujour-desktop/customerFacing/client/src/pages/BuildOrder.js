@@ -5,22 +5,14 @@ import { AuthContext } from '../App.js';
 import { fetchUserByEmail, submitFinalOrder, incrementUserOrderNumber } from './helperFiles/placeOrder';
 import { validateEmail, validateDeliveryAddress, validateDeliveryDate, validateCreditCardNumber, validateCreditCardExpiration, validateCVV, validateItemQuantities } from './helperFiles/orderValidation';
 import { GenericPopup, FarmInfoModal } from './ReusableReactComponents'; // Import your GenericPopup component
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Slider from 'react-slick';
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import fruitPlatter from '../assets/fruitPlatter.png';
-import salad from '../assets/salad.png';
-import selling from '../assets/selling.png';
-import pickingTomatoes from '../assets/pickingTomatoes.png';
 import { useCart } from '../context/CartContext';
+import CartTable from './components/CartTable'; // make sure the path is correct
 
 const BuildOrder = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
-  const { cartItems, setCartItems, addToCart, removeFromCart } = useCart();
+  const { cartItems, setCartItems, addToCart, removeFromCart, totalCost } = useCart();
 
     const initialOrderState = {
     customerEmail: '',
@@ -29,12 +21,9 @@ const BuildOrder = () => {
     creditCardNumber: '',
     creditCardExpiration: '',
     creditCardCVV: '',
-    items: [],
-    totalCost: 0,  // Add totalCost here
   };
   const [orderData, setOrderData] = useState(initialOrderState);
   const [availableItems, setAvailableItems] = useState([]); // Items fetched from the server
-  const [totalCost, setTotalCost] = useState(0);
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
   const [cartDropdownVisible, setCartDropdownVisible] = useState(false);
@@ -43,9 +32,10 @@ const BuildOrder = () => {
   const [showFarmInfo, setShowFarmInfo] = useState(false);
   const [selectedFarm, setSelectedFarm] = useState(null); 
   const [imageSources, setImageSources] = useState({}); // State to store image paths
-  const rotatingImageNames = [fruitPlatter, salad, selling, pickingTomatoes]; // Replace these with your actual image filenames
   const minimumOrderAmount = 30; // Minimum order amount before shipping
   const [error, setError] = useState('');
+  const [inputQuantities, setInputQuantities] = useState({});
+  const [updatingItems, setUpdatingItems] = useState({});
 
   const sliderSettings = {
   dots: true,
@@ -88,15 +78,14 @@ const getNextRelevantSaturday = () => {
   const navigate = useNavigate();
 
 const handleConfirmOrder = () => {
-  if (orderData.totalCost < minimumOrderAmount) {
+  if (totalCost < minimumOrderAmount) {
     setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
     return;
   }
+
   setError('');
-  navigate('/place-order', { state: { orderData } }); // pass entire orderData including totalCost
+  navigate('/place-order'); // pass entire orderData including totalCost
 };
-
-
 
 const fetchAvailableItems = async () => {
     try {
@@ -121,17 +110,30 @@ const fetchAvailableItems = async () => {
     }
 };
 
+const fetchImages = async (items) => {
+    const newImageSources = {};
+    for (const item of items) {
+        const imageName = item.itemName.replace('/', '-').toLowerCase(); // Clean item name for safe file paths
+        const farmFolderName = item.farm.name.replace(/\s+/g, '-').toLowerCase(); // Convert farm name to a folder-friendly format
+        try {
+            // Dynamically import the image from the path based on the farm name and item name
+            const imagePath = await import(`../assets/farms/${farmFolderName}/${imageName}.png`);
+            newImageSources[item.itemName] = imagePath.default;
+        } catch (e) {
+            console.log(`Failed to load image for ${item.itemName}:`, e);
+            newImageSources[item.itemName] = 'fallback-image-path.png'; // Provide a fallback image path if loading fails
+        }
+    }
+    setImageSources(newImageSources);
+};
+
   useEffect(() => {
     fetchAvailableItems();
   }, []);
 
-useEffect(() => {
-  const calculateTotalCost = () => {
-    const total = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
-    setOrderData(currentData => ({ ...currentData, totalCost: total }));
-  };
-  calculateTotalCost();
-}, [cartItems]);
+
+// In your component
+//const { items, images, isLoading, fetchItemsAndImagesError } = useFetchItemsAndImages();
 
 
   const filteredItems = availableItems.filter(item => {
@@ -165,15 +167,12 @@ useEffect(() => {
   };
 
 const removeItemFromCart = (itemId) => {
-  const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
-  setCartItems(updatedCartItems);
+  removeFromCart(itemId);
 };
 
+
 const toggleUpdateItem = (index) => {
-  const updatedCartItems = cartItems.map((item, idx) =>
-    idx === index ? { ...item, isUpdating: !item.isUpdating } : item
-  );
-  setCartItems(updatedCartItems);
+  toggleItemUpdate(itemId);  // A new method to be implemented in CartContext
 };
 
 const handleItemQuantityChange = (index, newQuantity) => {
@@ -183,60 +182,24 @@ const handleItemQuantityChange = (index, newQuantity) => {
     alert(`Sorry, there are only ${stockItem.quantityAvailable} units available of ${item.itemName} in stock.`);
     return;
   }
-
-  const updatedCartItems = [...cartItems];
-  updatedCartItems[index] = { ...item, quantity: newQuantity };
-  setCartItems(updatedCartItems);
-  updateTotalCost([...cartItems, { ...cartItems[index], quantity: newQuantity}]);
-
+  updateCartItem(item._id, newQuantity);  // Assuming `updateCartItem` takes itemId and new quantity
 };
 
 const handleAddToCart = (itemToAdd) => {
+  adjustTableContainerMargin()
   if (!itemToAdd) {
     alert('Invalid item.');
     return;
   }
-
-  // Find the corresponding item in availableItems to check stock
+    // Check stock and then add/update item in cart
   const stockItem = availableItems.find(item => item._id === itemToAdd._id);
-  if (!stockItem) {
-    alert('Item not found.');
+  if (!stockItem || itemToAdd.quantity > stockItem.quantityAvailable) {
+    alert(`Sorry, there are only ${stockItem ? stockItem.quantityAvailable : 0} units available.`);
     return;
   }
+  addToCart(itemToAdd);
+  requestAnimationFrame(() => adjustTableContainerMargin());
 
-  // Calculate the total quantity of this item already in the cart
-  const cartItem = cartItems.find(item => item._id === itemToAdd._id);
-  const totalQuantityInCart = cartItem ? cartItem.quantity + itemToAdd.quantity : itemToAdd.quantity;
-
-  if (totalQuantityInCart > stockItem.quantityAvailable) {
-    alert(`Sorry, there are only ${stockItem.quantityAvailable} units of ${itemToAdd.itemName} available in stock.`);
-    return;
-  }
-
-  // If item already exists in the cart, update its quantity
-  if (cartItem) {
-    const updatedCartItems = cartItems.map(item =>
-      item._id === itemToAdd._id ? { ...item, quantity: totalQuantityInCart } : item
-    );
-    setCartItems(updatedCartItems);
-  } else {
-    // Add new item to the cart
-    setCartItems([...cartItems, { ...itemToAdd, quantity: itemToAdd.quantity }]);
-  }
-
-  // Update total cost
-  updateTotalCost([...cartItems, { ...itemToAdd, quantity: itemToAdd.quantity }]);
-};
-
-const updateTotalCost = (cartItems) => {
-  const totalCost = cartItems.reduce((acc, item) => {
-    const stockItem = availableItems.find(stockItem => stockItem._id === item._id);
-    if (stockItem) {
-      return acc + (stockItem.unitCost * item.quantity);
-    }
-    return acc;
-  }, 0);
-  setTotalCost(totalCost);
 };
 
 const handleQuantityChange = (index, quantity) => {
@@ -260,121 +223,116 @@ const displayItemDetails = (itemToAdd) => {
 };
 
 // Inside BuildOrder component, define CartSidebar
-const CartSidebar = ({ cartItems, totalCost, removeItemFromCart, handleConfirmOrder, handleItemQuantityChange, toggleUpdateItem }) => {
+const CartSidebar = ({}) => {
+  const { cartItems, totalCost, removeFromCart, updateCartItem, confirmOrder } = useCart();
+  const [editQuantities, setEditQuantities] = useState({});
+
+    // Initialize or update local edit quantities state
+    useEffect(() => {
+        const newEditQuantities = {};
+        cartItems.forEach(item => {
+            if (item.isUpdating) {
+                newEditQuantities[item._id] = item.quantity; // Initialize with current quantity
+            }
+        });
+        setEditQuantities(newEditQuantities);
+    }, [cartItems]);
+
+    const handleQuantityChange = (itemId, quantity) => {
+        setEditQuantities(prev => ({ ...prev, [itemId]: quantity }));
+    };
+
+    const confirmUpdate = (itemId) => {
+        const quantity = Number(editQuantities[itemId]); // Convert to number when confirming
+        if (!isNaN(quantity) && quantity > 0) { // Ensure it's a valid number and more than 0
+            updateCartItem(itemId, quantity, false); // Commit the change
+        } else {
+            // Handle invalid input, e.g., reset to original quantity
+            updateCartItem(itemId, cartItems.find(item => item._id === itemId).quantity, false);
+        }
+    };
+
+  const handleConfirmOrder = () => {
+    if (totalCost < minimumOrderAmount) {
+      setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
+      return;
+    }
+    setError('');
+    navigate('/place-order'); // pass entire orderData including totalCost
+  };
+
+
   return (
     <div className="cart-sidebar">
       {error && <div className="about-dujour">{error}</div>}
       <h2>Cart</h2>
       <div className="table-container">
-        <table className="table-align">
-          <thead>
-            <tr>
-              <th>Item Name</th>
-              <th>Quantity</th>
-              <th>Unit Cost</th>
-              <th>Line Item Cost</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cartItems.map((item, index) => (
-              <tr key={item.id || index}>
-                <td>{item.itemName}</td>
-                <td>
-                  {item.isUpdating ? (
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleItemQuantityChange(index, e.target.value)}
-                      autoFocus
-                    />
-                  ) : (
-                    item.quantity
-                  )}
-                </td>
-                <td>${item.unitCost.toFixed(2)}</td>
-                <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
-                <td className="actions-cell">
-                  <button className="add-button" onClick={() => toggleUpdateItem(index)}>
-                    {item.isUpdating ? "Confirm" : "Update"}
-                  </button>
-                  <button className="delete-btn" onClick={() => removeItemFromCart(item._id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <CartTable
+            cartItems={cartItems}
+            inputQuantities={inputQuantities}
+            updatingItems={updatingItems}
+            setInputQuantities={setInputQuantities}
+            confirmUpdate={confirmUpdate}
+            toggleUpdateItem={toggleUpdateItem}
+            removeFromCart={removeFromCart}
+        />
       </div>
-      <p className="total-cost">Total Cost: ${orderData.totalCost.toFixed(2)}</p>
+      <p className="total-cost">Total Cost: ${totalCost.toFixed(2)}</p>
       <button onClick={handleConfirmOrder} className="add-button">Confirm Order</button>
     </div>
   );
 };
 
-useLayoutEffect(() => {
-  const adjustTableContainerMargin = () => {
-    const buildCartSection = document.querySelector('.build-cart-section');
-    const cardContainer = document.querySelector('.card-container');
-    const cartSidebar = document.querySelector('.cart-sidebar');
-    const tableContainer = document.querySelector('.table-container');
-    const cartHeader = cartSidebar?.querySelector('h2');
+const adjustTableContainerMargin = () => {
+  console.log("called adjustTableContainerMargin")
+  const cartSidebar = document.querySelector('.cart-sidebar');
+  if (!cartSidebar) return;
 
-    if (buildCartSection && cardContainer && cartSidebar && tableContainer && cartHeader) {
-      const buildCartSectionTop = buildCartSection.getBoundingClientRect().top;
-      const cardContainerTop = cardContainer.getBoundingClientRect().top;
-      const cartSidebarTop = cartSidebar.getBoundingClientRect().top;
-      const cartHeaderHeight = cartHeader.offsetHeight;
+  const tableContainer = cartSidebar.querySelector('.table-container');
+  if (!tableContainer) return;
 
-      // Adjust marginTopDifference by subtracting cartHeaderHeight
-      const marginTopDifference = (cardContainerTop - buildCartSectionTop) - cartHeaderHeight;
-      tableContainer.style.marginTop = `${marginTopDifference}px`;
-    }
-  };
+  // Reset margin top first to get a fresh measurement
+  tableContainer.style.marginTop = '0px';
 
-  // Only execute if the cart has items
-  if (cartItems.length > 0) {
-    adjustTableContainerMargin();
+  // Now calculate the required margin
+  const buildCartSection = document.querySelector('.build-cart-section');
+  const cardContainer = document.querySelector('.card-container');
+  const cartHeader = cartSidebar.querySelector('h2');
+
+  if (buildCartSection && cardContainer && cartHeader) {
+    const buildCartSectionTop = buildCartSection.getBoundingClientRect().top;
+    const cardContainerTop = cardContainer.getBoundingClientRect().top;
+    const cartHeaderHeight = cartHeader.offsetHeight;
+
+    const marginTopDifference = cardContainerTop - buildCartSectionTop - cartHeaderHeight;
+    tableContainer.style.marginTop = `${marginTopDifference}px`;
+  }
+};
+
+
+  useLayoutEffect(() => {
+    // Attach the event listener for resize on window
     window.addEventListener('resize', adjustTableContainerMargin);
 
     return () => {
+      // Clean up the event listener when the component unmounts
       window.removeEventListener('resize', adjustTableContainerMargin);
     };
-  }
-}, [cartItems.length]); // Run effect when cartItems changes
+  }, [cartItems]); // Re-run the effect when cartItems changes
+  
+  // Trigger the adjustment when cartItems changes, or component mounts initially
+  useEffect(() => {
+    console.log("adjustTableMarginCalled...")
+    adjustTableContainerMargin();
+  }, []);  // Dependency on cartItems to re-run when it changes
 
 
 
-
-const fetchImages = async (items) => {
-    const newImageSources = {};
-    for (const item of items) {
-        const imageName = item.itemName.replace('/', '-').toLowerCase(); // Clean item name for safe file paths
-        const farmFolderName = item.farm.name.replace(/\s+/g, '-').toLowerCase(); // Convert farm name to a folder-friendly format
-        try {
-            // Dynamically import the image from the path based on the farm name and item name
-            const imagePath = await import(`../assets/farms/${farmFolderName}/${imageName}.png`);
-            newImageSources[item.itemName] = imagePath.default;
-        } catch (e) {
-            console.log(`Failed to load image for ${item.itemName}:`, e);
-            newImageSources[item.itemName] = 'fallback-image-path.png'; // Provide a fallback image path if loading fails
-        }
-    }
-    setImageSources(newImageSources);
-};
 
 
 return (
   <div className="build-order-container">
     <div className="slider-container" style={{ margin: "5px 0" }}>
-      {/*<Slider {...sliderSettings}>
-        {rotatingImageNames.map((src, index) => (
-          <div key={index}>
-            <img src={src} alt={`${index}`} style={{ width: '95%', height: '250px' }} />
-          </div>
-        ))}
-      </Slider>*/}
     </div>
     <div className="content-container">
       <div className="build-cart-section">

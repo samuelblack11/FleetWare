@@ -44,6 +44,11 @@ orderSchema.pre('save', async function(next) {
     next(error);
   }
 });
+// Add to the existing orderSchema
+orderSchema.add({
+  promoCodeApplied: { type: String }
+});
+
 
 
 const Order = mongoose.model('Order', orderSchema, 'orders');

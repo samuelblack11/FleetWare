@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_TEST_KEY);
 const Farm = require('../models/Farm');
 const mongoose = require('mongoose');
+const PromoCode = require('../models/PromoCode'); // Assuming the model is in a directory called models
 
 // New route to get all orders with nested item and farm details
 router.get('/detailed-orders', async (req, res) => {
@@ -57,6 +58,30 @@ router.get('/detailed-orders', async (req, res) => {
     res.json(detailedOrders);
   } catch (error) {
     console.error('Error fetching detailed orders:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+// Route to validate a promo code
+router.post('/promocode', async (req, res) => {
+  try {
+    const { promoCode } = req.body;
+
+    {/*// Retrieve and log all promo codes in the database
+    const allPromoCodes = await PromoCode.find({});
+    console.log("All available promo codes:", allPromoCodes);*/}
+
+    const codeDetails = await PromoCode.findOne({ code: promoCode });
+    if (!codeDetails) {
+      return res.status(404).json({ isValid: false, message: "Promo code is not valid" });
+    }
+    res.json({
+      isValid: true,
+      type: codeDetails.type,
+      amount: codeDetails.type === 'discount' ? codeDetails.amount : undefined
+    });
+  } catch (error) {
+    console.error('Error validating promo code:', error);
     res.status(500).send('Server error');
   }
 });
@@ -220,6 +245,7 @@ router.post('/by-IDs', async (req, res) => {
   }
 });
 
+
 // Route to get orders for a specific user by their email
 router.get('/orders-by-user', async (req, res) => {
   const { email } = req.query;
@@ -235,8 +261,6 @@ router.get('/orders-by-user', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
-
-
 
 router.delete('/:id', async (req, res) => {
   try {

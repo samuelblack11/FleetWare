@@ -11,6 +11,12 @@ import logo from '../assets/logo128.png';
 import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 const moment = require('moment-timezone');
+import usePromoCode from './hooks/usePromoCode';
+import useNextSaturday from './hooks/useNextSaturday';
+import CartTable from './components/CartTable'; // make sure the path is correct
+import CartSummaryDisplay from './components/CartSummaryDisplay'; // make sure the path is correct
+import CustomerInfoForm from './components/CustomerInfoForm'; // make sure the path is correct
+
 import { useCart } from '../context/CartContext';
 
 const LoadingSpinner = () => {
@@ -24,17 +30,45 @@ const LoadingSpinner = () => {
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
-  const { cartItems, setCartItems, totalCost, clearCart } = useCart();
+  const { cartItems, setCartItems, totalCost, clearCart, updateCartItem, removeFromCart } = useCart();
   const navigate = useNavigate();
   // Create a new date object for the current time in EST
   const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
   const formattedDate = dateInEST.format();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const shippingCharge = 5; // Flat shipping fee
+  const minimumOrderAmount = 30; // Minimum order amount before shipping
+  const [availableItems, setAvailableItems] = useState([]);
+  const [discountedTotalCost, setDiscountedTotalCost] = useState(null);
+  const [discountedShipping, setDiscountedShipping] = useState(shippingCharge);
+  const [inputQuantities, setInputQuantities] = useState({});
+  const [updatingItems, setUpdatingItems] = useState({});
+
+  const { promoCode, setPromoCode, promoError, handlePromoSubmit, isPromoLoading } = usePromoCode();
+
   // In PlaceOrder when navigating back
   const handleBackToBuildOrder = () => {
     navigate('/build-order', { state: { orderData } });  // Pass entire orderData
   };
+
+useEffect(() => {
+    const editStates = {};
+    cartItems.forEach(item => {
+        editStates[item._id] = false; // Initially, no items are being updated
+    });
+    setUpdatingItems(editStates);
+}, [cartItems]);
+
+const confirmQuantityChange = (itemId) => {
+    const quantity = parseInt(inputQuantities[itemId], 10);
+    if (!isNaN(quantity) && quantity > 0) {
+        updateCartItem(itemId, quantity);
+    } else {
+        // Reset to original quantity if invalid
+        setInputQuantities({ ...inputQuantities, [itemId]: cartItems.find(item => item._id === itemId).quantity });
+    }
+};
 
   useEffect(() => {
     // Fetch the decrypted credit card details when the component mounts
@@ -55,25 +89,6 @@ const PlaceOrder = () => {
     }
   }, [user._id]);
 
-const getNextSaturday = () => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    let nextSaturday;
-    if (dayOfWeek === 5 || dayOfWeek === 6) {  // If today is Friday or Saturday
-        // Calculate next week's Saturday
-        nextSaturday = new Date(today.setDate(today.getDate() + (13 - dayOfWeek)));
-    } else {
-        // Calculate this week's Saturday
-        nextSaturday = new Date(today.setDate(today.getDate() + (6 - dayOfWeek)));
-    }
-    return nextSaturday;
-};
-
-
-  const shippingCharge = 5; // Flat shipping fee
-  const minimumOrderAmount = 30; // Minimum order amount before shipping
-  const [availableItems, setAvailableItems] = useState([]);
-
   const calculateInitialTotalCost = () => {
         const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
         const roundedSubtotal = Math.round(subtotal * 100) / 100; // rounding to 2 decimal places
@@ -81,7 +96,7 @@ const getNextSaturday = () => {
         return finalTotal;
     };
 
-  const nextSaturday = getNextSaturday(new Date());
+  const nextSaturday = useNextSaturday();
 
       // Initialize with data passed from BuildOrder or define fallback defaults
   const [orderData, setOrderData] = useState(() => {
@@ -93,8 +108,9 @@ const getNextSaturday = () => {
             creditCardNumber: '',
             ccExpirationDate: '',
             creditCardCVV: '',
-            items: state?.cartItems,
-            totalCost: state?.orderData?.totalCost || calculateInitialTotalCost() || 0,
+            items: cartItems,
+            totalCost: state?.orderData?.totalCost + shippingCharge || calculateInitialTotalCost() || 0,
+            totalCostPreDiscount: state?.orderData?.totalCost + shippingCharge || calculateInitialTotalCost() || 0,
         };
     });
 
@@ -106,7 +122,7 @@ const getNextSaturday = () => {
     creditCardNumber: '',
     ccExpirationDate: '',
     creditCardCVV: '',
-    items: state?.cartItems || [],
+    items: [],
   }
 
 useEffect(() => {
@@ -145,7 +161,7 @@ useEffect(() => {
   };
 
   const filterDate = (date) => {
-    const nextSaturday = getNextSaturday(new Date());
+    const nextSaturday = useNextSaturday();
     return date.toISOString().split('T')[0] === nextSaturday.toISOString().split('T')[0];
   };
 
@@ -167,31 +183,37 @@ useEffect(() => {
 
 
 const handleItemQuantityChange = (index, newQuantity) => {
-  const item = cartItems[index];
-  const stockItem = availableItems.find(avItem => avItem._id === item._id); // Ensure using _id consistently
-  if (!stockItem || newQuantity > stockItem.quantityAvailable) {
-    alert(`Sorry, there are only ${stockItem ? stockItem.quantityAvailable : 0} units available of ${item.itemName} in stock.`);
-    return;
-  }
-
-  const updatedCartItems = [...cartItems];
-  updatedCartItems[index] = { ...item, quantity: Number(newQuantity) };
-  setCartItems(updatedCartItems);
+    const item = cartItems[index];
+    if (item) {
+        updateCartItem(item._id, newQuantity);
+    }
 };
 
-	const removeItemFromCart = (itemId) => {
-  	const updatedCartItems = cartItems.filter(item => item._id !== itemId); // Use _id if available
-  	setCartItems(updatedCartItems);
-	};
+const removeItemFromCart = (itemId) => {
+    removeFromCart(itemId);
+};
 
-  const toggleUpdateItem = (index) => {
-    const updatedCartItems = cartItems.map((item, idx) =>
-      idx === index ? { ...item, isUpdating: !item.isUpdating } : item
-    );
-    setCartItems(updatedCartItems);
-  };
+
+  const toggleUpdateItem = (itemId) => {
+    setUpdatingItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+};
+
+const confirmUpdate = (itemId) => {
+    const quantity = parseInt(inputQuantities[itemId], 10);
+    if (!isNaN(quantity) && quantity > 0) {
+        updateCartItem(itemId, quantity);
+        toggleUpdateItem(itemId); // Turn off updating mode after confirming
+    } else {
+        // Optionally reset the input value on invalid input
+        setInputQuantities({ ...inputQuantities, [itemId]: cartItems.find(item => item._id === itemId).quantity });
+        toggleUpdateItem(itemId); // Still turn off updating mode
+    }
+};
+
 
 const transformOrderItems = (order) => {
+  console.log("++++++++++")
+  console.log(order)
   const transformedItems = order.items.map((item) => ({
     item: {
       _id: item._id,
@@ -223,9 +245,53 @@ const transformOrderItems = (order) => {
 };
 
 
+const validateFormFields = () => {
+    const errors = {};
+    if (!validateEmail(orderData.customerEmail)) {
+        errors.email = 'Please enter a valid email address.';
+    }
+
+    const addressValidation = validateDeliveryAddress(orderData.deliveryAddress);
+
+    // Handle different types of validation errors
+    if (!addressValidation.isValid) {
+      alert(`${addressValidation.error}`);
+      //setError(addressValidation.error);
+      setIsLoading(false);
+      return;
+    }
+
+
+
+    if (!validateCreditCardNumber(orderData.creditCardNumber)) {
+        errors.creditCard = 'Please enter a valid credit card number.';
+    }
+    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) {
+        errors.expiration = 'Please enter a valid expiration date.';
+    }
+    if (!validateCVV(orderData.creditCardCVV)) {
+        errors.cvv = 'Please enter a valid CVV.';
+    }
+    if (!validateItemQuantities(cartItems)) {
+        errors.quantities = 'Please ensure all item quantities are valid.';
+    }
+    return errors;
+}
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
+    // Check the delivery address
+
+    const formErrors = validateFormFields();
+    if (Object.keys(formErrors).length > 0) {
+        // Handle errors, e.g., show them to the user
+        console.error(formErrors);
+        return;
+    }
+
     const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
     const finalTotal = subtotal + shippingCharge; // Correctly calculate total cost including shipping
     setOrderData(oldData => ({ ...oldData, totalCost: finalTotal }));
@@ -236,15 +302,9 @@ const transformOrderItems = (order) => {
       return; // Stop further execution if minimum order amount not met
     }
 
-    if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
-    if (!validateDeliveryAddress(orderData.deliveryAddress)) { alert('Please enter a valid delivery address.'); return; }
-    //if (!validateDeliveryDate(orderData.deliveryDate)) { alert('Please enter a valid delivery date.'); return; }
-    if (!validateCreditCardNumber(orderData.creditCardNumber)) { alert('Please enter a valid credit card number.'); return; }
-    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) { alert('Please enter a valid credit card expiration date.'); return; }
-    if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
-    if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
     setIsLoading(true);
-
+    console.log("???")
+    console.log(orderData)
     const transformedOrder = transformOrderItems({
         ...orderData,
         totalCost: finalTotal  // Use finalTotal directly here
@@ -305,112 +365,48 @@ const transformOrderItems = (order) => {
 
 
   };
+
+
   return (
     <div className="customer-info-section">
     {isLoading && <LoadingSpinner />}
     {error && <div className="error">{error}</div>}
     <button className="add-button" onClick={handleBackToBuildOrder}>Back to Build Order</button>
       <h3>Customer Information</h3>
-      <table className="customer-info-table">
-        <tbody>
-            <tr>
-              <td><label htmlFor="customerName">Customer Name</label></td>
-              <td className="input-cell"><input className="input-name" type="text" name="customerName" id="customerName" value={orderData.customerName} onChange={handleChange} required /></td>
-            </tr>
-            {user.role === 'admin' && (
-            <tr>
-              <td><label htmlFor="customerEmail">Customer Email</label></td>
-              <td className="input-cell"><input className="input-email" type="email" name="customerEmail" id="customerEmail" value={orderData.customerEmail} onChange={handleChange} required /></td>
-            </tr>
-          )}
-          <tr>
-            <td><label htmlFor="deliveryAddress">Delivery Address</label></td>
-            <td className="input-cell"><input className="input-address" type="text" name="deliveryAddress" id="deliveryAddress" value={orderData.deliveryAddress} onChange={handleChange} required /></td>
-          </tr>
-          <tr>
-          <td><label htmlFor="deliveryDate">Delivery Date</label></td>
-          <td className="input-cell"><ReactDatePicker
-            className="input-datepicker"
-            selected={new Date(orderData.deliveryDate)}
-            onChange={handleDateChange}
-            dateFormat="yyyy-MM-dd"
-            minDate={orderData.deliveryDate}
-            maxDate={orderData.deliveryDate}
-          /></td>
-          </tr>
-          <tr>
-            <td><label htmlFor="creditCardNumber">Credit Card Number</label></td>
-            <td className="input-cell"><input className="input-cc" type="text" name="creditCardNumber" id="creditCardNumber" value={orderData.creditCardNumber} onChange={handleChange} required /></td>
-          </tr>
-          <tr>
-            <td><label htmlFor="creditCardExpiration" >Expiration Date (MM/YY)</label></td>
-            <td className="input-cell"><input
-              type="text" 
-              name="ccExpirationDate" 
-              id="ccExpirationDate" 
-              value={orderData.ccExpirationDate} 
-              placeholder="MM/YY" 
-              onChange={handleChange} 
-              required 
-              className="input-expiration"
-            />
-        </td>
-      </tr>
-      <tr>
-        <td><label htmlFor="creditCardCVV">Security Code (CVV)</label></td>
-          <td className="input-cell"><input 
-            type="text" 
-            name="creditCardCVV" 
-            id="creditCardCVV" 
-            value={orderData.creditCardCVV} 
-            onChange={handleChange} 
-            required 
-            className="input-cvv"
-          />
-      </td>
-    </tr>
-        </tbody>
-      </table>
+        <CustomerInfoForm
+          orderData={orderData}
+          handleChange={handleChange}
+          handleDateChange={handleDateChange}
+          isAdmin={user.role === 'admin'}
+        />
       <div className="cart-summary">
         <h3>Cart Summary</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Item Name</th>
-              <th>Quantity</th>
-              <th>Unit Cost</th>
-              <th>Line Item Cost</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cartItems.map((item, index) => (
-              <tr key={item._id}>
-                <td>{item.itemName}</td>
-                <td>
-                  {item.isUpdating ? (
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleItemQuantityChange(index, e.target.value)}
-                      autoFocus
-                    />
-                  ) : (
-                    item.quantity
-                  )}
-                </td>
-                <td>${item.unitCost.toFixed(2)}</td>
-                <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
-                <td className="actions-cell">
-                  <button className="add-button" onClick={() => toggleUpdateItem(index)}>{item.isUpdating ? "Confirm" : "Update"}</button>
-                  <button className="delete-btn" onClick={() => removeItemFromCart(item._id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="total-cost">Shipping Charge: ${shippingCharge.toFixed(2)}</p>
-        <p className="total-cost">Total Cost: ${orderData.totalCost.toFixed(2)}</p>
+          <CartSummaryTable
+            cartItems={cartItems}
+            inputQuantities={inputQuantities}
+            updatingItems={updatingItems}
+            setInputQuantities={setInputQuantities}
+            confirmUpdate={confirmUpdate}
+            toggleUpdateItem={toggleUpdateItem}
+            removeFromCart={removeFromCart}
+          />
+        <div className="promo-code-container">
+          <form onSubmit={handlePromoSubmit}>
+            <input type="text"
+            placeholder="Enter promo code"
+            className="promo-code-input"
+            value={promoCode} 
+            onChange={(e) => setPromoCode(e.target.value)}
+            />
+            <button type="submit" className="add-button">Apply</button>
+          </form>
+          {promoError && <div className="promo-error-message">{promoError}</div>}
+        </div>
+          <CartSummaryDisplay
+            shippingCharge={shippingCharge}
+            discountedShipping={discountedShipping}
+            orderData={{totalCost, totalCostPreDiscount: totalCost}} // Example usage, adjust as per your state logic
+          />
         <div className="submitButton">
           <form onSubmit={handleSubmit}>
             <button className="add-button" type="submit">Submit Order</button>

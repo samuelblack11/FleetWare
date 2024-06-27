@@ -6,17 +6,41 @@ export const validateEmail = (email) => {
 };
 
 export const validateDeliveryAddress = (address) => {
-  // This regex pattern specifically looks for an address in the format:
-  // "2300 Clarendon Blvd, Arlington, VA 22201"
-  // It checks for:
-  // 1. A street number: one or more digits.
-  // 2. A street name: can include alphabetic characters, spaces, and possibly descriptors like "Blvd", "St", "Ave", etc.
-  // 3. A city name: alphabetic characters and possibly spaces.
-  // 4. A state abbreviation: exactly two uppercase letters.
-  // 5. A ZIP code: exactly five digits.
-  const regex = /^\d+\s+[A-Za-z\s]+\w+,\s+[A-Za-z\s]+,\s+[A-Z]{2}\s\d{5}$/;
-  return regex.test(address.trim());
+  // Define allowed city-state pairs
+  const allowedLocations = [
+    { city: "Arlington", state: "VA" }
+    // Add more locations as needed
+  ];
+
+  // Regex pattern for checking the address format
+  const regex = /^\d+\s+[A-Za-z\s]+\w+,\s+([A-Za-z\s]+),\s+([A-Z]{2})\s\d{5}$/;
+
+  // Execute the regex pattern on the trimmed address
+  const match = address.trim().match(regex);
+
+  // If the regex does not match, return an error message for format
+  if (!match) {
+    return { isValid: false, error: "Invalid address format" };
+  }
+
+  // Extract the city name and state from the regex match
+  const cityName = match[1].trim();
+  const state = match[2];
+
+  // Check if the extracted city and state are in the allowed locations
+  const isLocationAllowed = allowedLocations.some(location => 
+    location.city.toLowerCase() === cityName.toLowerCase() && location.state === state
+  );
+
+  // If the location is not allowed, return an error message for location restriction
+  if (!isLocationAllowed) {
+    return { isValid: false, error: "We're sorry, delivery is currently only available in the Arlington area." };
+  }
+
+  // If everything is correct, return isValid as true
+  return { isValid: true };
 };
+
 
 
 export const validateDeliveryDate = (dateString) => {
