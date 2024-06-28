@@ -8,20 +8,14 @@ import { GenericPopup, FarmInfoModal } from './ReusableReactComponents'; // Impo
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import CartTable from './components/CartTable'; // make sure the path is correct
+import CartSidebar from './components/CartSidebar'; // make sure the path is correct
+import useAdjustTableContainerMargin from './components/useAdjustTableContainerMargin'; // Adjust the path as necessary
 
 const BuildOrder = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
-  const { cartItems, setCartItems, addToCart, removeFromCart, totalCost } = useCart();
-
-    const initialOrderState = {
-    customerEmail: '',
-    deliveryAddress: '',
-    deliveryDate: '',
-    creditCardNumber: '',
-    creditCardExpiration: '',
-    creditCardCVV: '',
-  };
+  const { cartItems, setCartItems, updateCartItem, toggleItemUpdate, addToCart, removeFromCart, totalCost } = useCart();
+  const initialOrderState = {customerEmail: '',deliveryAddress: '',deliveryDate: '',creditCardNumber: '',creditCardExpiration: '',creditCardCVV: '',};
   const [orderData, setOrderData] = useState(initialOrderState);
   const [availableItems, setAvailableItems] = useState([]); // Items fetched from the server
   const [popupVisible, setPopupVisible] = useState(false);
@@ -34,21 +28,9 @@ const BuildOrder = () => {
   const [imageSources, setImageSources] = useState({}); // State to store image paths
   const minimumOrderAmount = 30; // Minimum order amount before shipping
   const [error, setError] = useState('');
-  const [inputQuantities, setInputQuantities] = useState({});
-  const [updatingItems, setUpdatingItems] = useState({});
+  useAdjustTableContainerMargin(cartItems);
 
-  const sliderSettings = {
-  dots: true,
-  infinite: true,
-  speed: 2500,
-  slidesToShow: 3,
-  slidesToScroll: 1,
-  autoplay: true,
-  autoplaySpeed: 500,
-};
-
-
-const getNextRelevantSaturday = () => {
+  const getNextRelevantSaturday = () => {
     const date = new Date();
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 5 || dayOfWeek === 6) {  // If it's Friday or Saturday
@@ -77,16 +59,13 @@ const getNextRelevantSaturday = () => {
 
   const navigate = useNavigate();
 
-const handleConfirmOrder = () => {
-  if (totalCost < minimumOrderAmount) {
-    setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
-    return;
-  }
-
-  setError('');
-  navigate('/place-order'); // pass entire orderData including totalCost
-};
-
+  const handleConfirmOrder = () => {
+    if (cartItems.reduce((total, item) => total + item.unitCost * item.quantity, 0) < minimumOrderAmount) {
+      setError(`Minimum order amount of $${minimumOrderAmount} not reached.`);
+      return;
+    }
+    navigate('/place-order'); // Navigate with necessary data if needed
+  };
 const fetchAvailableItems = async () => {
     try {
         const response = await axios.get('/api/items');
@@ -102,6 +81,7 @@ const fetchAvailableItems = async () => {
                 quantity: 0,
                 unitCost: item.unitCost || 0,
             }));
+            console.log(filteredItems)
 
         setAvailableItems(filteredItems); // Set the filtered and enhanced items
         fetchImages(filteredItems); // Fetch images for the filtered items
@@ -127,15 +107,6 @@ const fetchImages = async (items) => {
     setImageSources(newImageSources);
 };
 
-  useEffect(() => {
-    fetchAvailableItems();
-  }, []);
-
-
-// In your component
-//const { items, images, isLoading, fetchItemsAndImagesError } = useFetchItemsAndImages();
-
-
   const filteredItems = availableItems.filter(item => {
   if (!filterField || !filterValue) {
     return true; // No filtering if filterField or filterValue is empty
@@ -151,6 +122,11 @@ const fetchImages = async (items) => {
 
   return true;
 });
+
+      // Inside BuildOrder component
+  useEffect(() => {
+    fetchAvailableItems();
+  }, []);
 
   // Inside BuildOrder component
   useEffect(() => {
@@ -170,45 +146,19 @@ const removeItemFromCart = (itemId) => {
   removeFromCart(itemId);
 };
 
+  const handleUpdateQuantity = (itemId, quantity) => {
+    updateCartItem(itemId, quantity);
+  };
 
-const toggleUpdateItem = (index) => {
-  toggleItemUpdate(itemId);  // A new method to be implemented in CartContext
-};
-
-const handleItemQuantityChange = (index, newQuantity) => {
-  const item = cartItems[index];
-  const stockItem = availableItems.find(avItem => avItem.itemName === item.itemName);
-  if (!stockItem || newQuantity > stockItem.quantityAvailable) {
-    alert(`Sorry, there are only ${stockItem.quantityAvailable} units available of ${item.itemName} in stock.`);
-    return;
-  }
-  updateCartItem(item._id, newQuantity);  // Assuming `updateCartItem` takes itemId and new quantity
-};
-
-const handleAddToCart = (itemToAdd) => {
-  adjustTableContainerMargin()
-  if (!itemToAdd) {
-    alert('Invalid item.');
-    return;
-  }
-    // Check stock and then add/update item in cart
-  const stockItem = availableItems.find(item => item._id === itemToAdd._id);
-  if (!stockItem || itemToAdd.quantity > stockItem.quantityAvailable) {
-    alert(`Sorry, there are only ${stockItem ? stockItem.quantityAvailable : 0} units available.`);
-    return;
-  }
-  addToCart(itemToAdd);
-  requestAnimationFrame(() => adjustTableContainerMargin());
-
-};
+  const handleAddToCart = (item) => {
+    addToCart(item);
+  };
 
 const handleQuantityChange = (index, quantity) => {
   const newItems = [...availableItems];
   newItems[index] = { ...newItems[index], quantity: Number(quantity) };
   setAvailableItems(newItems);
 };
-
-
 
 const displayItemDetails = (itemToAdd) => {
   const stockItem = availableItems.find(item => item._id === itemToAdd._id);
@@ -221,114 +171,6 @@ const displayItemDetails = (itemToAdd) => {
   setSelectedItemDetails(stockItem);
   setPopupVisible(true);
 };
-
-// Inside BuildOrder component, define CartSidebar
-const CartSidebar = ({}) => {
-  const { cartItems, totalCost, removeFromCart, updateCartItem, confirmOrder } = useCart();
-  const [editQuantities, setEditQuantities] = useState({});
-
-    // Initialize or update local edit quantities state
-    useEffect(() => {
-        const newEditQuantities = {};
-        cartItems.forEach(item => {
-            if (item.isUpdating) {
-                newEditQuantities[item._id] = item.quantity; // Initialize with current quantity
-            }
-        });
-        setEditQuantities(newEditQuantities);
-    }, [cartItems]);
-
-    const handleQuantityChange = (itemId, quantity) => {
-        setEditQuantities(prev => ({ ...prev, [itemId]: quantity }));
-    };
-
-    const confirmUpdate = (itemId) => {
-        const quantity = Number(editQuantities[itemId]); // Convert to number when confirming
-        if (!isNaN(quantity) && quantity > 0) { // Ensure it's a valid number and more than 0
-            updateCartItem(itemId, quantity, false); // Commit the change
-        } else {
-            // Handle invalid input, e.g., reset to original quantity
-            updateCartItem(itemId, cartItems.find(item => item._id === itemId).quantity, false);
-        }
-    };
-
-  const handleConfirmOrder = () => {
-    if (totalCost < minimumOrderAmount) {
-      setError(`Minimum order amount of $${minimumOrderAmount} not reached. Please add more items to your cart.`);
-      return;
-    }
-    setError('');
-    navigate('/place-order'); // pass entire orderData including totalCost
-  };
-
-
-  return (
-    <div className="cart-sidebar">
-      {error && <div className="about-dujour">{error}</div>}
-      <h2>Cart</h2>
-      <div className="table-container">
-        <CartTable
-            cartItems={cartItems}
-            inputQuantities={inputQuantities}
-            updatingItems={updatingItems}
-            setInputQuantities={setInputQuantities}
-            confirmUpdate={confirmUpdate}
-            toggleUpdateItem={toggleUpdateItem}
-            removeFromCart={removeFromCart}
-        />
-      </div>
-      <p className="total-cost">Total Cost: ${totalCost.toFixed(2)}</p>
-      <button onClick={handleConfirmOrder} className="add-button">Confirm Order</button>
-    </div>
-  );
-};
-
-const adjustTableContainerMargin = () => {
-  console.log("called adjustTableContainerMargin")
-  const cartSidebar = document.querySelector('.cart-sidebar');
-  if (!cartSidebar) return;
-
-  const tableContainer = cartSidebar.querySelector('.table-container');
-  if (!tableContainer) return;
-
-  // Reset margin top first to get a fresh measurement
-  tableContainer.style.marginTop = '0px';
-
-  // Now calculate the required margin
-  const buildCartSection = document.querySelector('.build-cart-section');
-  const cardContainer = document.querySelector('.card-container');
-  const cartHeader = cartSidebar.querySelector('h2');
-
-  if (buildCartSection && cardContainer && cartHeader) {
-    const buildCartSectionTop = buildCartSection.getBoundingClientRect().top;
-    const cardContainerTop = cardContainer.getBoundingClientRect().top;
-    const cartHeaderHeight = cartHeader.offsetHeight;
-
-    const marginTopDifference = cardContainerTop - buildCartSectionTop - cartHeaderHeight;
-    tableContainer.style.marginTop = `${marginTopDifference}px`;
-  }
-};
-
-
-  useLayoutEffect(() => {
-    // Attach the event listener for resize on window
-    window.addEventListener('resize', adjustTableContainerMargin);
-
-    return () => {
-      // Clean up the event listener when the component unmounts
-      window.removeEventListener('resize', adjustTableContainerMargin);
-    };
-  }, [cartItems]); // Re-run the effect when cartItems changes
-  
-  // Trigger the adjustment when cartItems changes, or component mounts initially
-  useEffect(() => {
-    console.log("adjustTableMarginCalled...")
-    adjustTableContainerMargin();
-  }, []);  // Dependency on cartItems to re-run when it changes
-
-
-
-
 
 return (
   <div className="build-order-container">
@@ -381,14 +223,8 @@ return (
         </div>
       </div>
       {cartItems.length > 0 && (
-        <CartSidebar
-          cartItems={cartItems}
-          totalCost={totalCost}
-          removeItemFromCart={removeItemFromCart}
-          handleConfirmOrder={handleConfirmOrder}
-          handleItemQuantityChange={handleItemQuantityChange}
-          toggleUpdateItem={toggleUpdateItem}
-        />
+        // In BuildOrder component rendering:
+        <CartSidebar />
       )}
     </div>
     <GenericPopup show={popupVisible} onClose={() => setPopupVisible(false)}>

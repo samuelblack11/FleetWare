@@ -21,20 +21,17 @@ const OrderSummary = () => {
     overallStatus: orderData.overallStatus || 'Order Confirmed',
     items: orderData.items,
     totalCost: orderData.totalCost,
-    masterOrderNumber: masterOrderNumber || ''
+    masterOrderNumber: masterOrderNumber || '',
+    promoApplied: orderData.promoDiscount > 0 || orderData.discountedShipping !== orderData.shippingCharge,
+    originalShippingCharge: orderData.originalShippingCharge,
+    discountedShipping: orderData.discountedShipping,
+    originalTotalCost: orderData.totalCostPreDiscount
   };
 
   useEffect(() => {
     // Log the current order
   }, [currentOrder]);
 
-  const handleBackToBuildOrder = () => {
-    navigate('/build-order', { state: { cartItems, totalCost } });
-  };
-
-  const handleBackToPlaceOrder = () => {
-    navigate('/place-order', { state: { cartItems, totalCost } });
-  };
 
   const handleBackToMenu = () => {
     navigate('/build-order', { state: { cartItems: [], totalCost: 0 } });

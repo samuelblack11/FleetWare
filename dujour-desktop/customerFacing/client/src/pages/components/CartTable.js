@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CartTable = ({ cartItems, inputQuantities, updatingItems, setInputQuantities, confirmUpdate, toggleUpdateItem, removeFromCart }) => {
+const CartTable = ({ cartItems, inputQuantities, updatingItems, setInputQuantities, confirmUpdate, toggleItemUpdate, removeFromCart }) => {
     return (
         <table>
             <thead>
@@ -17,25 +17,31 @@ const CartTable = ({ cartItems, inputQuantities, updatingItems, setInputQuantiti
                     <tr key={item._id}>
                         <td>{item.itemName}</td>
                         <td>
-                            {updatingItems[item._id] ? (
+                            {item.isUpdating ? (
                                 <input
-                                    type="number"
-                                    value={inputQuantities[item._id]}
-                                    onChange={(e) => setInputQuantities({ ...inputQuantities, [item._id]: e.target.value })}
+                                    type={inputQuantities[item._id] === '' ? "text" : "number"}
+                                    value={inputQuantities[item._id] === '' ? '' : (inputQuantities[item._id] || item.quantity)}
+                                    onChange={e => {
+                                        const newValue = e.target.value;
+                                        setInputQuantities(item._id, newValue === '' ? '' : newValue);
+                                    }}
                                     className="mini-cart-quantity-input"
-                                    min="1"
                                 />
                             ) : (
                                 item.quantity
                             )}
                         </td>
                         <td>${item.unitCost.toFixed(2)}</td>
-                        <td>${(inputQuantities[item._id] * item.unitCost).toFixed(2)}</td>
+                        <td>${(item.quantity * item.unitCost).toFixed(2)}</td>
                         <td>
-                            {updatingItems[item._id] ? (
-                                <button className="add-button" onClick={() => confirmUpdate(item._id)}>Confirm</button>
+                            {item.isUpdating ? (
+                                <button className="add-button" onClick={() => confirmUpdate(item._id)}>
+                                    Confirm
+                                </button>
                             ) : (
-                                <button className="add-button" onClick={() => toggleUpdateItem(item._id)}>Update</button>
+                                <button className="add-button" onClick={() => toggleItemUpdate(item._id)}>
+                                    Update
+                                </button>
                             )}
                             <button className="delete-btn" onClick={() => removeFromCart(item._id)}>Delete</button>
                         </td>

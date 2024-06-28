@@ -116,7 +116,7 @@ export const FarmInfoModal = ({ show, farm, onClose }) => {
 };
 
 
-export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, isPopup, buttonTitle }) => {
+export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, isPopup, buttonTitle}) => {
   if (!show) {
     return null;
   }
@@ -142,8 +142,24 @@ export const DetailedOrderSummary = ({ show, order, onClose, forConfirmation, is
         {!forConfirmation && (
           <p><strong>Order Status:</strong> {order.overallStatus}</p>
         )}
-        <p><strong>Shipping Charge:</strong> ${shippingCharge}</p>
-        <p><strong>Total Cost:</strong> ${order.totalCost}</p>
+        <p><strong>Shipping Charge:</strong>
+        {order.promoApplied && order.discountedShipping === 0 ? (
+          <>
+            <span style={{ textDecoration: 'line-through' }}>${order.originalShippingCharge.toFixed(2)}</span> $0.00
+          </>
+        ) : (
+          `$${order.discountedShipping.toFixed(2)}`
+        )}
+      </p>
+      <p><strong>Total Cost:</strong>
+        {order.promoApplied ? (
+          <>
+            <span style={{ textDecoration: 'line-through' }}>${order.originalTotalCost.toFixed(2)}</span> ${order.totalCost.toFixed(2)}
+          </>
+        ) : (
+          `$${order.totalCost.toFixed(2)}`
+        )}
+      </p>
         <table>
           <thead>
             <tr>

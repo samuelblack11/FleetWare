@@ -277,6 +277,12 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { orderData, paymentMethodId, amount, currency, emailHtml, return_url } = req.body;
+  console.log("<<<<")
+  console.log(orderData)
+
+
+
+
   try {
     // Step 1: Process payment
     const paymentIntent = await stripe.paymentIntents.create({
@@ -296,7 +302,9 @@ router.post('/', async (req, res) => {
     // Step 2: Generate master order number and save the order
     const maxMasterOrder = await Order.findOne().sort({ masterOrderNumber: -1 }).exec();
     const maxMasterOrderNumber = maxMasterOrder ? maxMasterOrder.masterOrderNumber : 0;
+    console.log(maxMasterOrderNumber)
     const orderStatus = 'Order Confirmed'
+
     const order = new Order({
       ...orderData,
       masterOrderNumber: maxMasterOrderNumber + 1,
@@ -313,6 +321,11 @@ router.post('/', async (req, res) => {
         { new: true }
       );
     }
+
+
+    console.log("!!!!")
+    console.log(order)
+
 
     ///////////////////////////////////////////////
 
@@ -335,7 +348,7 @@ router.post('/', async (req, res) => {
     try {
       await transporter.sendMail(mailOptions);
     } catch (error) {
-      console.error('Failed to send delivery confirmation email', error);
+      console.error('Failed to send order confirmation email', error);
     }
     ///////////////////////////////////////////////
 

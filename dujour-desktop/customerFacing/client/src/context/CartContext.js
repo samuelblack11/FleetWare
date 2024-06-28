@@ -9,36 +9,40 @@ export const CartProvider = ({ children }) => {
     const [totalCost, setTotalCost] = useState(0);
 
     // Add an item to the cart or update its quantity if it already exists
-    const addToCart = (itemToAdd) => {
-        const exists = cartItems.find(item => item._id === itemToAdd._id);
-        if (exists) {
-            // Update the item quantity if it exists
-            setCartItems(cartItems.map(item => 
-                item._id === itemToAdd._id ? {...item, quantity: item.quantity + itemToAdd.quantity} : item
-            ));
-        } else {
-            // Add the new item to the cart
-            setCartItems([...cartItems, itemToAdd]);
-        }
+const addToCart = (itemToAdd) => {
+    const exists = cartItems.find(item => item._id === itemToAdd._id);
+    if (exists) {
+        // Update the item quantity if it exists
+        setCartItems(cartItems.map(item => 
+            item._id === itemToAdd._id ? {...item, quantity: item.quantity + itemToAdd.quantity} : item
+        ));
+    } else {
+        // Add the new item to the cart with isUpdating initialized to false
+        setCartItems([...cartItems, {...itemToAdd, isUpdating: false}]);
+    }
+};
+
+    const updateCartItem = (itemId, quantity) => {
+        setCartItems(prevItems =>
+            prevItems.map(item =>
+                item._id === itemId ? { ...item, quantity: quantity} : item
+            )
+        );
+        console.log(cartItems)
+    };
+
+    const toggleItemUpdate = (itemId) => {
+        setCartItems(prevItems =>
+            prevItems.map(item =>
+                item._id === itemId ? { ...item, isUpdating: !item.isUpdating } : item
+            )
+        );
     };
 
     // Remove an item from the cart by ID
     const removeFromCart = (itemId) => {
         setCartItems(cartItems.filter(item => item._id !== itemId));
     };
-
-const updateCartItem = (itemId, quantity, isUpdating) => {
-    setCartItems(cartItems.map(item => 
-        item._id === itemId ? { ...item, quantity: quantity, isUpdating: isUpdating } : item
-    ));
-};
-
-const confirmUpdate = (itemId) => {
-    if (editQuantities[itemId] !== undefined) {
-        updateCartItem(itemId, Number(editQuantities[itemId]), true); // Pass 'true' to toggle 'isUpdating' off
-    }
-};
-
 
     // Clear the cart
     const clearCart = () => {
@@ -58,8 +62,9 @@ const confirmUpdate = (itemId) => {
             setCartItems,
             totalCost,
             addToCart,
-            removeFromCart,
             updateCartItem,
+            toggleItemUpdate,
+            removeFromCart,
             clearCart
         }}>
             {children}

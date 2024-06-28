@@ -30,7 +30,8 @@ const LoadingSpinner = () => {
 const PlaceOrder = () => {
   const { user } = useContext(AuthContext);
   const { state } = useLocation();
-  const { cartItems, setCartItems, totalCost, clearCart, updateCartItem, removeFromCart } = useCart();
+  const { cartItems, setCartItems, totalCost, clearCart, updateCartItem, removeFromCart,toggleItemUpdate,confirmOrder} = useCart();
+
   const navigate = useNavigate();
   // Create a new date object for the current time in EST
   const dateInEST = moment().tz("America/New_York").set({hour: 11, minute: 0, second: 0, millisecond: 0});
@@ -44,13 +45,46 @@ const PlaceOrder = () => {
   const [discountedShipping, setDiscountedShipping] = useState(shippingCharge);
   const [inputQuantities, setInputQuantities] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
+  const [editQuantities, setEditQuantities] = useState({});
+  const [promoDiscount, setPromoDiscount] = useState(0);
 
-  const { promoCode, setPromoCode, promoError, handlePromoSubmit, isPromoLoading } = usePromoCode();
+    const applyPromoEffect = (promoData) => {
+        if (promoData.type === "freeShipping") {
+          setDiscountedShipping(0); // Set discounted shipping to 0
+          const newTotalCost = orderData.totalCost - shippingCharge; // Subtract current shipping charge from total cost
+          setOrderData(prev => ({
+            ...prev,
+            totalCost: newTotalCost
+        }));
+        } else if (promoData.type === "discount" && promoData.amount) {
+            setOrderData(prev => ({
+                ...prev,
+                totalCost: Math.max(0, prev.totalCost * (1-(promoData.amount/100)))
+            }));
+        }
+    };
 
-  // In PlaceOrder when navigating back
-  const handleBackToBuildOrder = () => {
-    navigate('/build-order', { state: { orderData } });  // Pass entire orderData
-  };
+    const resetOrderState = () => {
+    setDiscountedShipping(shippingCharge); // Reset shipping to default
+    setPromoCode('');                     // Clear promo code
+    setPromoDiscount(0);                  // Reset any discounts
+    clearCart();                          // Assuming this clears the cart items
+    // Add any other state resets needed for a new order
+};
+
+
+    const { promoCode, promoData, setPromoCode, promoError, handlePromoSubmit } = usePromoCode(applyPromoEffect);
+
+    // Use `promoData` here as needed, for example:
+    useEffect(() => {
+      if (promoData) {
+        console.log("Promo data received:", promoData);
+      }
+    }, [promoData]);
+      // In PlaceOrder when navigating back
+      const handleBackToBuildOrder = () => {
+        navigate('/build-order', { state: { orderData } });  // Pass entire orderData
+      };
 
 useEffect(() => {
     const editStates = {};
@@ -60,15 +94,28 @@ useEffect(() => {
     setUpdatingItems(editStates);
 }, [cartItems]);
 
-const confirmQuantityChange = (itemId) => {
-    const quantity = parseInt(inputQuantities[itemId], 10);
-    if (!isNaN(quantity) && quantity > 0) {
-        updateCartItem(itemId, quantity);
-    } else {
-        // Reset to original quantity if invalid
-        setInputQuantities({ ...inputQuantities, [itemId]: cartItems.find(item => item._id === itemId).quantity });
+useEffect(() => {
+    const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+    const finalTotal = subtotal + discountedShipping; // Use discounted shipping
+    setOrderData(prev => ({
+        ...prev,
+        totalCost: finalTotal,
+        totalCostPreDiscount: subtotal + shippingCharge // Always calculate pre-discount using the original shipping charge
+    }));
+}, [cartItems, discountedShipping]); // Updated to trigger recalculation when discountedShipping changes
+
+
+useEffect(() => {
+  const newEditQuantities = {...editQuantities};
+  cartItems.forEach(item => {
+    if (item.isUpdating && !newEditQuantities[item._id]) {
+      newEditQuantities[item._id] = item.quantity.toString(); // Store as string for input
+    } else if (!item.isUpdating) {
+      delete newEditQuantities[item._id]; // Remove from edit quantities when not updating
     }
-};
+  });
+  setEditQuantities(newEditQuantities);
+}, [cartItems]);
 
   useEffect(() => {
     // Fetch the decrypted credit card details when the component mounts
@@ -166,7 +213,7 @@ useEffect(() => {
   };
 
   const handleDateChange = (date) => {
-        setOrderData({ ...orderData, deliveryDate: date });
+    setOrderData({ ...orderData, deliveryDate: date });
   };
 
   useEffect(() => {
@@ -182,38 +229,30 @@ useEffect(() => {
 }, []);
 
 
-const handleItemQuantityChange = (index, newQuantity) => {
-    const item = cartItems[index];
-    if (item) {
-        updateCartItem(item._id, newQuantity);
-    }
+const handleQuantityChange = (itemId, quantity) => {
+  setEditQuantities(prev => ({ ...prev, [itemId]: quantity }));
 };
 
 const removeItemFromCart = (itemId) => {
-    removeFromCart(itemId);
+  removeFromCart(itemId);
 };
 
 
-  const toggleUpdateItem = (itemId) => {
-    setUpdatingItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+const toggleUpdateItem = (itemId) => {
+  setUpdatingItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
 };
 
 const confirmUpdate = (itemId) => {
-    const quantity = parseInt(inputQuantities[itemId], 10);
-    if (!isNaN(quantity) && quantity > 0) {
+    const quantityStr = editQuantities[itemId];
+    const quantity = quantityStr.trim() === '' ? 0 : Number(quantityStr);  // Convert empty input to 0 or any default value
+
+    if (!isNaN(quantity) && quantity >= 0) {
         updateCartItem(itemId, quantity);
-        toggleUpdateItem(itemId); // Turn off updating mode after confirming
-    } else {
-        // Optionally reset the input value on invalid input
-        setInputQuantities({ ...inputQuantities, [itemId]: cartItems.find(item => item._id === itemId).quantity });
-        toggleUpdateItem(itemId); // Still turn off updating mode
+        toggleItemUpdate(itemId);  // Toggle off the editing mode
     }
 };
 
-
 const transformOrderItems = (order) => {
-  console.log("++++++++++")
-  console.log(order)
   const transformedItems = order.items.map((item) => ({
     item: {
       _id: item._id,
@@ -247,12 +286,9 @@ const transformOrderItems = (order) => {
 
 const validateFormFields = () => {
     const errors = {};
-    if (!validateEmail(orderData.customerEmail)) {
-        errors.email = 'Please enter a valid email address.';
-    }
+
 
     const addressValidation = validateDeliveryAddress(orderData.deliveryAddress);
-
     // Handle different types of validation errors
     if (!addressValidation.isValid) {
       alert(`${addressValidation.error}`);
@@ -261,20 +297,13 @@ const validateFormFields = () => {
       return;
     }
 
+    if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
+    if (!validateCreditCardNumber(orderData.creditCardNumber)) { alert('Please enter a valid credit card number.'); return; }
+    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) { alert('Please enter a valid credit card expiration date.'); return; }
+    if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
+    if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
 
 
-    if (!validateCreditCardNumber(orderData.creditCardNumber)) {
-        errors.creditCard = 'Please enter a valid credit card number.';
-    }
-    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) {
-        errors.expiration = 'Please enter a valid expiration date.';
-    }
-    if (!validateCVV(orderData.creditCardCVV)) {
-        errors.cvv = 'Please enter a valid CVV.';
-    }
-    if (!validateItemQuantities(cartItems)) {
-        errors.quantities = 'Please ensure all item quantities are valid.';
-    }
     return errors;
 }
 
@@ -293,21 +322,20 @@ const validateFormFields = () => {
     }
 
     const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
-    const finalTotal = subtotal + shippingCharge; // Correctly calculate total cost including shipping
-    setOrderData(oldData => ({ ...oldData, totalCost: finalTotal }));
 
     // Check if subtotal meets the minimum required amount before shipping
     if (subtotal < minimumOrderAmount) {
       alert(`Minimum order amount of $${minimumOrderAmount} not met. Please add more items.`);
       return; // Stop further execution if minimum order amount not met
     }
-
     setIsLoading(true);
-    console.log("???")
-    console.log(orderData)
     const transformedOrder = transformOrderItems({
         ...orderData,
-        totalCost: finalTotal  // Use finalTotal directly here
+        totalCost: orderData.totalCost,
+        promoApplied: promoDiscount > 0 || discountedShipping !== shippingCharge,
+        originalShippingCharge: shippingCharge,
+        discountedShipping: discountedShipping,
+        originalTotalCost: orderData.totalCostPreDiscount
     });
     const orderHtml = ReactDOMServer.renderToString(
       <>
@@ -323,11 +351,14 @@ const validateFormFields = () => {
       </>
     );
 
-    const amountInCents = Math.round(finalTotal * 100); // Convert totalCost to cents and round to the nearest integer
+    const amountInCents = Math.round(orderData.totalCost * 100); // Convert totalCost to cents and round to the nearest integer
+    console.log("99999")
+    console.log(orderData)
+
 
     try {
       const response = await axios.post('/api/orders', {
-        orderData: { ...orderData, totalCost: finalTotal }, // Make sure to include updated totalCost here
+        orderData, // Make sure to include updated totalCost here
         paymentMethodId: 'pm_card_visa', // This should be the actual payment method ID
         amount: amountInCents, // Amount in cents
         currency: 'usd',
@@ -348,8 +379,9 @@ const validateFormFields = () => {
           console.error('Failed to update stock:', stockError);
           // Handle error, perhaps log it or display a message, but don't block order confirmation
         }
-        alert('Order submitted and email sent successfully!');
+        alert('Order submitted successfully!');
         setOrderData(initialOrderState);
+        resetOrderState();
         setCartItems([]);
         const savedOrder = response.data.order;
         const masterOrderNumber = savedOrder.masterOrderNumber;
@@ -361,9 +393,6 @@ const validateFormFields = () => {
       console.error('Failed to submit the order and send the email.', error);
       alert('Failed to submit the order and send the email. Please try again.');
     }
-
-
-
   };
 
 
@@ -381,13 +410,13 @@ const validateFormFields = () => {
         />
       <div className="cart-summary">
         <h3>Cart Summary</h3>
-          <CartSummaryTable
+          <CartTable
             cartItems={cartItems}
-            inputQuantities={inputQuantities}
-            updatingItems={updatingItems}
-            setInputQuantities={setInputQuantities}
+            inputQuantities={editQuantities}
+            updatingItems={item => item.isUpdating}
+            setInputQuantities={handleQuantityChange}
             confirmUpdate={confirmUpdate}
-            toggleUpdateItem={toggleUpdateItem}
+            toggleItemUpdate={toggleItemUpdate}
             removeFromCart={removeFromCart}
           />
         <div className="promo-code-container">
@@ -403,9 +432,12 @@ const validateFormFields = () => {
           {promoError && <div className="promo-error-message">{promoError}</div>}
         </div>
           <CartSummaryDisplay
-            shippingCharge={shippingCharge}
-            discountedShipping={discountedShipping}
-            orderData={{totalCost, totalCostPreDiscount: totalCost}} // Example usage, adjust as per your state logic
+              shippingCharge={shippingCharge}
+              discountedShipping={discountedShipping}
+              orderData={{
+                  totalCost: orderData.totalCost,
+                  totalCostPreDiscount: orderData.totalCostPreDiscount
+              }}
           />
         <div className="submitButton">
           <form onSubmit={handleSubmit}>
