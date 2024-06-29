@@ -285,28 +285,46 @@ const transformOrderItems = (order) => {
 
 
 const validateFormFields = () => {
-    const errors = {};
-
-
+    // Validate delivery address
     const addressValidation = validateDeliveryAddress(orderData.deliveryAddress);
-    // Handle different types of validation errors
     if (!addressValidation.isValid) {
       alert(`${addressValidation.error}`);
-      //setError(addressValidation.error);
       setIsLoading(false);
-      return;
+      return false;  // Indicate validation failure
     }
 
-    if (!validateEmail(orderData.customerEmail)) { alert('Please enter a valid email address.'); return; }
-    if (!validateCreditCardNumber(orderData.creditCardNumber)) { alert('Please enter a valid credit card number.'); return; }
-    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) { alert('Please enter a valid credit card expiration date.'); return; }
-    if (!validateCVV(orderData.creditCardCVV)) { alert('Please enter a valid CVV.'); return; }
-    if (!validateItemQuantities(cartItems)) { alert('Please ensure all item quantities are valid.'); return; }
+    // Validate email
+    if (!validateEmail(orderData.customerEmail)) {
+      alert('Please enter a valid email address.');
+      return false;
+    }
 
+    // Validate credit card number
+    if (!validateCreditCardNumber(orderData.creditCardNumber)) {
+      alert('Please enter a valid credit card number.');
+      return false;
+    }
 
-    return errors;
+    // Validate credit card expiration date
+    if (!validateCreditCardExpiration(orderData.ccExpirationDate)) {
+      alert('Please enter a valid credit card expiration date.');
+      return false;
+    }
+
+    // Validate CVV
+    if (!validateCVV(orderData.creditCardCVV)) {
+      alert('Please enter a valid CVV.');
+      return false;
+    }
+
+    // Validate item quantities
+    if (!validateItemQuantities(cartItems)) {
+      alert('Please ensure all item quantities are valid.');
+      return false;
+    }
+
+    return true;  // Indicate successful validation
 }
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -314,11 +332,12 @@ const validateFormFields = () => {
     setError('');
     // Check the delivery address
 
-    const formErrors = validateFormFields();
-    if (Object.keys(formErrors).length > 0) {
-        // Handle errors, e.g., show them to the user
-        console.error(formErrors);
-        return;
+    // Run validation
+    const isFormValid = validateFormFields();
+    if (!isFormValid) {
+        console.error('Validation failed.');
+        setIsLoading(false);  // Ensure loading is reset if validation fails
+        return;  // Exit handleSubmit if validation fails
     }
 
     const subtotal = cartItems.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
@@ -350,12 +369,7 @@ const validateFormFields = () => {
         />
       </>
     );
-
     const amountInCents = Math.round(orderData.totalCost * 100); // Convert totalCost to cents and round to the nearest integer
-    console.log("99999")
-    console.log(orderData)
-
-
     try {
       const response = await axios.post('/api/orders', {
         orderData, // Make sure to include updated totalCost here

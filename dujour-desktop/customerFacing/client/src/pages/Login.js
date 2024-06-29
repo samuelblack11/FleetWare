@@ -108,8 +108,8 @@ return (
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
       <div className="button-group">
-        <button type="submit" className="submit-btn">{isSigningUp ? 'Sign Up' : 'Login'}</button>
-        <button type="button" className="submit-btn" onClick={() => setIsSigningUp(!isSigningUp)}>
+        <button type="submit" className="add-button">{isSigningUp ? 'Sign Up' : 'Login'}</button>
+        <button type="button" className="add-button" onClick={() => setIsSigningUp(!isSigningUp)}>
           {isSigningUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
         </button>
       </div>

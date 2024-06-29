@@ -46,7 +46,10 @@ const farmRoutes = require('../../../dujour-shared/routes/farms');
 const itemRoutes = require('../../../dujour-shared/routes/items');
 const orderRoutes = require('../../../dujour-shared/routes/orders');
 const userRoutes = require('../../../dujour-shared/routes/users');
-const optimizeDeliveries= require('../../../dujour-shared/routes/optimize-deliveries');
+const optimizeDeliveries = require('../../../dujour-shared/routes/optimize-deliveries')({
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY
+});
+
 const deliveryRoutes= require('../../../dujour-shared/routes/deliveryRoutes');
 const pickPlans= require('../../../dujour-shared/routes/pickPlans');
 

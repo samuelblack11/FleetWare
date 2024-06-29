@@ -118,12 +118,14 @@ useEffect(() => {
     setIsLoading(true);
     setError('');
     try {
+      console.log("handleOptimizeRoutes called...")
       const { data } = await axios.post('/api/optimize-deliveries', {
         orders,
         numClusters,
         warehouseLocation: whLocation,
         method: routingMethod
       });
+      console.log(data)
       setOptimizedRoutes(data.optimizedRoutes || []);
     } catch (error) {
       console.error("Error optimizing routes:", error);

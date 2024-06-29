@@ -5,7 +5,12 @@ const hclust = require('ml-hclust');
 const ACO = require('ant-colony-optimization/src/ants');
 const axios = require('axios'); // Ensure axios is required if not already
 const { GoogleMapsClient } = require("@googlemaps/google-maps-services-js");
-const config = require('../config'); 
+
+
+// In dujour-shared/routes/optimize-deliveries.js
+module.exports = (config) => {
+  const router = require('express').Router();
+
 
 // Example using Express.js
 const maxRouteTime = 2 * 60 * 60; // Maximum route time in seconds (2 hours)
@@ -17,6 +22,8 @@ const loadingTime = 15 * 60; // Loading time in seconds (15 minutes)
 
 router.post('/', async (req, res) => {
   const { orders, numClusters, warehouseLocation, method } = req.body;
+  console.log("^^^^")
+  console.log(config.googleMapsApiKey); // Just as an example
   try {
     // Geocode warehouse location
     const warehouseGeocode = await geocodeAddresses([warehouseLocation.address]);
@@ -211,4 +218,5 @@ function segmentPathIntoClusters(path, numClusters) {
     return clusterAssignments;
 }
 
-module.exports = router;
+  return router;
+};

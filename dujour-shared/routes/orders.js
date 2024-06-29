@@ -277,11 +277,6 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { orderData, paymentMethodId, amount, currency, emailHtml, return_url } = req.body;
-  console.log("<<<<")
-  console.log(orderData)
-
-
-
 
   try {
     // Step 1: Process payment
@@ -298,11 +293,9 @@ router.post('/', async (req, res) => {
       return res.status(400).send('Payment processing failed.');
     }
 
-
     // Step 2: Generate master order number and save the order
     const maxMasterOrder = await Order.findOne().sort({ masterOrderNumber: -1 }).exec();
     const maxMasterOrderNumber = maxMasterOrder ? maxMasterOrder.masterOrderNumber : 0;
-    console.log(maxMasterOrderNumber)
     const orderStatus = 'Order Confirmed'
 
     const order = new Order({
@@ -321,11 +314,6 @@ router.post('/', async (req, res) => {
         { new: true }
       );
     }
-
-
-    console.log("!!!!")
-    console.log(order)
-
 
     ///////////////////////////////////////////////
 
